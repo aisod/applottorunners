@@ -7,28 +7,54 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  flutter_local_notifications: ^19.0.0
-  permission_handler: ^12.0.0
-  geolocator: ^14.0.0
-  file_picker: '>=8.1.2'
-  image_picker: '>=1.1.2'
-  supabase_flutter: '>=1.10.0'
+  flutter_local_notifications: ^18.0.0
+  permission_handler: ^11.3.1
+  geolocator: ^13.0.1
+  file_picker: ^9.0.0
+  image_picker: ^1.0.7
+  supabase_flutter: ^2.8.0
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.0
-  fl_chart: 0.68.0
-  google_fonts: 6.1.0
-  shared_preferences: 2.3.2
-  path_provider: 2.1.4
-  provider: 6.1.2
-  http: '>=1.0.0'
-  uuid: '>=3.0.0'
+  fl_chart: ^1.0.0
+  google_fonts: ^6.1.0
+  shared_preferences: ^2.3.2
+  path_provider: ^2.1.4
+  provider: ^6.1.2
+  http: ^1.0.0
+  uuid: ^4.5.1
+  geocoding: ^3.0.0
+  google_maps_flutter: ^2.6.0
+  intl: ^0.18.1
+  url_launcher: ^6.3.1
+  pdf: ^3.11.1
+  printing: ^5.13.2
+  share_plus: ^10.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
   change_app_package_name: ^1.4.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "web/icons/logolotto.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "web/icons/logolotto.png"
+    background_color: "#FFFFFF"
+    theme_color: "#2196F3"
+  windows:
+    generate: true
+    image_path: "web/icons/logolotto.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "web/icons/logolotto.png"
 
 flutter:
   uses-material-design: true

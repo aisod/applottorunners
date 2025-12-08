@@ -24,7 +24,7 @@ CREATE TABLE errands (
     category TEXT NOT NULL CHECK (category IN ('grocery', 'delivery', 'document', 'shopping', 'other')),
     price_amount DECIMAL(10,2) NOT NULL,
     time_limit_hours INTEGER NOT NULL DEFAULT 24,
-    status TEXT NOT NULL DEFAULT 'posted' CHECK (status IN ('posted', 'accepted', 'in_progress', 'completed', 'cancelled')),
+    status TEXT NOT NULL DEFAULT 'posted' CHECK (status IN ('posted', 'pending', 'accepted', 'in_progress', 'completed', 'cancelled')),
     location_address TEXT NOT NULL,
     pickup_address TEXT,
     delivery_address TEXT,
@@ -34,7 +34,32 @@ CREATE TABLE errands (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     accepted_at TIMESTAMP WITH TIME ZONE,
+    started_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Chat conversations table
+CREATE TABLE chat_conversations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    errand_id UUID REFERENCES errands(id) ON DELETE CASCADE NOT NULL,
+    customer_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    runner_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    closed_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(errand_id)
+);
+
+-- Chat messages table
+CREATE TABLE chat_messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    conversation_id UUID REFERENCES chat_conversations(id) ON DELETE CASCADE NOT NULL,
+    sender_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    message TEXT NOT NULL,
+    message_type TEXT NOT NULL DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'location', 'status_update')),
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Runner applications table
@@ -98,6 +123,9 @@ CREATE TABLE payments (
 CREATE INDEX idx_errands_status ON errands(status);
 CREATE INDEX idx_errands_customer_id ON errands(customer_id);
 CREATE INDEX idx_errands_runner_id ON errands(runner_id);
+CREATE INDEX idx_chat_conversations_errand_id ON chat_conversations(errand_id);
+CREATE INDEX idx_chat_messages_conversation_id ON chat_messages(conversation_id);
+CREATE INDEX idx_chat_messages_sender_id ON chat_messages(sender_id);
 CREATE INDEX idx_errands_category ON errands(category);
 CREATE INDEX idx_errands_created_at ON errands(created_at);
 CREATE INDEX idx_runner_applications_user_id ON runner_applications(user_id);

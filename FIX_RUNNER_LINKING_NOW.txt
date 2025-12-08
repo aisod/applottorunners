@@ -1,0 +1,146 @@
+========================================================================
+   FIX RUNNER LINKING - IMMEDIATE STEPS
+========================================================================
+
+PROBLEM: 18 runners shown, but 0 bookings and 0 revenue
+
+CAUSE: Bookings exist but aren't linked to runner IDs
+
+QUICK FIX (2 STEPS):
+========================================================================
+
+STEP 1: RUN DIAGNOSTIC (2 minutes)
+-----------------------------------
+
+1. Open: https://supabase.com/dashboard
+2. Go to: SQL Editor
+3. Click: "+ New Query"
+4. Open file: diagnose_runner_linking.sql
+5. Copy ALL contents, paste into SQL Editor
+6. Click: "Run"
+
+LOOK AT THE RESULTS - You'll see something like:
+
+   Test Section              | Total | With Driver | With Runner | Unassigned
+   ========================= | ===== | =========== | =========== | ==========
+   TRANSPORTATION BOOKINGS   |   10  |      0      |      0      |     10
+   BUS SERVICE BOOKINGS      |    5  |      0      |      0      |      5
+
+   ↑ This tells you: "10 transportation bookings, NONE assigned to runners"
+
+
+STEP 2: RUN THE FIX (2 minutes)
+---------------------------------
+
+1. Stay in Supabase SQL Editor
+2. Click: "+ New Query" (new tab)
+3. Open file: fix_runner_linking.sql
+4. Copy ALL contents, paste into SQL Editor
+5. Click: "Run"
+6. Wait for "Success" message
+
+7. Restart your Flutter app
+8. Go to: Admin Dashboard → Provider Accounting
+9. Pull down to refresh
+
+SHOULD NOW SHOW DATA!
+
+
+ALTERNATIVE: QUICK TEST FIX (If bookings are unassigned)
+========================================================================
+
+If the diagnostic shows all bookings are unassigned (0 with driver/runner),
+you can manually assign some for testing:
+
+1. In Supabase SQL Editor, run:
+
+   -- Find a runner
+   SELECT id, full_name FROM users 
+   WHERE user_type = 'runner' OR is_verified = true 
+   LIMIT 1;
+
+2. Copy the ID (looks like: a1b2c3d4-5678-90ab-cdef-1234567890ab)
+
+3. Run this (replace YOUR_RUNNER_ID):
+
+   UPDATE transportation_bookings 
+   SET driver_id = 'YOUR_RUNNER_ID_HERE'
+   WHERE driver_id IS NULL 
+   LIMIT 5;
+
+   UPDATE bus_service_bookings 
+   SET runner_id = 'YOUR_RUNNER_ID_HERE'
+   WHERE runner_id IS NULL 
+   LIMIT 5;
+
+4. Restart Flutter app and check accounting
+
+
+WHAT THE FIX DOES:
+========================================================================
+
+✓ Creates improved database view
+✓ Links bookings to runners through:
+  - Direct driver_id/runner_id (when set)
+  - Service → Provider → User (fallback)
+✓ Counts ALL statuses (pending, accepted, active, completed)
+✓ Handles NULL values properly
+✓ Shows detailed booking breakdowns
+
+
+EXPECTED RESULTS AFTER FIX:
+========================================================================
+
+Provider Accounting should show:
+
+✓ Total Revenue: Actual amounts (e.g., N$1,250.00)
+✓ Company Commission: 33.3% (e.g., N$416.25)
+✓ Runner Earnings: 66.7% (e.g., N$833.75)
+✓ Total Bookings: Actual count (e.g., 15)
+✓ Runner List: Shows runners with their bookings
+✓ Click runner: See detailed booking list
+
+
+TROUBLESHOOTING:
+========================================================================
+
+ISSUE: Diagnostic shows 0 total bookings
+FIX: Create some bookings in your app first
+
+ISSUE: Diagnostic shows bookings but ALL are unassigned
+FIX: Either:
+   - Have runners accept bookings in app
+   - Use "ALTERNATIVE: QUICK TEST FIX" above
+   - Check that acceptance flow is saving runner_id
+
+ISSUE: "service_providers doesn't exist" error
+FIX: That's OK - the fix handles this gracefully
+
+ISSUE: Still showing 0 after running fix
+CHECK: 
+   - Did SQL run successfully? (look for green "Success")
+   - Did you restart the Flutter app?
+   - Did you pull down to refresh the page?
+
+
+FILES TO USE:
+========================================================================
+
+1. diagnose_runner_linking.sql  ← Run this FIRST
+2. fix_runner_linking.sql       ← Run this SECOND
+3. This file                    ← You're reading it!
+
+
+SUMMARY:
+========================================================================
+
+1. Run diagnose_runner_linking.sql in Supabase
+2. Run fix_runner_linking.sql in Supabase
+3. Restart Flutter app
+4. Check Provider Accounting
+
+TIME REQUIRED: 5 minutes
+DIFFICULTY: Easy (just copy-paste SQL)
+
+========================================================================
+

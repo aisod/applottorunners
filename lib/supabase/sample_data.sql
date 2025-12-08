@@ -26,6 +26,7 @@ $$ LANGUAGE plpgsql;
 -- Insert sample users into auth.users first
 DO $$
 DECLARE
+  admin_id uuid;
   customer1_id uuid;
   customer2_id uuid;
   runner1_id uuid;
@@ -33,6 +34,7 @@ DECLARE
   business1_id uuid;
 BEGIN
   -- Create auth users and get their IDs
+  admin_id := insert_user_to_auth('admin@lottorunners.com', 'admin123');
   customer1_id := insert_user_to_auth('john.customer@example.com', 'password123');
   customer2_id := insert_user_to_auth('mary.shopper@example.com', 'password123');
   runner1_id := insert_user_to_auth('mike.runner@example.com', 'password123');
@@ -41,6 +43,7 @@ BEGIN
 
   -- Insert corresponding user profiles
   INSERT INTO users (id, email, full_name, phone, user_type, is_verified, has_vehicle, location_address) VALUES
+    (admin_id, 'admin@lottorunners.com', 'Admin User', '+264-61-000000', 'admin', true, false, 'Admin Office, Windhoek'),
     (customer1_id, 'john.customer@example.com', 'John Customer', '+1234567890', 'individual', true, false, '123 Oak Street, Downtown'),
     (customer2_id, 'mary.shopper@example.com', 'Mary Shopper', '+1234567891', 'individual', true, false, '456 Pine Avenue, Uptown'),
     (runner1_id, 'mike.runner@example.com', 'Mike Runner', '+1234567892', 'runner', true, true, '789 Main Street, Central'),

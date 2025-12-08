@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
-
-// Define primary color constant
-const Color primaryColor = Color(0xFF2E7D32);
+import 'package:lotto_runners/utils/responsive.dart';
 
 class ErrandOversightPage extends StatefulWidget {
   const ErrandOversightPage({super.key});
@@ -38,7 +36,10 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading errands: $e')),
+          SnackBar(
+            content: Text('Unable to load errands. Please check your internet connection and try again.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     }
@@ -205,7 +206,7 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
       case 'cancelled':
         return Colors.red;
       default:
-        return Colors.grey;
+        return theme.colorScheme.outline;
     }
   }
 
@@ -220,9 +221,9 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
       case 'shopping':
         return Colors.purple;
       case 'other':
-        return Colors.grey;
+        return theme.colorScheme.outline;
       default:
-        return Colors.grey;
+        return theme.colorScheme.outline;
     }
   }
 
@@ -245,13 +246,14 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: Column(
         children: [
           // Search and Filter Section
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.grey[50],
+            color: theme.colorScheme.surfaceContainerHighest,
             child: Column(
               children: [
                 TextField(
@@ -260,10 +262,10 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: theme.colorScheme.outline),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: theme.colorScheme.surface,
                   ),
                   onChanged: (value) =>
                       _filterErrands(value, _selectedStatus, _selectedCategory),
@@ -273,38 +275,45 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      const Text('Status: ',
-                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('Status: ',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          )),
                       _buildFilterChip(
                           'All',
                           'all',
                           _selectedStatus,
                           (value) => _filterErrands(
-                              _searchQuery, value, _selectedCategory)),
+                              _searchQuery, value, _selectedCategory),
+                          context),
                       _buildFilterChip(
                           'Posted',
                           'posted',
                           _selectedStatus,
                           (value) => _filterErrands(
-                              _searchQuery, value, _selectedCategory)),
+                              _searchQuery, value, _selectedCategory),
+                          context),
                       _buildFilterChip(
                           'Accepted',
                           'accepted',
                           _selectedStatus,
                           (value) => _filterErrands(
-                              _searchQuery, value, _selectedCategory)),
+                              _searchQuery, value, _selectedCategory),
+                          context),
                       _buildFilterChip(
                           'In Progress',
                           'in_progress',
                           _selectedStatus,
                           (value) => _filterErrands(
-                              _searchQuery, value, _selectedCategory)),
+                              _searchQuery, value, _selectedCategory),
+                          context),
                       _buildFilterChip(
                           'Completed',
                           'completed',
                           _selectedStatus,
                           (value) => _filterErrands(
-                              _searchQuery, value, _selectedCategory)),
+                              _searchQuery, value, _selectedCategory),
+                          context),
                     ],
                   ),
                 ),
@@ -313,38 +322,45 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      const Text('Category: ',
-                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('Category: ',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          )),
                       _buildFilterChip(
                           'All',
                           'all',
                           _selectedCategory,
                           (value) => _filterErrands(
-                              _searchQuery, _selectedStatus, value)),
+                              _searchQuery, _selectedStatus, value),
+                          context),
                       _buildFilterChip(
                           'Grocery',
                           'grocery',
                           _selectedCategory,
                           (value) => _filterErrands(
-                              _searchQuery, _selectedStatus, value)),
+                              _searchQuery, _selectedStatus, value),
+                          context),
                       _buildFilterChip(
                           'Delivery',
                           'delivery',
                           _selectedCategory,
                           (value) => _filterErrands(
-                              _searchQuery, _selectedStatus, value)),
+                              _searchQuery, _selectedStatus, value),
+                          context),
                       _buildFilterChip(
                           'Document',
                           'document',
                           _selectedCategory,
                           (value) => _filterErrands(
-                              _searchQuery, _selectedStatus, value)),
+                              _searchQuery, _selectedStatus, value),
+                          context),
                       _buildFilterChip(
                           'Shopping',
                           'shopping',
                           _selectedCategory,
                           (value) => _filterErrands(
-                              _searchQuery, _selectedStatus, value)),
+                              _searchQuery, _selectedStatus, value),
+                          context),
                     ],
                   ),
                 ),
@@ -362,13 +378,13 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.assignment_outlined,
-                                size: 64, color: Colors.grey),
+                                size: 64, color: theme.colorScheme.outline),
                             SizedBox(height: 16),
                             Text(
                               'No errands found',
                               style: TextStyle(
                                 fontSize: 18,
-                                color: Colors.grey,
+                                color: theme.colorScheme.outline,
                               ),
                             ),
                           ],
@@ -392,8 +408,9 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
   }
 
   Widget _buildFilterChip(String label, String value, String currentValue,
-      Function(String) onSelected) {
+      Function(String) onSelected, BuildContext context) {
     final isSelected = currentValue == value;
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: FilterChip(
@@ -402,8 +419,9 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
         onSelected: (selected) {
           onSelected(selected ? value : 'all');
         },
-        selectedColor: primaryColor.withOpacity(0.2),
-        checkmarkColor: primaryColor,
+        selectedColor:
+            theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
+        checkmarkColor: theme.colorScheme.primary,
       ),
     );
   }
@@ -415,16 +433,18 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
     final categoryColor = _getCategoryColor(category);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin:
+          EdgeInsets.only(bottom: Responsive.isSmallMobile(context) ? 8 : 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(Responsive.isSmallMobile(context) ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding:
+                      EdgeInsets.all(Responsive.isSmallMobile(context) ? 6 : 8),
                   decoration: BoxDecoration(
                     color: categoryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -432,26 +452,26 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   child: Icon(
                     _getCategoryIcon(category),
                     color: categoryColor,
-                    size: 20,
+                    size: Responsive.isSmallMobile(context) ? 16 : 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: Responsive.isSmallMobile(context) ? 8 : 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         errand['title'] ?? 'Unknown',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: Responsive.isSmallMobile(context) ? 14 : 16,
                         ),
                       ),
                       Text(
                         errand['description'] ?? 'No description',
                         style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
+                          color: theme.colorScheme.outline[600],
+                          fontSize: Responsive.isSmallMobile(context) ? 12 : 14,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -480,7 +500,7 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.attach_money, size: 16, color: Colors.green),
+                const Icon(Icons.attach_money, size: 16, color: Colors.green),
                 Text(
                   'N\$${errand['price_amount'] ?? '0.00'}',
                   style: const TextStyle(
@@ -489,23 +509,23 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                Icon(Icons.access_time, size: 16, color: theme.colorScheme.outline[600]),
                 const SizedBox(width: 4),
                 Text(
                   '${errand['time_limit_hours'] ?? 0}h',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: theme.colorScheme.outline[600],
                     fontSize: 12,
                   ),
                 ),
                 if (errand['requires_vehicle']) ...[
                   const SizedBox(width: 16),
-                  Icon(Icons.directions_car, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.directions_car, size: 16, color: theme.colorScheme.outline[600]),
                   const SizedBox(width: 4),
                   Text(
                     'Vehicle',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: theme.colorScheme.outline[600],
                       fontSize: 12,
                     ),
                   ),
@@ -514,7 +534,7 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                 Text(
                   _formatDate(errand['created_at']),
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: theme.colorScheme.outline[500],
                     fontSize: 12,
                   ),
                 ),
@@ -525,12 +545,12 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
               Row(
                 children: [
                   if (errand['customer'] != null) ...[
-                    Icon(Icons.person, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.person, size: 16, color: theme.colorScheme.outline[600]),
                     const SizedBox(width: 4),
                     Text(
                       'Customer: ${errand['customer']['full_name']}',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: theme.colorScheme.outline[600],
                         fontSize: 12,
                       ),
                     ),
@@ -538,12 +558,12 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   if (errand['runner'] != null) ...[
                     if (errand['customer'] != null) const SizedBox(width: 16),
                     Icon(Icons.directions_run,
-                        size: 16, color: Colors.grey[600]),
+                        size: 16, color: theme.colorScheme.outline[600]),
                     const SizedBox(width: 4),
                     Text(
                       'Runner: ${errand['runner']['full_name']}',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: theme.colorScheme.outline[600],
                         fontSize: 12,
                       ),
                     ),

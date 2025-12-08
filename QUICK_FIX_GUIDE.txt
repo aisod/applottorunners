@@ -1,0 +1,98 @@
+================================================================================
+⚠️  QUICK FIX: Database Migration Required
+================================================================================
+
+ERROR YOU'RE SEEING:
+  "column 'allow_reply' of relation 'admin_messages' does not exist"
+
+SOLUTION:
+  Apply the database migration via Supabase Dashboard
+
+================================================================================
+STEP-BY-STEP INSTRUCTIONS (5 MINUTES)
+================================================================================
+
+STEP 1: Open Supabase Dashboard
+  → Go to: https://supabase.com/dashboard
+  → Login to your account
+  → Select your "Lotto Runners" project
+
+STEP 2: Open SQL Editor
+  → Click "SQL Editor" in the left sidebar
+  → Click "New Query" button (top right)
+
+STEP 3: Copy the SQL
+  → Open file: add_allow_reply_to_admin_messages.sql
+  → Select ALL text (Ctrl+A)
+  → Copy (Ctrl+C)
+
+STEP 4: Paste and Run
+  → Paste into SQL Editor (Ctrl+V)
+  → Click green "Run" button (bottom right)
+  → Wait for "Success" message
+
+STEP 5: Restart Your App
+  → Stop your Flutter app (if running)
+  → Run: flutter run
+  → Test sending a message as admin
+  → Should work! ✅
+
+================================================================================
+WHAT THIS MIGRATION DOES
+================================================================================
+
+✅ Adds "allow_reply" column to admin_messages table
+✅ Sets default value to TRUE (replies allowed)
+✅ Updates existing messages to allow replies
+✅ Updates database functions to support the new column
+
+================================================================================
+VERIFICATION
+================================================================================
+
+After running the migration, you can verify it worked by running this query
+in the SQL Editor:
+
+  SELECT column_name, data_type, column_default 
+  FROM information_schema.columns 
+  WHERE table_name = 'admin_messages' 
+  AND column_name = 'allow_reply';
+
+You should see:
+  allow_reply | boolean | true
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Q: I don't see "SQL Editor" in my dashboard
+A: Make sure you're logged into the correct Supabase account and project
+
+Q: The migration fails with an error
+A: Copy the error message and check if the column already exists
+
+Q: Still getting the error after migration
+A: Restart your Flutter app completely (stop and start again)
+
+Q: Can't access Supabase Dashboard
+A: Check your internet connection and Supabase account credentials
+
+================================================================================
+FILES TO USE
+================================================================================
+
+Migration File: add_allow_reply_to_admin_messages.sql
+Documentation: APPLY_MIGRATION_NOW.md
+Complete Guide: RUNNER_MESSAGES_COMPLETE_UPDATE.md
+
+================================================================================
+SUPPORT
+================================================================================
+
+If you need help:
+1. Check APPLY_MIGRATION_NOW.md for detailed instructions
+2. Review the SQL file to understand what it does
+3. Verify you have admin access to your Supabase project
+
+================================================================================
+

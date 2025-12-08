@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
-import 'package:lotto_runners/pages/admin/user_management_page.dart';
-import 'package:lotto_runners/pages/admin/errand_oversight_page.dart';
-import 'package:lotto_runners/pages/admin/payment_tracking_page.dart';
-import 'package:lotto_runners/pages/admin/runner_verification_page.dart';
-import 'package:lotto_runners/pages/admin/analytics_page.dart';
-
-// Define primary color constant
-const Color primaryColor = Color(0xFF2E7D32);
+import 'package:lotto_runners/utils/responsive.dart';
+import 'dart:async';
+import 'analytics_page.dart';
+import 'bus_management_page.dart';
+import 'accounting_page.dart';
+import 'runner_messaging_page.dart';
+import 'service_management_page.dart';
+import 'special_orders_management_page.dart';
+import 'transportation_management_page.dart';
+import 'user_management_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -17,408 +20,442 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-  int _selectedIndex = 0;
+  bool _isLoading = true;
   Map<String, dynamic>? _analyticsData;
-  bool _isLoadingAnalytics = true;
-
-  final List<Widget> _pages = [
-    const AdminDashboard(),
-    const UserManagementPage(),
-    const ErrandOversightPage(),
-    const PaymentTrackingPage(),
-    const RunnerVerificationPage(),
-    const AnalyticsPage(),
-  ];
-
-  final List<String> _titles = [
-    'Admin Dashboard',
-    'User Management',
-    'Errand Oversight',
-    'Payment Tracking',
-    'Runner Verification',
-    'Analytics',
-  ];
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
-    _loadAnalytics();
+    _loadDashboardData();
+    _startPeriodicRefresh();
   }
 
-  Future<void> _loadAnalytics() async {
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPeriodicRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
+      if (mounted) {
+        _loadDashboardData();
+      }
+    });
+  }
+
+  Future<void> _loadDashboardData() async {
     try {
-      final data = await SupabaseConfig.getAnalyticsData();
-      setState(() {
-        _analyticsData = data;
-        _isLoadingAnalytics = false;
-      });
+      final analytics = await SupabaseConfig.getAnalyticsData();
+
+      if (mounted) {
+        setState(() {
+          _analyticsData = analytics;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoadingAnalytics = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+    final isSmallMobile = Responsive.isSmallMobile(context);
+    final isDesktop = Responsive.isDesktop(context);
+    final theme = Theme.of(context);
+
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadAnalytics,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await SupabaseConfig.signOut();
-            },
-          ),
-        ],
-      ),
-      body: _selectedIndex == 0
-          ? AdminDashboard(
-              analyticsData: _analyticsData, isLoading: _isLoadingAnalytics)
-          : _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey[600],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Users',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: 'Errands',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.payment),
-            label: 'Payments',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.verified_user),
-            label: 'Verification',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics),
-            label: 'Analytics',
-          ),
-        ],
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Hero Section
+            _buildHeroSection(isSmallMobile, isMobile),
+            
+            // Management Cards
+            Container(
+              constraints: BoxConstraints(
+                maxWidth: isDesktop ? 1200 : double.infinity,
+              ),
+              padding: EdgeInsets.all(isSmallMobile ? 16 : (isDesktop ? 40 : 24)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildManagementCards(isSmallMobile, isMobile, theme),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class AdminDashboard extends StatelessWidget {
-  final Map<String, dynamic>? analyticsData;
-  final bool isLoading;
-
-  const AdminDashboard({
-    super.key,
-    this.analyticsData,
-    this.isLoading = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Welcome Section
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
+  Widget _buildHeroSection(bool isSmallMobile, bool isMobile) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isSmallMobile ? 16 : (isMobile ? 24 : 40)),
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [primaryColor, primaryColor.withOpacity(0.8)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.admin_panel_settings,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Welcome to Admin Dashboard',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Manage your Lotto Runners platform',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Quick Stats
-          if (analyticsData != null) ...[
-            const Text(
-              'Quick Overview',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                colors: [
+                  LottoRunnersColors.primaryBlue,
+                  LottoRunnersColors.primaryBlueDark,
+            LottoRunnersColors.primaryYellow,
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.2,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                _buildStatCard(
-                  'Total Users',
-                  analyticsData!['total_users'].toString(),
-                  Icons.people,
-                  Colors.blue,
+                Icon(
+                  Icons.admin_panel_settings,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  size: isSmallMobile ? 32 : 40,
                 ),
-                _buildStatCard(
-                  'Total Errands',
-                  analyticsData!['total_errands'].toString(),
-                  Icons.assignment,
-                  Colors.orange,
-                ),
-                _buildStatCard(
-                  'Completed',
-                  analyticsData!['completed_errands'].toString(),
-                  Icons.check_circle,
-                  Colors.green,
-                ),
-                _buildStatCard(
-                  'Revenue',
-                  '\$${analyticsData!['total_revenue'].toStringAsFixed(2)}',
-                  Icons.attach_money,
-                  Colors.purple,
-                ),
-              ],
+                SizedBox(width: isSmallMobile ? 12 : 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Admin Dashboard',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: isSmallMobile ? 24 : 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: isSmallMobile ? 4 : 8),
+                      Text(
+                        'Manage your Lotto Runners platform',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                          fontSize: isSmallMobile ? 14 : 16,
+                        ),
+                      ),
+                    ],
+                  ),
             ),
-            const SizedBox(height: 24),
           ],
-
-          // Quick Actions
-          const Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.8,
-            children: [
-              _buildActionCard(
-                context,
-                'Manage Users',
-                Icons.people_alt,
-                Colors.blue,
-                () => _navigateToPage(context, 1),
-              ),
-              _buildActionCard(
-                context,
-                'View Errands',
-                Icons.assignment_turned_in,
-                Colors.orange,
-                () => _navigateToPage(context, 2),
-              ),
-              _buildActionCard(
-                context,
-                'Track Payments',
-                Icons.payment,
-                Colors.green,
-                () => _navigateToPage(context, 3),
-              ),
-              _buildActionCard(
-                context,
-                'Verify Runners',
-                Icons.verified_user,
-                Colors.purple,
-                () => _navigateToPage(context, 4),
-              ),
-            ],
-          ),
-        ],
+        ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildQuickStats(bool isSmallMobile, bool isMobile, ThemeData theme) {
+    final totalUsers = _analyticsData?['total_users'] ?? 0;
+    final totalErrands = _analyticsData?['total_errands'] ?? 0;
+    final totalRevenue = _analyticsData?['total_revenue'] ?? 0.0;
+    final activeRunners = _analyticsData?['active_runners'] ?? 0;
+
+    final gridConfig = Responsive.getMetricsGridConfig(context);
+
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+        Text(
+          'Quick Stats',
+          style: TextStyle(
+            fontSize: isSmallMobile ? 18 : 22,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        SizedBox(height: isSmallMobile ? 12 : 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: gridConfig['crossAxisCount'],
+          crossAxisSpacing: gridConfig['spacing'],
+          mainAxisSpacing: gridConfig['spacing'],
+          childAspectRatio: gridConfig['childAspectRatio'],
+          children: [
+            _buildStatCard(
+              'Total Users',
+              totalUsers.toString(),
+              Icons.people,
+              LottoRunnersColors.primaryBlue,
+              theme,
+              isSmallMobile,
+            ),
+            _buildStatCard(
+              'Total Errands',
+              totalErrands.toString(),
+              Icons.assignment,
+              Colors.green,
+              theme,
+              isSmallMobile,
+            ),
+            _buildStatCard(
+              'Revenue',
+              'N\$${totalRevenue.toStringAsFixed(2)}',
+              Icons.attach_money,
+              LottoRunnersColors.primaryYellow,
+              theme,
+              isSmallMobile,
+            ),
+            _buildStatCard(
+              'Active Runners',
+              activeRunners.toString(),
+              Icons.directions_run,
+              LottoRunnersColors.accent,
+              theme,
+              isSmallMobile,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
   Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    ThemeData theme,
+    bool isSmallMobile,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+            children: [
+              Container(
+            padding: EdgeInsets.all(isSmallMobile ? 8 : 12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+              size: isSmallMobile ? 20 : 24,
             ),
-            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isSmallMobile ? 12 : 16),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: isSmallMobile ? 20 : 24,
               fontWeight: FontWeight.bold,
-              color: color,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: isSmallMobile ? 4 : 8),
           Text(
             title,
             style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+              fontSize: isSmallMobile ? 12 : 14,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionCard(
-    BuildContext context,
+  Widget _buildManagementCards(bool isSmallMobile, bool isMobile, ThemeData theme) {
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+          'Management',
+          style: TextStyle(
+            fontSize: isSmallMobile ? 18 : 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        SizedBox(height: isSmallMobile ? 12 : 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: isMobile ? 2 : 3,
+          crossAxisSpacing: isSmallMobile ? 12 : 16,
+          mainAxisSpacing: isSmallMobile ? 12 : 16,
+          childAspectRatio: isMobile ? 1.2 : 1.5,
+          children: [
+            _buildManagementCard(
+              'Service Management',
+              Icons.build,
+              LottoRunnersColors.primaryBlue,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ServiceManagementPage()),
+              ),
+            theme,
+            isSmallMobile,
+          ),
+            _buildManagementCard(
+              'Transportation',
+              Icons.directions_bus,
+              Colors.orange,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TransportationManagementPage()),
+              ),
+            theme,
+            isSmallMobile,
+          ),
+            _buildManagementCard(
+              'User Management',
+              Icons.people,
+              Colors.purple,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UserManagementPage()),
+              ),
+            theme,
+            isSmallMobile,
+          ),
+            _buildManagementCard(
+              'Accounting',
+              Icons.account_balance_wallet,
+              LottoRunnersColors.primaryYellow,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AccountingPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
+            _buildManagementCard(
+              'Messenger',
+              Icons.message,
+              Colors.green,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RunnerMessagingPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
+            _buildManagementCard(
+              'Analytics',
+              Icons.analytics,
+              Colors.teal,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AnalyticsPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
+            _buildManagementCard(
+              'Bus Management',
+              Icons.airport_shuttle,
+              Colors.indigo,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BusManagementPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
+            _buildManagementCard(
+              'Special Orders',
+              Icons.star,
+              Colors.deepOrange,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SpecialOrdersManagementPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
+        ],
+      ),
+      ],
+    );
+  }
+
+  Widget _buildManagementCard(
     String title,
     IconData icon,
     Color color,
     VoidCallback onTap,
+    ThemeData theme,
+    bool isSmallMobile,
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1,
+          ),
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+              padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Icon(
+                icon,
+                color: color,
+                size: isSmallMobile ? 28 : 32,
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey[400],
+            SizedBox(height: isSmallMobile ? 8 : 12),
+          Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: isSmallMobile ? 13 : 15,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
-  void _navigateToPage(BuildContext context, int index) {
-    if (context.mounted) {
-      final scaffold = Scaffold.of(context);
-      // This would navigate to the specific page - for now we'll show a message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Navigating to page $index')),
-      );
-    }
-  }
 }
+

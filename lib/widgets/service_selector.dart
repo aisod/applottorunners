@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../supabase/supabase_config.dart';
 import '../utils/responsive.dart';
-import '../utils/breakpoints.dart';
+import '../theme.dart';
+import '../widgets/location_input_field.dart';
 
 class ServiceSelector extends StatefulWidget {
   final Function(Map<String, dynamic>) onServiceSelected;
@@ -9,11 +10,11 @@ class ServiceSelector extends StatefulWidget {
   final bool showTransportationOnly;
 
   const ServiceSelector({
-    Key? key,
+    super.key,
     required this.onServiceSelected,
     this.initialServiceType,
     this.showTransportationOnly = false,
-  }) : super(key: key);
+  });
 
   @override
   State<ServiceSelector> createState() => _ServiceSelectorState();
@@ -23,15 +24,12 @@ class _ServiceSelectorState extends State<ServiceSelector>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  List<Map<String, dynamic>> _categories = [];
   List<Map<String, dynamic>> _subcategories = [];
   List<Map<String, dynamic>> _services = [];
   List<Map<String, dynamic>> _transportationServices = [];
   List<Map<String, dynamic>> _vehicleTypes = [];
-  List<Map<String, dynamic>> _routes = [];
   List<Map<String, dynamic>> _towns = [];
 
-  String? _selectedCategoryId;
   String? _selectedSubcategoryId;
   String? _selectedServiceId;
   String? _selectedVehicleTypeId;
@@ -49,6 +47,11 @@ class _ServiceSelectorState extends State<ServiceSelector>
   TimeOfDay? _selectedTime;
   String? _pickupLocation;
   String? _dropoffLocation;
+  String _selectedVehicleClass = 'standard';
+
+  // Text controllers for location fields
+  late final TextEditingController _pickupLocationController;
+  late final TextEditingController _dropoffLocationController;
 
   Map<String, dynamic>? _priceEstimate;
 
@@ -64,12 +67,18 @@ class _ServiceSelectorState extends State<ServiceSelector>
       _activeTab = 'transportation';
     }
 
+    // Initialize text controllers
+    _pickupLocationController = TextEditingController();
+    _dropoffLocationController = TextEditingController();
+
     _loadInitialData();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _pickupLocationController.dispose();
+    _dropoffLocationController.dispose();
     super.dispose();
   }
 
@@ -85,7 +94,7 @@ class _ServiceSelectorState extends State<ServiceSelector>
       }
 
       futures.addAll([
-        _loadServiceCategories(),
+        _loadSubcategories(),
         _loadVehicleTypes(),
         _loadTowns(),
       ]);
@@ -94,7 +103,10 @@ class _ServiceSelectorState extends State<ServiceSelector>
     } catch (e) {
       print('Error loading initial data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading services: $e')),
+        SnackBar(
+          content: Text('Unable to load services. Please check your internet connection and try again.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -108,16 +120,8 @@ class _ServiceSelectorState extends State<ServiceSelector>
     });
   }
 
-  Future<void> _loadServiceCategories() async {
-    final categories = await SupabaseConfig.getServiceCategories();
-    setState(() {
-      _categories = categories;
-    });
-  }
-
-  Future<void> _loadSubcategories(String categoryId) async {
-    final subcategories =
-        await SupabaseConfig.getServiceSubcategories(categoryId);
+  Future<void> _loadSubcategories() async {
+    final subcategories = await SupabaseConfig.getTransportationSubcategories();
     setState(() {
       _subcategories = subcategories;
       _selectedSubcategoryId = null;
@@ -141,6 +145,14 @@ class _ServiceSelectorState extends State<ServiceSelector>
     });
   }
 
+  Future<void> _loadVehicleTypesBySubcategory(String subcategoryId) async {
+    final vehicleTypes =
+        await SupabaseConfig.getVehicleTypesBySubcategory(subcategoryId);
+    setState(() {
+      _vehicleTypes = vehicleTypes;
+    });
+  }
+
   Future<void> _loadTowns() async {
     final towns = await SupabaseConfig.getTowns();
     setState(() {
@@ -148,18 +160,11 @@ class _ServiceSelectorState extends State<ServiceSelector>
     });
   }
 
-  Future<void> _loadRoutes() async {
-    final routes = await SupabaseConfig.getRoutes();
-    setState(() {
-      _routes = routes;
-    });
-  }
-
   Future<void> _calculatePrice() async {
     if (_selectedServiceId == null) return;
 
     try {
-      final estimate = await SupabaseConfig.calculateTransportationPrice(
+      final estimate = await SupabaseConfig.calculateTransportationServicePrice(
         serviceId: _selectedServiceId!,
         passengerCount: _passengerCount,
         includePickup: _needsHomePickup,
@@ -174,16 +179,6 @@ class _ServiceSelectorState extends State<ServiceSelector>
     }
   }
 
-  void _onCategorySelected(String categoryId) {
-    setState(() {
-      _selectedCategoryId = categoryId;
-      _selectedSubcategoryId = null;
-      _selectedServiceId = null;
-      _priceEstimate = null;
-    });
-    _loadSubcategories(categoryId);
-  }
-
   void _onSubcategorySelected(String subcategoryId) {
     setState(() {
       _selectedSubcategoryId = subcategoryId;
@@ -191,6 +186,7 @@ class _ServiceSelectorState extends State<ServiceSelector>
       _priceEstimate = null;
     });
     _loadTransportationServices(subcategoryId);
+    _loadVehicleTypesBySubcategory(subcategoryId);
   }
 
   void _onServiceSelected(Map<String, dynamic> service) {
@@ -237,12 +233,12 @@ class _ServiceSelectorState extends State<ServiceSelector>
       selectionData = {
         'type': 'transportation',
         'service': selectedService,
-        'category_id': _selectedCategoryId,
         'subcategory_id': _selectedSubcategoryId,
         'vehicle_type_id': _selectedVehicleTypeId,
         'route_id': _selectedRouteId,
         'origin_town_id': _selectedOriginTownId,
         'destination_town_id': _selectedDestinationTownId,
+        'vehicle_class': _selectedVehicleClass,
         'passenger_count': _passengerCount,
         'needs_pickup': _needsHomePickup,
         'selected_date': _selectedDate?.toIso8601String(),
@@ -302,6 +298,7 @@ class _ServiceSelectorState extends State<ServiceSelector>
 
   Widget _buildServicesTab() {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -317,14 +314,11 @@ class _ServiceSelectorState extends State<ServiceSelector>
 
   Widget _buildTransportationTab() {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCategorySelection(),
-          if (_selectedCategoryId != null) ...[
-            const SizedBox(height: 16),
-            _buildSubcategorySelection(),
-          ],
+          _buildSubcategorySelection(),
           if (_selectedSubcategoryId != null) ...[
             const SizedBox(height: 16),
             _buildTransportationServiceGrid(),
@@ -343,8 +337,12 @@ class _ServiceSelectorState extends State<ServiceSelector>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: Responsive.isMobile(context) ? 2 : 3,
-        childAspectRatio: 1.2,
+        crossAxisCount: Responsive.isMobile(context)
+            ? 2
+            : Responsive.isTablet(context)
+                ? 3
+                : 4,
+        childAspectRatio: Responsive.isMobile(context) ? 1.1 : 1.2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -358,9 +356,11 @@ class _ServiceSelectorState extends State<ServiceSelector>
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.blue.shade50 : Colors.white,
+              color: isSelected ? Colors.white : LottoRunnersColors.gray50,
               border: Border.all(
-                color: isSelected ? Colors.blue : Colors.grey.shade300,
+                color: isSelected
+                    ? LottoRunnersColors.primaryBlue
+                    : Colors.grey.shade300,
                 width: isSelected ? 2 : 1,
               ),
               borderRadius: BorderRadius.circular(12),
@@ -378,31 +378,39 @@ class _ServiceSelectorState extends State<ServiceSelector>
                 Icon(
                   Icons.build,
                   size: 32,
-                  color: isSelected ? Colors.blue : Colors.grey.shade600,
+                  color: isSelected
+                      ? LottoRunnersColors.primaryBlue
+                      : Colors.grey.shade600,
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  service['name'] ?? 'Service',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.blue : Colors.black87,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (service['description'] != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    service['description'],
+                Flexible(
+                  child: Text(
+                    service['name'] ?? 'Service',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? LottoRunnersColors.primaryBlue
+                          : Colors.black87,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (service['description'] != null) ...[
+                  const SizedBox(height: 4),
+                  Flexible(
+                    child: Text(
+                      service['description'],
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ],
@@ -410,83 +418,6 @@ class _ServiceSelectorState extends State<ServiceSelector>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildCategorySelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Select Service Category',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: Responsive.isMobile(context) ? 2 : 3,
-            childAspectRatio: 1.5,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemCount: _categories.length,
-          itemBuilder: (context, index) {
-            final category = _categories[index];
-            final isSelected = category['id'] == _selectedCategoryId;
-
-            return GestureDetector(
-              onTap: () => _onCategorySelected(category['id']),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.blue.shade50 : Colors.white,
-                  border: Border.all(
-                    color: isSelected ? Colors.blue : Colors.grey.shade300,
-                    width: isSelected ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _getCategoryIcon(category['icon']),
-                      size: 28,
-                      color: isSelected
-                          ? Colors.blue
-                          : _getCategoryColor(category['color']),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      category['name'] ?? 'Category',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.blue : Colors.black87,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ],
     );
   }
 
@@ -512,8 +443,12 @@ class _ServiceSelectorState extends State<ServiceSelector>
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: Responsive.isMobile(context) ? 2 : 4,
-            childAspectRatio: 1.3,
+            crossAxisCount: Responsive.isMobile(context)
+                ? 2
+                : Responsive.isTablet(context)
+                    ? 3
+                    : 5,
+            childAspectRatio: Responsive.isMobile(context) ? 1.2 : 1.3,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
@@ -522,20 +457,29 @@ class _ServiceSelectorState extends State<ServiceSelector>
             final subcategory = _subcategories[index];
             final isSelected = subcategory['id'] == _selectedSubcategoryId;
 
+            // Determine if this is a shuttle or contract service
+            final isShuttle =
+                subcategory['name']?.toLowerCase().contains('shuttle') ?? false;
+            final isContract =
+                subcategory['name']?.toLowerCase().contains('contract') ??
+                    false;
+
             return GestureDetector(
               onTap: () => _onSubcategorySelected(subcategory['id']),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.blue.shade50 : Colors.white,
+                  color: Colors.grey.shade900,
                   border: Border.all(
-                    color: isSelected ? Colors.blue : Colors.grey.shade300,
+                    color: isSelected
+                        ? LottoRunnersColors.primaryBlue
+                        : Colors.grey.shade700,
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -545,21 +489,54 @@ class _ServiceSelectorState extends State<ServiceSelector>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      _getSubcategoryIcon(subcategory['icon']),
-                      size: 24,
-                      color: isSelected ? Colors.blue : Colors.grey.shade600,
+                      isShuttle || isContract
+                          ? Icons.directions_car
+                          : _getSubcategoryIcon(subcategory['icon']),
+                      size: 32,
+                      color: isSelected
+                          ? (isShuttle || isContract
+                              ? LottoRunnersColors.primaryBlue
+                              : LottoRunnersColors.primaryBlue)
+                          : Colors.white,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subcategory['name'] ?? 'Type',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.blue : Colors.black87,
+                    const SizedBox(height: 8),
+                    Flexible(
+                      child: Text(
+                        subcategory['name'] ?? 'Type',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? (isShuttle || isContract
+                                  ? LottoRunnersColors.primaryBlue
+                                  : LottoRunnersColors.primaryBlue)
+                              : Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Flexible(
+                      child: Text(
+                        isShuttle
+                            ? 'On-Demand Vehicles'
+                            : isContract
+                                ? 'Business Contracts'
+                                : 'Scheduled Services',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isSelected
+                              ? (isShuttle || isContract
+                                  ? LottoRunnersColors.primaryBlue
+                                  : LottoRunnersColors.primaryBlue)
+                              : Colors.white.withValues(alpha: 0.8),
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -606,15 +583,17 @@ class _ServiceSelectorState extends State<ServiceSelector>
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.blue.shade50 : Colors.white,
+                  color: isSelected ? Colors.white : LottoRunnersColors.gray50,
                   border: Border.all(
-                    color: isSelected ? Colors.blue : Colors.grey.shade300,
+                    color: isSelected
+                        ? LottoRunnersColors.primaryBlue
+                        : Colors.grey.shade300,
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -631,7 +610,9 @@ class _ServiceSelectorState extends State<ServiceSelector>
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.blue : Colors.black87,
+                              color: isSelected
+                                  ? LottoRunnersColors.primaryBlue
+                                  : Colors.black87,
                             ),
                           ),
                         ),
@@ -666,43 +647,95 @@ class _ServiceSelectorState extends State<ServiceSelector>
                       ),
                     ],
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        if (route != null) ...[
-                          Icon(
-                            Icons.route,
-                            size: 16,
-                            color: Colors.grey.shade600,
+                    // Responsive layout for route and vehicle info
+                    Responsive.isMobile(context)
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (route != null) ...[
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.route,
+                                      size: 16,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        route['name'] ?? 'Route',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                              if (vehicleType != null) ...[
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.directions_car,
+                                      size: 16,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        '${vehicleType['name']} (${vehicleType['capacity']} seats)',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              if (route != null) ...[
+                                Icon(
+                                  Icons.route,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    route['name'] ?? 'Route',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              if (vehicleType != null) ...[
+                                const SizedBox(width: 16),
+                                Icon(
+                                  Icons.directions_car,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    '${vehicleType['name']} (${vehicleType['capacity']} seats)',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              route['name'] ?? 'Route',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
-                        if (vehicleType != null) ...[
-                          const SizedBox(width: 16),
-                          Icon(
-                            Icons.directions_car,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${vehicleType['name']} (${vehicleType['capacity']} seats)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
                     if (service['features'] != null &&
                         service['features'].isNotEmpty) ...[
                       const SizedBox(height: 8),
@@ -717,14 +750,14 @@ class _ServiceSelectorState extends State<ServiceSelector>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: LottoRunnersColors.gray100,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               feature.toString(),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 11,
-                                color: Colors.blue.shade700,
+                                color: LottoRunnersColors.gray700,
                               ),
                             ),
                           );
@@ -795,6 +828,8 @@ class _ServiceSelectorState extends State<ServiceSelector>
             ),
           ),
           const SizedBox(height: 16),
+          _buildVehicleClassSelector(),
+          const SizedBox(height: 16),
           _buildPassengerCountSelector(),
           const SizedBox(height: 16),
           _buildDateTimeSelector(),
@@ -807,6 +842,81 @@ class _ServiceSelectorState extends State<ServiceSelector>
             _buildPriceEstimate(),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildVehicleClassSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Vehicle Class:',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _buildVehicleClassOption(
+                'economic', 'Economic', Icons.directions_car, Colors.green),
+            const SizedBox(width: 12),
+            _buildVehicleClassOption(
+                'standard', 'Standard', Icons.airport_shuttle, Colors.blue),
+            const SizedBox(width: 12),
+            _buildVehicleClassOption(
+                'premium', 'Premium', Icons.directions_bus, Colors.purple),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVehicleClassOption(
+      String value, String label, IconData icon, Color color) {
+    final isSelected = _selectedVehicleClass == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedVehicleClass = value;
+          });
+          _onBookingDetailsChanged();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? color.withValues(alpha: 0.1)
+                : Colors.grey.shade100,
+            border: Border.all(
+              color: isSelected ? color : Colors.grey.shade300,
+              width: isSelected ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? color : Colors.grey.shade600,
+                size: 20,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? color : Colors.grey.shade700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -956,36 +1066,32 @@ class _ServiceSelectorState extends State<ServiceSelector>
   Widget _buildLocationInputs() {
     return Column(
       children: [
-        TextField(
-          onChanged: (value) {
+        LocationInputField(
+          label: 'Pickup Location',
+          hint: 'Enter pickup address or use current location',
+          prefixIcon: Icons.location_on,
+          controller: _pickupLocationController,
+          onLocationChanged: () {
             setState(() {
-              _pickupLocation = value;
+              _pickupLocation = _pickupLocationController.text;
             });
+            _onBookingDetailsChanged();
           },
-          decoration: InputDecoration(
-            labelText: 'Pickup Location',
-            hintText: 'Enter pickup address',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            prefixIcon: const Icon(Icons.location_on),
-          ),
+          showCurrentLocationButton: true,
         ),
         const SizedBox(height: 12),
-        TextField(
-          onChanged: (value) {
+        LocationInputField(
+          label: 'Drop-off Location',
+          hint: 'Enter destination address',
+          prefixIcon: Icons.flag,
+          controller: _dropoffLocationController,
+          onLocationChanged: () {
             setState(() {
-              _dropoffLocation = value;
+              _dropoffLocation = _dropoffLocationController.text;
             });
+            _onBookingDetailsChanged();
           },
-          decoration: InputDecoration(
-            labelText: 'Drop-off Location',
-            hintText: 'Enter destination address',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            prefixIcon: const Icon(Icons.flag),
-          ),
+          showCurrentLocationButton: false,
         ),
       ],
     );
@@ -1020,9 +1126,9 @@ class _ServiceSelectorState extends State<ServiceSelector>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: LottoRunnersColors.gray100,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(color: LottoRunnersColors.gray300),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1032,7 +1138,7 @@ class _ServiceSelectorState extends State<ServiceSelector>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.blue,
+              color: LottoRunnersColors.primaryBlue,
             ),
           ),
           const SizedBox(height: 8),
@@ -1087,7 +1193,6 @@ class _ServiceSelectorState extends State<ServiceSelector>
               onPressed: () {
                 setState(() {
                   _selectedServiceId = null;
-                  _selectedCategoryId = null;
                   _selectedSubcategoryId = null;
                   _priceEstimate = null;
                   _passengerCount = 1;
@@ -1097,6 +1202,9 @@ class _ServiceSelectorState extends State<ServiceSelector>
                   _pickupLocation = null;
                   _dropoffLocation = null;
                 });
+                // Clear text controllers
+                _pickupLocationController.clear();
+                _dropoffLocationController.clear();
               },
               child: const Text('Clear'),
             ),

@@ -1,0 +1,106 @@
+========================================================================
+   PROVIDER ACCOUNTING FIX - STEP BY STEP INSTRUCTIONS
+========================================================================
+
+PROBLEM:
+--------
+Provider accounting is showing 0 runners, 0 bookings, and 0 earnings.
+
+SOLUTION:
+---------
+I've already fixed the Flutter code ✓
+Now you just need to run ONE SQL script in Supabase.
+
+FOLLOW THESE STEPS:
+-------------------
+
+STEP 1: Open Supabase Dashboard
+   • Go to: https://supabase.com/dashboard
+   • Login with your account
+   • Select your project: fhqxzchuwlqetrhbqlhw
+
+STEP 2: Open SQL Editor
+   • Look at the LEFT SIDEBAR
+   • Click on "SQL Editor" (has a < > icon)
+   • Click the "+ New Query" button at the top
+
+STEP 3: Copy the SQL Fix
+   • In your lotto_runners folder, open: fix_accounting_view.sql
+   • Select ALL the text (Ctrl+A)
+   • Copy it (Ctrl+C)
+
+STEP 4: Paste and Run
+   • Go back to Supabase SQL Editor
+   • Paste the SQL (Ctrl+V)
+   • Click the green "Run" button (or press Ctrl+Enter)
+   • Wait for "Success" message
+
+STEP 5: Test Your App
+   • Close your Flutter app if it's running
+   • Run: flutter run
+   • Go to Admin Dashboard
+   • Click "Provider Accounting" tab
+   • You should now see data instead of zeros!
+
+WHAT THIS SQL DOES:
+-------------------
+✓ Creates a database view called "runner_earnings_summary"
+✓ Counts ALL booking types (errands, transportation, contracts, buses)
+✓ Includes ALL booking statuses (pending, accepted, active, completed)
+✓ Calculates commission (33.3% company, 66.7% runner)
+✓ Creates a function to show detailed bookings per runner
+
+EXPECTED RESULTS:
+-----------------
+After the fix, Provider Accounting should show:
+   • Total Revenue: Actual amounts (not $0.00)
+   • Company Commission: 33.3% of revenue
+   • Runner Earnings: 66.7% of revenue
+   • Total Bookings: Count of all bookings
+   • List of runners with their individual stats
+
+TROUBLESHOOTING:
+----------------
+If you still see zeros:
+
+1. Check SQL ran successfully
+   - Look for green "Success" message in Supabase
+   - If error, copy error message and share it
+
+2. Check console output
+   - Run your Flutter app
+   - Look at the console/terminal
+   - You should see: "✅ Loaded earnings for X runners"
+
+3. Verify bookings have runner IDs
+   - In Supabase SQL Editor, run:
+     SELECT COUNT(*) FROM transportation_bookings WHERE driver_id IS NOT NULL;
+   - Should return a number > 0
+
+4. Pull to refresh
+   - In Provider Accounting page, swipe down to refresh
+
+NEED HELP?
+----------
+Share these details:
+   • Screenshot of Supabase SQL Editor after running script
+   • Console output when opening Provider Accounting
+   • Number of bookings in your database
+
+FILES CREATED:
+--------------
+✓ FIX_INSTRUCTIONS.txt (this file)
+✓ PROVIDER_ACCOUNTING_ZERO_BOOKINGS_FIX.md (detailed explanation)
+✓ run_accounting_fix.bat (helper script)
+✓ fix_accounting_view.sql (the SQL to run)
+
+SUMMARY:
+--------
+1. Open Supabase Dashboard → SQL Editor
+2. Copy contents of fix_accounting_view.sql
+3. Paste and click Run
+4. Restart your Flutter app
+5. Check Provider Accounting - should work now!
+
+========================================================================
+

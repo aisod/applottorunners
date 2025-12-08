@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/widgets/errand_card.dart';
+import 'package:lotto_runners/utils/responsive.dart';
 
 class BrowseErrandsPage extends StatefulWidget {
   const BrowseErrandsPage({super.key});
@@ -12,7 +13,9 @@ class BrowseErrandsPage extends StatefulWidget {
 
 class _BrowseErrandsPageState extends State<BrowseErrandsPage>
     with TickerProviderStateMixin {
+  List<Map<String, dynamic>> _allItems = []; // Combined errands and bookings
   List<Map<String, dynamic>> _errands = [];
+  List<Map<String, dynamic>> _transportationBookings = [];
   bool _isLoading = true;
   String _selectedCategory = 'all';
   String _searchQuery = '';
@@ -21,7 +24,8 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
   late Animation<double> _fadeAnimation;
 
   final List<Map<String, String>> _categories = [
-    {'value': 'all', 'label': 'All', 'icon': 'grid_view'},
+    {'value': 'all', 'label': 'All History', 'icon': 'history'},
+    {'value': 'errands', 'label': 'My Errands', 'icon': 'assignment'},
     {'value': 'grocery', 'label': 'Grocery', 'icon': 'shopping_cart'},
     {'value': 'delivery', 'label': 'Delivery', 'icon': 'local_shipping'},
     {'value': 'document', 'label': 'Documents', 'icon': 'description'},
@@ -51,10 +55,12 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
 
   Future<void> _loadUserProfile() async {
     try {
-      final userId = SupabaseConfig.currentUser?.id;
-      if (userId != null) {
-        final profile = await SupabaseConfig.getUserProfile(userId);
-        setState(() => _userProfile = profile);
+      final user = SupabaseConfig.currentUser;
+      if (user != null) {
+        final profile = await SupabaseConfig.getUserProfile(user.id);
+        setState(() {
+          _userProfile = profile;
+        });
       }
     } catch (e) {
       print('Error loading user profile: $e');
@@ -63,23 +69,80 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
 
   Future<void> _loadErrands() async {
     try {
-      setState(() => _isLoading = true);
-      final errands = await SupabaseConfig.getErrands(status: 'posted');
-      print('Loaded ${errands.length} errands'); // Debug info
-      if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final user = SupabaseConfig.currentUser;
+      if (user != null) {
+        final errands = await SupabaseConfig.getMyErrands(user.id);
+        final bookings = await SupabaseConfig.getUserBookings(user.id);
+
         setState(() {
           _errands = errands;
+          _transportationBookings = bookings;
+          _allItems = [
+            ...errands.map((e) => {
+                  ...e,
+                  'item_type': 'errand',
+                }),
+            ...bookings.map((b) => {
+                  ...b,
+                  'item_type': 'transportation',
+                  'title': 'Transportation Booking',
+                  'category': 'transportation',
+                  'description':
+                      '${b['pickup_location']} → ${b['dropoff_location']}',
+                }),
+          ];
           _isLoading = false;
         });
+
+        // Start the animation after loading
         _animationController.forward();
       }
     } catch (e) {
-      print('Error loading errands: $e'); // Debug info
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showErrorSnackBar('Failed to load errands. Please try again.');
-      }
+      print('Error loading errands: $e');
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  void _combineAndPrepareItems(
+      List<Map<String, dynamic>> errands, List<Map<String, dynamic>> bookings) {
+    List<Map<String, dynamic>> combinedItems = [];
+
+    // Add errands with type identifier
+    for (var errand in errands) {
+      combinedItems.add({
+        ...errand,
+        'item_type': 'errand',
+        'sort_date': errand['created_at'] ?? DateTime.now().toIso8601String(),
+      });
+    }
+
+    // Add transportation bookings with type identifier
+    for (var booking in bookings) {
+      combinedItems.add({
+        ...booking,
+        'item_type': 'transportation',
+        'title': 'Transportation Booking',
+        'category': 'transportation',
+        'description':
+            '${booking['pickup_location']} → ${booking['dropoff_location']}',
+        'sort_date': booking['created_at'] ?? DateTime.now().toIso8601String(),
+      });
+    }
+
+    // Sort by creation date (newest first)
+    combinedItems.sort((a, b) {
+      final dateA = DateTime.tryParse(a['sort_date'] ?? '') ?? DateTime.now();
+      final dateB = DateTime.tryParse(b['sort_date'] ?? '') ?? DateTime.now();
+      return dateB.compareTo(dateA);
+    });
+
+    _allItems = combinedItems;
   }
 
   void _showErrorSnackBar(String message) {
@@ -87,7 +150,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.white),
+            Icon(Icons.error_outline, color: theme.colorScheme.onError),
             const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
@@ -99,27 +162,41 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
     );
   }
 
-  List<Map<String, dynamic>> get _filteredErrands {
-    return _errands.where((errand) {
+  List<Map<String, dynamic>> get _filteredItems {
+    return _allItems.where((item) {
       // Filter by category
-      if (_selectedCategory != 'all' &&
-          errand['category'] != _selectedCategory) {
-        return false;
+      if (_selectedCategory != 'all') {
+        if (_selectedCategory == 'errands' && item['item_type'] != 'errand') {
+          return false;
+        }
+        if (_selectedCategory == 'transportation' &&
+            item['item_type'] != 'transportation') {
+          return false;
+        }
+        if (_selectedCategory != 'errands' &&
+            _selectedCategory != 'transportation' &&
+            item['category'] != _selectedCategory) {
+          return false;
+        }
       }
 
       // Filter by search query
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
-        final title = errand['title']?.toString().toLowerCase() ?? '';
-        final description =
-            errand['description']?.toString().toLowerCase() ?? '';
-        if (!title.contains(query) && !description.contains(query)) {
+        final title = item['title']?.toString().toLowerCase() ?? '';
+        final description = item['description']?.toString().toLowerCase() ?? '';
+        final pickupLocation =
+            item['pickup_location']?.toString().toLowerCase() ?? '';
+        final dropoffLocation =
+            item['dropoff_location']?.toString().toLowerCase() ?? '';
+
+        if (!title.contains(query) &&
+            !description.contains(query) &&
+            !pickupLocation.contains(query) &&
+            !dropoffLocation.contains(query)) {
           return false;
         }
       }
-
-      // Don't filter by vehicle requirement - let runners see all errands
-      // They can decide if they want to take jobs that require vehicles
 
       return true;
     }).toList();
@@ -131,34 +208,40 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
 
     return Scaffold(
       backgroundColor: LottoRunnersColors.gray50,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(theme),
-          SliverToBoxAdapter(child: _buildSearchAndFilters(theme)),
-          _isLoading
-              ? SliverFillRemaining(child: _buildLoadingState(theme))
-              : _buildErrandsList(theme),
-        ],
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          clipBehavior: Clip.hardEdge,
+          slivers: [
+            _buildAppBar(theme),
+            SliverToBoxAdapter(child: _buildSearchAndFilters(theme)),
+            _isLoading
+                ? SliverFillRemaining(child: _buildLoadingState(theme))
+                : _buildHistoryList(theme),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildAppBar(ThemeData theme) {
+    final isSmallMobile = Responsive.isSmallMobile(context);
+
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: isSmallMobile ? 100 : 120,
       floating: false,
       pinned: true,
       backgroundColor: LottoRunnersColors.primaryBlue,
       flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          'Browse Errands',
+        title: const Text(
+          'My History',
           style: TextStyle(
-            color: Colors.white,
+            color: theme.colorScheme.onPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
         background: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -178,20 +261,18 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
               ),
               // Stats overlay
               Positioned(
-                bottom: 60,
-                left: 20,
-                right: 20,
+                bottom: isSmallMobile ? 40 : 60,
+                left: isSmallMobile ? 12 : 20,
+                right: isSmallMobile ? 12 : 20,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildStatItem(
-                        '${_errands.length}', 'Total', Icons.assignment),
-                    _buildStatItem('${_filteredErrands.length}', 'Available',
-                        Icons.visibility),
+                        '${_errands.length}', 'Errands', Icons.assignment),
+                    _buildStatItem('${_transportationBookings.length}',
+                        'Bookings', Icons.directions_bus),
                     _buildStatItem(
-                        '${_userProfile?['user_type'] == 'runner' ? 'Runner' : 'Customer'}',
-                        'Mode',
-                        Icons.person),
+                        '${_allItems.length}', 'Total', Icons.history),
                   ],
                 ),
               ),
@@ -202,151 +283,102 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
       actions: [
         IconButton(
           onPressed: _loadErrands,
-          icon: Icon(Icons.refresh, color: Colors.white),
+          icon: Icon(Icons.refresh, color: theme.colorScheme.onPrimary),
           tooltip: 'Refresh errands',
         ),
         IconButton(
           onPressed: () => _showFilterDialog(theme),
-          icon: Icon(Icons.tune, color: Colors.white),
+          icon: Icon(Icons.tune, color: theme.colorScheme.onPrimary),
           tooltip: 'Advanced filters',
         ),
       ],
     );
   }
 
-  Widget _buildStatItem(String value, String label, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white70, size: 16),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSearchAndFilters(ThemeData theme) {
+    final isSmallMobile = Responsive.isSmallMobile(context);
+
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.all(isSmallMobile ? 12 : 16),
+      padding: EdgeInsets.all(isSmallMobile ? 16 : 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.onPrimary,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: theme.colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Search bar
           TextField(
-            onChanged: (value) => setState(() => _searchQuery = value),
+            onChanged: _onSearchChanged,
             decoration: InputDecoration(
-              hintText: 'Search errands by title or description...',
-              hintStyle: TextStyle(color: LottoRunnersColors.gray400),
-              prefixIcon:
-                  Icon(Icons.search, color: LottoRunnersColors.primaryBlue),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon:
-                          Icon(Icons.clear, color: LottoRunnersColors.gray400),
-                      onPressed: () => setState(() => _searchQuery = ''),
-                    )
-                  : null,
-              filled: true,
-              fillColor: LottoRunnersColors.gray50,
+              hintText: 'Search errands and bookings...',
+              prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.colorScheme.outline),
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            ),
-            style: TextStyle(
-              color: LottoRunnersColors.gray900,
-              fontSize: 16,
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainerHighest,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallMobile ? 12 : 16,
+                vertical: isSmallMobile ? 12 : 16,
+              ),
+              isDense: isSmallMobile,
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // Category filters
-          SizedBox(
-            height: 45,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final isSelected = _selectedCategory == category['value'];
-
-                return Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    child: FilterChip(
-                      selected: isSelected,
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _getIconData(category['icon']!),
-                            size: 16,
-                            color: isSelected
-                                ? Colors.white
-                                : LottoRunnersColors.primaryBlue,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            category['label']!,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : LottoRunnersColors.primaryBlue,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      onSelected: (selected) {
-                        setState(() => _selectedCategory = category['value']!);
-                      },
-                      backgroundColor: LottoRunnersColors.gray50,
-                      selectedColor: LottoRunnersColors.primaryBlue,
-                      checkmarkColor: Colors.white,
-                      side: BorderSide(
-                        color: isSelected
-                            ? LottoRunnersColors.primaryBlue
-                            : LottoRunnersColors.gray300,
-                        width: isSelected ? 2 : 1,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                );
-              },
+          SizedBox(height: isSmallMobile ? 12 : 16),
+          // Category filter
+          Text(
+            'Filter by Category',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: isSmallMobile ? 13 : 14,
             ),
+          ),
+          SizedBox(height: isSmallMobile ? 8 : 12),
+          // Category chips
+          Wrap(
+            spacing: isSmallMobile ? 6 : 8,
+            runSpacing: isSmallMobile ? 6 : 8,
+            children: _categories.map((category) {
+              final isSelected = _selectedCategory == category['value'];
+              return FilterChip(
+                label: Text(
+                  category['label']!,
+                  style: TextStyle(
+                    fontSize: isSmallMobile ? 11 : 12,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                selected: isSelected,
+                onSelected: (selected) {
+                  if (selected) {
+                    _onCategoryChanged(category['value']);
+                  }
+                },
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                selectedColor: LottoRunnersColors.primaryBlue.withOpacity(0.2),
+                checkmarkColor: LottoRunnersColors.primaryBlue,
+                side: BorderSide(
+                  color: isSelected
+                      ? LottoRunnersColors.primaryBlue
+                      : theme.colorScheme.outline,
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallMobile ? 8 : 12,
+                  vertical: isSmallMobile ? 6 : 8,
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -373,6 +405,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
   Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
@@ -380,10 +413,10 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
             height: 80,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+              color: LottoRunnersColors.primaryBlue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: CircularProgressIndicator(
+            child: const CircularProgressIndicator(
               valueColor:
                   AlwaysStoppedAnimation(LottoRunnersColors.primaryBlue),
               strokeWidth: 3,
@@ -409,24 +442,24 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
     );
   }
 
-  Widget _buildErrandsList(ThemeData theme) {
-    final filteredErrands = _filteredErrands;
+  Widget _buildHistoryList(ThemeData theme) {
+    final filteredItems = _filteredItems;
 
-    if (filteredErrands.isEmpty) {
+    if (filteredItems.isEmpty) {
       return SliverFillRemaining(child: _buildEmptyState(theme));
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            final errand = filteredErrands[index];
+            final item = filteredItems[index];
             return FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
                 position: Tween<Offset>(
-                  begin: Offset(0, 0.5),
+                  begin: const Offset(0, 0.5),
                   end: Offset.zero,
                 ).animate(CurvedAnimation(
                   parent: _animationController,
@@ -438,17 +471,20 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                 )),
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 16),
-                  child: ErrandCard(
-                    errand: errand,
-                    onTap: () => _showErrandDetails(errand),
-                    showAcceptButton: _userProfile?['user_type'] == 'runner',
-                    onAccept: () => _acceptErrand(errand),
-                  ),
+                  child: item['item_type'] == 'transportation'
+                      ? _buildTransportationCard(item)
+                      : ErrandCard(
+                          errand: item,
+                          onTap: () => _showItemDetails(item),
+                          showAcceptButton:
+                              false, // No accept button in history
+                          onAccept: () {}, // Not used in history
+                        ),
                 ),
               ),
             );
           },
-          childCount: filteredErrands.length,
+          childCount: filteredItems.length,
         ),
       ),
     );
@@ -459,13 +495,14 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
       child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                color: LottoRunnersColors.primaryBlue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Icon(
@@ -506,11 +543,11 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                 });
                 _loadErrands();
               },
-              icon: Icon(Icons.refresh, color: Colors.white),
-              label: Text(
+              icon: Icon(Icons.refresh, color: theme.colorScheme.onPrimary),
+              label: const Text(
                 'Refresh Errands',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: theme.colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -533,13 +570,13 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Advanced Filters'),
+        title: const Text('Advanced Filters'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SwitchListTile(
-              title: Text('Vehicle Required Only'),
-              subtitle: Text('Show only errands that require a vehicle'),
+              title: const Text('Vehicle Required Only'),
+              subtitle: const Text('Show only errands that require a vehicle'),
               value: false, // You can add this as a state variable
               onChanged: (value) {
                 // Implement vehicle filter logic
@@ -550,11 +587,19 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
+            child: const Text('Close'),
           ),
         ],
       ),
     );
+  }
+
+  void _showItemDetails(Map<String, dynamic> item) {
+    if (item['item_type'] == 'transportation') {
+      _showTransportationDetails(item);
+    } else {
+      _showErrandDetails(item);
+    }
   }
 
   void _showErrandDetails(Map<String, dynamic> errand) {
@@ -571,8 +616,8 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
 
     return Container(
       margin: const EdgeInsets.only(top: 100),
-      decoration: BoxDecoration(
-        color: Colors.white,
+      decoration: const BoxDecoration(
+        color: theme.colorScheme.onPrimary,
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
       child: DraggableScrollableSheet(
@@ -586,6 +631,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
             child: SingleChildScrollView(
               controller: scrollController,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Handle bar
@@ -618,8 +664,8 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color:
-                              LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                          color: LottoRunnersColors.primaryBlue
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -641,14 +687,14 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color:
-                              LottoRunnersColors.primaryYellow.withOpacity(0.1),
+                          color: LottoRunnersColors.primaryPurple
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           Icons.attach_money,
-                          color:
-                              LottoRunnersColors.primaryYellow.withOpacity(0.8),
+                          color: LottoRunnersColors.primaryPurple
+                              .withValues(alpha: 0.8),
                           size: 24,
                         ),
                       ),
@@ -664,10 +710,11 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: LottoRunnersColors.accent.withOpacity(0.1),
+                          color:
+                              LottoRunnersColors.accent.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.timer,
                           color: LottoRunnersColors.accent,
                           size: 24,
@@ -730,7 +777,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                       ),
                       child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.location_on,
                             color: LottoRunnersColors.primaryBlue,
                             size: 24,
@@ -758,7 +805,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                       height: 56,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           colors: [
                             LottoRunnersColors.primaryBlue,
                             LottoRunnersColors.primaryBlueDark,
@@ -766,8 +813,8 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                LottoRunnersColors.primaryBlue.withOpacity(0.3),
+                            color: LottoRunnersColors.primaryBlue
+                                .withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -788,13 +835,13 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.check_circle,
-                                color: Colors.white, size: 24),
+                            const Icon(Icons.check_circle,
+                                color: theme.colorScheme.onPrimary, size: 24),
                             const SizedBox(width: 12),
                             Text(
                               'Accept Errand',
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.white,
+                                color: theme.colorScheme.onPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -819,6 +866,25 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
       final userId = SupabaseConfig.currentUser?.id;
       if (userId == null) return;
 
+      // Check runner limits first
+      final runnerLimits = await SupabaseConfig.checkRunnerLimits(userId);
+      if (!(runnerLimits['can_accept_errands'] ?? false)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'You have reached the maximum limit of 2 active jobs. Please complete all jobs before accepting new ones.',
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+        return;
+      }
+
       // Show loading
       showDialog(
         context: context,
@@ -827,17 +893,17 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.onPrimary,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Column(
+            child: const Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircularProgressIndicator(
                   valueColor:
                       AlwaysStoppedAnimation(LottoRunnersColors.primaryBlue),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text('Accepting errand...'),
               ],
             ),
@@ -852,10 +918,10 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
+            content: const Row(
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Text(
                   'Errand accepted successfully!',
                   style: TextStyle(fontWeight: FontWeight.w600),
@@ -878,13 +944,379 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
       }
     }
   }
+
+  void _onCategoryChanged(String? value) {
+    if (value != null) {
+      setState(() {
+        _selectedCategory = value;
+      });
+    }
+  }
+
+  Widget _buildStatItem(String value, String label, IconData icon) {
+    final isSmallMobile = Responsive.isSmallMobile(context);
+
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: theme.colorScheme.onPrimary,
+          size: isSmallMobile ? 20 : 24,
+        ),
+        SizedBox(height: isSmallMobile ? 4 : 8),
+        Text(
+          value,
+          style: TextStyle(
+            color: theme.colorScheme.onPrimary,
+            fontSize: isSmallMobile ? 16 : 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: isSmallMobile ? 10 : 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value;
+    });
+  }
+
+  String _formatHistoryDate(String? dateString) {
+    if (dateString == null) return 'Unknown';
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
+  Widget _buildTransportationCard(Map<String, dynamic> booking) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: LottoRunnersColors.gray900.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showTransportationDetails(booking),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with transportation icon and status
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.directions_bus,
+                        color: LottoRunnersColors.primaryBlue,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Transportation Booking',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: LottoRunnersColors.gray900,
+                            ),
+                          ),
+                          Text(
+                            _formatHistoryDate(booking['created_at']),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: LottoRunnersColors.gray600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color:
+                            _getStatusColor(booking['status']).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _getStatusColor(booking['status'])
+                              .withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        booking['status']?.toString().toUpperCase() ??
+                            'PENDING',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: _getStatusColor(booking['status']),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Route information
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'From',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: LottoRunnersColors.gray600,
+                            ),
+                          ),
+                          Text(
+                            booking['pickup_location'] ?? 'Not specified',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: LottoRunnersColors.gray900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward,
+                      color: LottoRunnersColors.gray400,
+                      size: 20,
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text(
+                            'To',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: LottoRunnersColors.gray600,
+                            ),
+                          ),
+                          Text(
+                            booking['dropoff_location'] ?? 'Not specified',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: LottoRunnersColors.gray900,
+                            ),
+                            textAlign: TextAlign.end,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Bottom row with price and passengers
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (booking['passenger_count'] != null)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.people,
+                            size: 16,
+                            color: LottoRunnersColors.gray600,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${booking['passenger_count']} passenger${booking['passenger_count'] == 1 ? '' : 's'}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: LottoRunnersColors.gray600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (booking['final_price'] != null)
+                      Text(
+                        '\$${booking['final_price'].toString()}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: LottoRunnersColors.accent,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTransportationDetails(Map<String, dynamic> booking) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: theme.colorScheme.onPrimary,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SingleChildScrollView(
+            controller: controller,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: LottoRunnersColors.gray300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Header
+                  const Text(
+                    'Transportation Details',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: LottoRunnersColors.gray900,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Details
+                  _buildDetailRow('Status',
+                      booking['status']?.toString().toUpperCase() ?? 'PENDING'),
+                  _buildDetailRow(
+                      'From', booking['pickup_location'] ?? 'Not specified'),
+                  _buildDetailRow(
+                      'To', booking['dropoff_location'] ?? 'Not specified'),
+                  if (booking['booking_date'] != null)
+                    _buildDetailRow(
+                        'Date', _formatHistoryDate(booking['booking_date'])),
+                  if (booking['booking_time'] != null)
+                    _buildDetailRow('Time', booking['booking_time']),
+                  if (booking['passenger_count'] != null)
+                    _buildDetailRow(
+                        'Passengers', booking['passenger_count'].toString()),
+                  if (booking['final_price'] != null)
+                    _buildDetailRow('Price', '\$${booking['final_price']}'),
+                  if (booking['special_requests'] != null &&
+                      booking['special_requests'].toString().isNotEmpty)
+                    _buildDetailRow(
+                        'Special Requests', booking['special_requests']),
+                  if (booking['notes'] != null &&
+                      booking['notes'].toString().isNotEmpty)
+                    _buildDetailRow('Notes', booking['notes']),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: LottoRunnersColors.gray600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: LottoRunnersColors.gray900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return LottoRunnersColors.accent;
+      case 'confirmed':
+        return LottoRunnersColors.primaryBlue;
+      case 'cancelled':
+        return Colors.red;
+      case 'pending':
+      default:
+        return LottoRunnersColors.primaryPurple;
+    }
+  }
 }
 
 class AppBarPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
+      ..color = Colors.white.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
 
     // Draw subtle pattern

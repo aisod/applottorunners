@@ -1,16 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
-import 'package:lotto_runners/pages/post_errand_page.dart';
-import 'package:lotto_runners/pages/browse_errands_page.dart';
-import 'package:lotto_runners/pages/my_errands_page.dart';
 import 'package:lotto_runners/pages/profile_page.dart';
+import 'package:lotto_runners/pages/transportation_page.dart';
+import 'package:lotto_runners/pages/my_orders_page.dart';
+import 'package:lotto_runners/pages/my_history_page.dart';
+import 'package:lotto_runners/pages/runner_history_page.dart';
 import 'package:lotto_runners/pages/admin/admin_home_page.dart';
 import 'package:lotto_runners/pages/admin/service_management_page.dart';
 import 'package:lotto_runners/pages/admin/user_management_page.dart';
 import 'package:lotto_runners/pages/admin/transportation_management_page.dart';
-import 'package:lotto_runners/widgets/service_selector.dart';
+import 'package:lotto_runners/pages/admin/vehicle_discount_management_page.dart';
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/pages/available_errands_page.dart';
+import 'package:lotto_runners/pages/runner_dashboard_page.dart';
+import 'package:lotto_runners/pages/runner_messages_page.dart';
+import 'package:lotto_runners/pages/runner_home_page.dart';
+import 'package:lotto_runners/pages/service_selection_page.dart';
+import 'bus_booking_page.dart';
+import 'contract_booking_page.dart';
+import 'package:lotto_runners/services/errand_acceptance_notification_service.dart';
+import 'package:lotto_runners/services/transportation_acceptance_notification_service.dart';
+// Import page transitions for fun customer animations
+import 'package:lotto_runners/utils/page_transitions.dart';
+// Import custom icons
+import 'package:lotto_runners/widgets/custom_icons.dart';
+import 'package:lotto_runners/widgets/terms_acceptance_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,30 +38,33 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   int _currentIndex = 0;
   Map<String, dynamic>? _userProfile;
   bool _isLoading = true;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  int _totalErrands = 0;
-  int _completedErrands = 0;
-  int _inProgressErrands = 0;
-  double _totalSavings = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
     _loadUserProfile();
+
+    // Initialize errand acceptance notification service
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ErrandAcceptanceNotificationService.instance.startMonitoring(context);
+      TransportationAcceptanceNotificationService.instance.startMonitoring(
+        context,
+      );
+    });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    ErrandAcceptanceNotificationService.instance.stopMonitoring();
+    TransportationAcceptanceNotificationService.instance.stopMonitoring();
     super.dispose();
+  }
+
+  /// Public method to set the current tab index (for external navigation)
+  void setCurrentIndex(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
   }
 
   Future<void> _loadUserProfile() async {
@@ -59,8 +77,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             _userProfile = profile;
             _isLoading = false;
           });
-          _animationController.forward();
           _loadDashboardStats();
+          
+          // Check if terms have been accepted
+          _checkTermsAcceptance(profile);
         }
       }
     } catch (e) {
@@ -76,6 +96,80 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
+  /// Check if user has accepted terms and show dialog if not
+  void _checkTermsAcceptance(Map<String, dynamic>? profile) {
+    if (profile == null) return;
+    
+    final termsAccepted = profile['terms_accepted'] as bool? ?? false;
+    final userType = profile['user_type'] as String? ?? 'individual';
+    
+    if (!termsAccepted && mounted) {
+      // Show terms acceptance dialog after a short delay to ensure UI is ready
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showTermsAcceptanceDialog(userType);
+        }
+      });
+    }
+  }
+
+  /// Show the terms acceptance dialog
+  void _showTermsAcceptanceDialog(String userType) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Cannot dismiss without accepting
+      builder: (context) => TermsAcceptanceDialog(
+        userType: userType,
+        onAccepted: () async {
+          // Mark terms as accepted
+          final success = await SupabaseConfig.acceptTermsAndConditions();
+          
+          if (success && mounted) {
+            // Update local profile state
+            setState(() {
+              if (_userProfile != null) {
+                _userProfile!['terms_accepted'] = true;
+                _userProfile!['terms_accepted_at'] = DateTime.now().toIso8601String();
+              }
+            });
+            
+            // Close dialog
+            Navigator.of(context).pop();
+            
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Terms & Conditions accepted'),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          } else {
+            // Show error message
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Failed to accept terms. Please try again.'),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
   Future<void> _loadDashboardStats() async {
     try {
       final userId = SupabaseConfig.currentUser?.id;
@@ -85,8 +179,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         int total = errands.length;
         int completed = errands.where((e) => e['status'] == 'completed').length;
         int inProgress = errands
-            .where((e) =>
-                e['status'] == 'in_progress' || e['status'] == 'accepted')
+            .where(
+              (e) => e['status'] == 'in_progress' || e['status'] == 'accepted',
+            )
             .length;
 
         double savings = 0.0;
@@ -96,14 +191,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           }
         }
 
-        if (mounted) {
-          setState(() {
-            _totalErrands = total;
-            _completedErrands = completed;
-            _inProgressErrands = inProgress;
-            _totalSavings = savings;
-          });
-        }
+        // Statistics calculated but not displayed
       }
     } catch (e) {
       print('Error loading dashboard stats: $e');
@@ -116,8 +204,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       body: Responsive.isDesktop(context)
           ? _buildDesktopLayout()
           : Responsive.isTablet(context)
-              ? _buildTabletLayout()
-              : _buildMobileLayout(),
+          ? _buildTabletLayout()
+          : _buildMobileLayout(),
     );
   }
 
@@ -135,21 +223,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           Container(
             width: 280,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               border: Border(
-                right: BorderSide(
-                  color: LottoRunnersColors.gray200,
-                  width: 1,
-                ),
+                right: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
               ),
             ),
             child: _buildSidebar(userType),
           ),
-          // Main content
+          // Main content with animated transitions (matching PageTransitions.slideAndFade)
           Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: _getPages(userType),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeOutCubic,
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.3, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: KeyedSubtree(
+                key: ValueKey<int>(_currentIndex),
+                child: _getPages(userType)[_currentIndex],
+              ),
             ),
           ),
         ],
@@ -163,17 +265,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildMobileLayout() {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final userType = _userProfile?['user_type'] ?? 'individual';
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _getPages(userType),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeOutCubic,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.3, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<int>(_currentIndex),
+          child: _getPages(userType)[_currentIndex],
+        ),
       ),
       bottomNavigationBar: _buildBottomNavBar(context, userType),
     );
@@ -187,13 +304,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         // Header
         Container(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 LottoRunnersColors.primaryBlue,
                 LottoRunnersColors.primaryBlueDark,
+                LottoRunnersColors.primaryYellow,
               ],
             ),
           ),
@@ -205,7 +323,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ClipRRect(
@@ -217,7 +335,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) => Icon(
                       Icons.directions_run,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       size: 28,
                     ),
                   ),
@@ -227,7 +345,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Text(
                 'Lotto Runners',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -236,7 +354,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Text(
                 'Welcome back, $userName',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
                   fontSize: 14,
                 ),
               ),
@@ -284,7 +402,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isActive
-              ? LottoRunnersColors.primaryBlue.withOpacity(0.1)
+              ? LottoRunnersColors.primaryBlue.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -293,10 +411,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Icon(
               isActive ? activeIcon : icon,
               color: isDestructive
-                  ? Colors.red
+                  ? Theme.of(context).colorScheme.error
                   : isActive
-                      ? LottoRunnersColors.primaryBlue
-                      : LottoRunnersColors.gray600,
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outline,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -304,10 +422,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               label,
               style: TextStyle(
                 color: isDestructive
-                    ? Colors.red
+                    ? Theme.of(context).colorScheme.error
                     : isActive
-                        ? LottoRunnersColors.primaryBlue
-                        : LottoRunnersColors.gray700,
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -322,9 +440,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (userType == 'runner') {
       return [
         _buildSidebarItem(
-          icon: Icons.search_outlined,
-          activeIcon: Icons.search,
-          label: 'Browse Errands',
+          icon: Icons.home_outlined,
+          activeIcon: Icons.home,
+          label: 'Home',
           isActive: _currentIndex == 0,
           onTap: () => setState(() => _currentIndex = 0),
         ),
@@ -332,17 +450,33 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         _buildSidebarItem(
           icon: Icons.assignment_outlined,
           activeIcon: Icons.assignment,
-          label: 'My Errands',
+          label: 'Available',
           isActive: _currentIndex == 1,
           onTap: () => setState(() => _currentIndex = 1),
+        ),
+        const SizedBox(height: 8),
+        _buildSidebarItem(
+          icon: Icons.dashboard_outlined,
+          activeIcon: Icons.dashboard,
+          label: 'My Orders',
+          isActive: _currentIndex == 2,
+          onTap: () => setState(() => _currentIndex = 2),
+        ),
+        const SizedBox(height: 8),
+        _buildSidebarItem(
+          icon: Icons.history_outlined,
+          activeIcon: Icons.history,
+          label: 'My History',
+          isActive: _currentIndex == 3,
+          onTap: () => setState(() => _currentIndex = 3),
         ),
         const SizedBox(height: 8),
         _buildSidebarItem(
           icon: Icons.person_outline,
           activeIcon: Icons.person,
           label: 'Profile',
-          isActive: _currentIndex == 2,
-          onTap: () => setState(() => _currentIndex = 2),
+          isActive: _currentIndex == 4,
+          onTap: () => setState(() => _currentIndex = 4),
         ),
       ];
     } else if (userType == 'admin' || userType == 'super_admin') {
@@ -364,27 +498,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ),
         const SizedBox(height: 8),
         _buildSidebarItem(
+          icon: Icons.local_offer_outlined,
+          activeIcon: Icons.local_offer,
+          label: 'Ride Discounts',
+          isActive: _currentIndex == 2,
+          onTap: () => setState(() => _currentIndex = 2),
+        ),
+        const SizedBox(height: 8),
+        _buildSidebarItem(
           icon: Icons.directions_bus_outlined,
           activeIcon: Icons.directions_bus,
           label: 'Transportation',
-          isActive: _currentIndex == 2,
-          onTap: () => setState(() => _currentIndex = 2),
+          isActive: _currentIndex == 3,
+          onTap: () => setState(() => _currentIndex = 3),
         ),
         const SizedBox(height: 8),
         _buildSidebarItem(
           icon: Icons.people_outline,
           activeIcon: Icons.people,
           label: 'User Management',
-          isActive: _currentIndex == 3,
-          onTap: () => setState(() => _currentIndex = 3),
+          isActive: _currentIndex == 4,
+          onTap: () => setState(() => _currentIndex = 4),
         ),
         const SizedBox(height: 8),
         _buildSidebarItem(
           icon: Icons.person_outline,
           activeIcon: Icons.person,
           label: 'Profile',
-          isActive: _currentIndex == 4,
-          onTap: () => setState(() => _currentIndex = 4),
+          isActive: _currentIndex == 5,
+          onTap: () => setState(() => _currentIndex = 5),
         ),
       ];
     } else {
@@ -400,17 +542,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         _buildSidebarItem(
           icon: Icons.assignment_outlined,
           activeIcon: Icons.assignment,
-          label: 'My Errands',
+          label: 'My Orders',
           isActive: _currentIndex == 1,
           onTap: () => setState(() => _currentIndex = 1),
+        ),
+        const SizedBox(height: 8),
+        _buildSidebarItem(
+          icon: Icons.directions_bus_outlined,
+          activeIcon: Icons.directions_bus,
+          label: 'History',
+          isActive: _currentIndex == 2,
+          onTap: () => setState(() => _currentIndex = 2),
         ),
         const SizedBox(height: 8),
         _buildSidebarItem(
           icon: Icons.person_outline,
           activeIcon: Icons.person,
           label: 'Profile',
-          isActive: _currentIndex == 2,
-          onTap: () => setState(() => _currentIndex = 2),
+          isActive: _currentIndex == 3,
+          onTap: () => setState(() => _currentIndex = 3),
         ),
       ];
     }
@@ -420,8 +570,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     switch (userType) {
       case 'runner':
         return [
-          const BrowseErrandsPage(),
-          const MyErrandsPage(),
+          RunnerHomePage(
+            onNavigateToTab: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+          ), // Home page with greeting, stats, and analytics
+          const AvailableErrandsPage(), // Browse available errands to accept
+          const RunnerDashboardPage(), // Manage accepted errands
+          const RunnerHistoryPage(), // View completed errands and transportation bookings
           const ProfilePage(),
         ];
       case 'admin':
@@ -429,6 +587,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         return [
           _buildAdminDashboard(),
           _buildAdminServiceManagement(),
+          _buildVehicleDiscountManagement(),
           _buildTransportationManagement(),
           _buildAdminUserManagement(),
           const ProfilePage(),
@@ -438,7 +597,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       default:
         return [
           _buildDashboard(),
-          const MyErrandsPage(),
+          const MyOrdersPage(),
+          const MyHistoryPage(),
           const ProfilePage(),
         ];
     }
@@ -449,17 +609,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     if (userType == 'runner') {
       items = [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.search_outlined),
-          activeIcon: Icon(Icons.search),
-          label: 'Browse',
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: 'Home',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.assignment_outlined),
           activeIcon: Icon(Icons.assignment),
-          label: 'My Errands',
+          label: 'Available',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard_outlined),
+          activeIcon: Icon(Icons.dashboard),
+          label: 'Orders',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.history_outlined),
+          activeIcon: Icon(Icons.history),
+          label: 'History',
+        ),
+        const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
           activeIcon: Icon(Icons.person),
           label: 'Profile',
@@ -467,27 +637,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ];
     } else if (userType == 'admin' || userType == 'super_admin') {
       items = [
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.admin_panel_settings_outlined),
           activeIcon: Icon(Icons.admin_panel_settings),
           label: 'Admin',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.build_outlined),
           activeIcon: Icon(Icons.build),
           label: 'Services',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.local_offer_outlined),
+          activeIcon: Icon(Icons.local_offer),
+          label: 'Discounts',
+        ),
+        const BottomNavigationBarItem(
           icon: Icon(Icons.directions_bus_outlined),
           activeIcon: Icon(Icons.directions_bus),
           label: 'Transport',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.people_outline),
           activeIcon: Icon(Icons.people),
           label: 'Users',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
           activeIcon: Icon(Icons.person),
           label: 'Profile',
@@ -495,17 +670,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ];
     } else {
       items = [
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.dashboard_outlined),
           activeIcon: Icon(Icons.dashboard),
           label: 'Dashboard',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(Icons.assignment_outlined),
           activeIcon: Icon(Icons.assignment),
-          label: 'My Errands',
+          label: 'My Orders',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.history),
+          activeIcon: Icon(Icons.history),
+          label: 'My History',
+        ),
+        const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
           activeIcon: Icon(Icons.person),
           label: 'Profile',
@@ -518,59 +698,39 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       onTap: (index) => setState(() => _currentIndex = index),
       items: items,
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: LottoRunnersColors.primaryBlue,
-      unselectedItemColor: LottoRunnersColors.gray600,
-      selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
+      selectedItemColor: LottoRunnersColors.primaryYellow,
+      unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
       elevation: 0,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
     );
   }
 
+  //Dashboard the one with the
   Widget _buildDashboard() {
     final userType = _userProfile?['user_type'] ?? 'individual';
     final userName = _userProfile?['full_name'] ?? 'User';
     final isDesktop = Responsive.isDesktop(context);
+    final isSmallMobile = Responsive.isSmallMobile(context);
 
-    return Scaffold(
-      backgroundColor: LottoRunnersColors.gray50,
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Hero Section
-              _buildHeroSection(userName, userType),
+      return Scaffold(
+        backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Hero Section
+            _buildHeroSection(userName, userType),
 
-              // Main Content
-              Container(
-                constraints: BoxConstraints(
-                  maxWidth: isDesktop ? 1200 : double.infinity,
-                ),
-                padding: EdgeInsets.all(isDesktop ? 40 : 24),
-                child: Column(
-                  children: [
-                    // Stats Section
-                    if (isDesktop) _buildStatsSection(),
-                    if (isDesktop) const SizedBox(height: 40),
-
-                    // Quick Actions
-                    _buildQuickActions(userType, isDesktop),
-                    const SizedBox(height: 40),
-
-                    // Recent Activity
-                    _buildRecentActivity(isDesktop),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            // Main Content - Now empty since everything is in the hero section card
+            const SizedBox.shrink(),
+          ],
         ),
       ),
       floatingActionButton: !isDesktop
           ? FloatingActionButton.extended(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const PostErrandPage()),
+                PageTransitions.scale(const ServiceSelectionPage()),
               ),
               backgroundColor: LottoRunnersColors.primaryBlue,
               foregroundColor: Colors.white,
@@ -583,539 +743,903 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildHeroSection(String userName, String userType) {
     final isDesktop = Responsive.isDesktop(context);
+    final isSmallMobile = Responsive.isSmallMobile(context);
+    final isTablet = Responsive.isTablet(context);
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            LottoRunnersColors.primaryBlue,
-            LottoRunnersColors.primaryBlueDark,
-          ],
+      return Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
         ),
-      ),
       child: Container(
         constraints: BoxConstraints(
           maxWidth: isDesktop ? 1200 : double.infinity,
         ),
-        padding: EdgeInsets.all(isDesktop ? 40 : 24),
+        padding: EdgeInsets.all(isSmallMobile ? 16 : (isDesktop ? 40 : 24)),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isDesktop) const SizedBox(height: 20),
-
-            // Header
-            Row(
-              children: [
-                Container(
-                  width: isDesktop ? 80 : 60,
-                  height: isDesktop ? 80 : 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 2,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: _userProfile?['avatar_url'] != null
-                        ? Image.network(
-                            _userProfile!['avatar_url'],
-                            width: isDesktop ? 76 : 56,
-                            height: isDesktop ? 76 : 56,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                _buildDefaultAvatar(userType, isDesktop),
-                          )
-                        : _buildDefaultAvatar(userType, isDesktop),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+             // Main card container - combined with recent activity
+             Container(
+               padding: EdgeInsets.all(isSmallMobile ? 20 : (isDesktop ? 32 : 24)),
+               decoration: BoxDecoration(
+                 color: Theme.of(context).brightness == Brightness.dark 
+                     ? Theme.of(context).colorScheme.surfaceContainerHighest 
+                     : Colors.white,
+                 borderRadius: BorderRadius.circular(20),
+                 boxShadow: [
+                   BoxShadow(
+                     color: Theme.of(context).brightness == Brightness.dark
+                         ? Colors.black.withOpacity(0.3)
+                         : Colors.black.withOpacity(0.05),
+                     blurRadius: 20,
+                     offset: const Offset(0, 10),
+                   ),
+                 ],
+               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with profile and greeting
+                  Row(
                     children: [
-                      Text(
-                        'Hello, $userName! 👋',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: isDesktop ? 32 : 24,
-                          fontWeight: FontWeight.bold,
-                          height: 1.2,
+                      Container(
+                        width: isSmallMobile ? 50 : (isDesktop ? 60 : 55),
+                        height: isSmallMobile ? 50 : (isDesktop ? 60 : 55),
+                         decoration: BoxDecoration(
+                           borderRadius: BorderRadius.circular(25),
+                           border: Border.all(
+                             color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                             width: 1,
+                           ),
+                         ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(25),
+                          child: _userProfile?['avatar_url'] != null
+                              ? Image.network(
+                                  _userProfile!['avatar_url'],
+                                  width: isSmallMobile ? 48 : (isDesktop ? 58 : 53),
+                                  height: isSmallMobile ? 48 : (isDesktop ? 58 : 53),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      _buildDefaultAvatar(userType, isDesktop),
+                                )
+                              : _buildDefaultAvatar(userType, isDesktop),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _getWelcomeMessage(userType),
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: isDesktop ? 18 : 16,
-                          height: 1.4,
+                      SizedBox(width: isSmallMobile ? 12 : 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                colors: [
+                                  LottoRunnersColors.primaryBlue,
+                                  LottoRunnersColors.primaryYellow,
+                                ],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ).createShader(bounds),
+                              child: Text(
+                                'Hello $userName!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isSmallMobile ? 20 : (isDesktop ? 28 : 24),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                             SizedBox(height: isSmallMobile ? 4 : 6),
+                             Text(
+                               'What are you looking for?',
+                               style: TextStyle(
+                                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                 fontSize: isSmallMobile ? 12 : (isDesktop ? 16 : 14),
+                               ),
+                             ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                if (!isDesktop)
-                  IconButton(
-                    onPressed: () async => await SupabaseConfig.signOut(),
-                    icon: Icon(
-                      Icons.logout,
-                      color: Colors.white,
-                    ),
+                  SizedBox(height: isSmallMobile ? 24 : 32),
+
+                  // Action buttons layout: 1 on top, 3 below
+                  Column(
+                    children: [
+                      // Top button - Request an Errand (full width, horizontal layout)
+                      _buildHorizontalActionButton(
+                        icon: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.asset(
+                            'web/icons/lotto runners icon 192.png',
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.directions_run,
+                              size: 32,
+                              color: LottoRunnersColors.primaryBlue,
+                            ),
+                          ),
+                        ),
+                        title: 'Request an Errand',
+                        subtitle: 'Best way to move items',
+                        onTap: () => Navigator.push(
+                          context,
+                          PageTransitions.rotateAndScale(
+                            const ServiceSelectionPage(),
+                          ),
+                        ),
+                        isSmallMobile: isSmallMobile,
+                      ),
+                      SizedBox(height: isSmallMobile ? 12 : 16),
+                      
+                      // Bottom row - Three buttons side by side
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildActionButton(
+                              icon: Image.network(
+                                'https://irfbqpruvkkbylwwikwx.supabase.co/storage/v1/object/public/icons/contract.jpg',
+                                width: 90,
+                                height: 90,
+                                fit: BoxFit.contain,
+                                cacheWidth: 180,
+                                cacheHeight: 180,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: LottoRunnersColors.primaryYellow.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Error loading contract.png: $error');
+                                  return Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: LottoRunnersColors.primaryYellow.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.event_seat,
+                                      size: 50,
+                                      color: LottoRunnersColors.primaryYellow,
+                                    ),
+                                  );
+                                },
+                              ),
+                              label: 'Contract Rides',
+                              onTap: () => Navigator.push(
+                                context,
+                                PageTransitions.scale(const ContractBookingPage()),
+                              ),
+                              isSmallMobile: isSmallMobile,
+                            ),
+                          ),
+                          SizedBox(width: isSmallMobile ? 8 : 12),
+                          Expanded(
+                            child: _buildActionButton(
+                              icon: Image.network(
+                                'https://irfbqpruvkkbylwwikwx.supabase.co/storage/v1/object/public/icons/bus1.png',
+                                width: 90,
+                                height: 90,
+                                fit: BoxFit.contain,
+                                cacheWidth: 180,
+                                cacheHeight: 180,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Error loading bus1.png: $error');
+                                  return Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.directions_bus,
+                                      size: 50,
+                                      color: LottoRunnersColors.primaryBlue,
+                                    ),
+                                  );
+                                },
+                              ),
+                              label: 'Bus Services',
+                              onTap: () => Navigator.push(
+                                context,
+                                PageTransitions.rotateAndScale(const BusBookingPage()),
+                              ),
+                              isSmallMobile: isSmallMobile,
+                            ),
+                          ),
+                          SizedBox(width: isSmallMobile ? 8 : 12),
+                          Expanded(
+                            child: _buildActionButton(
+                              icon: Image.network(
+                                'https://irfbqpruvkkbylwwikwx.supabase.co/storage/v1/object/public/icons/car.png',
+                                width: 90,
+                                height: 90,
+                                fit: BoxFit.contain,
+                                cacheWidth: 180,
+                                cacheHeight: 180,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Error loading car.png: $error');
+                                  return Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.directions_car,
+                                      size: 50,
+                                      color: LottoRunnersColors.primaryBlue,
+                                    ),
+                                  );
+                                },
+                              ),
+                              label: 'Request a Ride',
+                              onTap: () => Navigator.push(
+                                context,
+                                PageTransitions.scale(const TransportationPage()),
+                              ),
+                              isSmallMobile: isSmallMobile,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-              ],
+                  // Add divider before Recent Activity
+                  SizedBox(height: isSmallMobile ? 24 : 32),
+                  Divider(
+                    height: 1,
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                  ),
+                  SizedBox(height: isSmallMobile ? 24 : 32),
+                  // Recent Activity section (now inside main card)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Recent Activity',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: isSmallMobile ? 18.0 : 24.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() {
+                          _currentIndex = 1; // Navigate to My Orders tab
+                        }),
+                        child: Text(
+                          'View All',
+                          style: TextStyle(
+                            color: LottoRunnersColors.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                            fontSize: isSmallMobile ? 12.0 : 14.0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isSmallMobile ? 16 : 24),
+                  _buildRecentActivityContent(isDesktop, isSmallMobile),
+                ],
+              ),
             ),
-
-            SizedBox(height: isDesktop ? 40 : 24),
-
-            // CTA Section
-            if (isDesktop) _buildHeroCTA(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeroCTA() {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
+  Widget _buildHorizontalActionButton({
+    required Widget icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required bool isSmallMobile,
+  }) {
+    return _AnimatedShimmerButton(
+      onTap: onTap,
+      isSmallMobile: isSmallMobile,
+      child: Row(
+        children: [
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ready to get started?',
+                  title,
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: isSmallMobile ? 16 : 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isSmallMobile ? 4 : 6),
                 Text(
-                  'Post your first errand and connect with trusted runners in your area.',
+                  subtitle,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const PostErrandPage()),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: LottoRunnersColors.primaryYellow,
-                    foregroundColor: LottoRunnersColors.gray900,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Post New Errand',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: isSmallMobile ? 12 : 14,
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsSection() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-              child: _buildStatCard('Total Errands', '$_totalErrands',
-                  Icons.assignment, LottoRunnersColors.primaryBlue)),
-          const SizedBox(width: 32),
-          Expanded(
-              child: _buildStatCard('Completed', '$_completedErrands',
-                  Icons.check_circle, LottoRunnersColors.accent)),
-          const SizedBox(width: 32),
-          Expanded(
-              child: _buildStatCard('In Progress', '$_inProgressErrands',
-                  Icons.schedule, LottoRunnersColors.primaryYellow)),
-          const SizedBox(width: 32),
-          Expanded(
-              child: _buildStatCard(
-                  'Savings',
-                  'N\$' + _totalSavings.toStringAsFixed(2),
-                  Icons.savings,
-                  LottoRunnersColors.primaryBlue)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(icon, color: color, size: 28),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: LottoRunnersColors.gray900,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            color: LottoRunnersColors.gray600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActions(String userType, bool isDesktop) {
-    return Container(
-      padding: EdgeInsets.all(isDesktop ? 32 : 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: isDesktop ? 24 : 20,
-              fontWeight: FontWeight.bold,
-              color: LottoRunnersColors.gray900,
+          SizedBox(width: isSmallMobile ? 12 : 16),
+          Container(
+            width: isSmallMobile ? 48 : 56,
+            height: isSmallMobile ? 48 : 56,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: Center(child: icon),
           ),
-          const SizedBox(height: 24),
-          GridView.count(
-            crossAxisCount: isDesktop ? 4 : 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: isDesktop ? 24 : 16,
-            mainAxisSpacing: isDesktop ? 24 : 16,
-            childAspectRatio: isDesktop ? 1.0 : 1.1,
-            children: [
-              _buildActionCard(
-                'Post New Errand',
-                'Create a new task',
-                Icons.add_task,
-                LottoRunnersColors.primaryBlue,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const PostErrandPage()),
-                ),
-                isDesktop,
-              ),
-              _buildActionCard(
-                'Transportation',
-                'Book bus & shuttle services',
-                Icons.directions_bus,
-                LottoRunnersColors.accent,
-                () => _showTransportationServices(),
-                isDesktop,
-              ),
-              _buildActionCard(
-                'Browse Runners',
-                'Find verified runners',
-                Icons.people_alt,
-                LottoRunnersColors.primaryYellow,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const BrowseErrandsPage()),
-                ),
-                isDesktop,
-              ),
-              _buildActionCard(
-                'Track Errands',
-                'Monitor your tasks',
-                Icons.location_on,
-                LottoRunnersColors.primaryBlue,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const MyErrandsPage()),
-                ),
-                isDesktop,
-              ),
-              _buildActionCard(
-                'Profile Settings',
-                'Manage your account',
-                Icons.settings,
-                LottoRunnersColors.gray700,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilePage()),
-                ),
-                isDesktop,
-              ),
-            ],
+          SizedBox(width: isSmallMobile ? 8 : 12),
+          Icon(
+            Icons.arrow_forward_ios,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+            size: isSmallMobile ? 16 : 18,
           ),
         ],
       ),
     );
   }
 
-  void _showTransportationServices() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.8,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: LottoRunnersColors.gray300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.directions_bus,
-                      color: LottoRunnersColors.primaryBlue,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Transportation Services',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: LottoRunnersColors.gray900,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
-              // Service Selector
-              Expanded(
-                child: ServiceSelector(
-                  showTransportationOnly: true,
-                  onServiceSelected: (service) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            'Transportation service selected: ${service['name']}'),
-                        backgroundColor: LottoRunnersColors.accent,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionCard(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-    bool isDesktop,
-  ) {
+  Widget _buildActionButton({
+    required Widget icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isSmallMobile,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: EdgeInsets.all(isDesktop ? 24 : 16),
-        decoration: BoxDecoration(
-          color: LottoRunnersColors.gray50,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: LottoRunnersColors.gray200,
-            width: 1,
-          ),
-        ),
+       child: Container(
+         height: isSmallMobile ? 160 : 180,
+         decoration: BoxDecoration(
+           color: Theme.of(context).brightness == Brightness.dark 
+               ? Theme.of(context).colorScheme.surface 
+               : Colors.white,
+           borderRadius: BorderRadius.circular(16),
+           border: Border.all(
+             color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+             width: 1,
+           ),
+           boxShadow: [
+             BoxShadow(
+               color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02),
+               blurRadius: 8,
+               offset: const Offset(0, 2),
+             ),
+           ],
+         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: isDesktop ? 60 : 48,
-              height: isDesktop ? 60 : 48,
+              width: isSmallMobile ? 90 : 100,
+              height: isSmallMobile ? 90 : 100,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: isDesktop ? 28 : 24,
-              ),
+              child: Center(child: icon),
             ),
-            SizedBox(height: isDesktop ? 16 : 12),
-            Flexible(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: isDesktop ? 16 : 14,
-                  fontWeight: FontWeight.w600,
-                  color: LottoRunnersColors.gray900,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Flexible(
-              child: Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: isDesktop ? 14 : 12,
-                  color: LottoRunnersColors.gray600,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+            SizedBox(height: isSmallMobile ? 8 : 12),
+             Text(
+               label,
+               style: TextStyle(
+                 color: Theme.of(context).colorScheme.onSurface,
+                 fontSize: isSmallMobile ? 12 : 14,
+                 fontWeight: FontWeight.w600,
+               ),
+               textAlign: TextAlign.center,
+               maxLines: 2,
+               overflow: TextOverflow.ellipsis,
+             ),
           ],
         ),
       ),
     );
   }
 
+  // _buildRecentActivity is now integrated into the main card
+  // Keeping this method for backward compatibility but it's no longer used
   Widget _buildRecentActivity(bool isDesktop) {
-    return Container(
-      padding: EdgeInsets.all(isDesktop ? 32 : 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Recent Activity',
-            style: TextStyle(
-              fontSize: isDesktop ? 24 : 20,
-              fontWeight: FontWeight.bold,
-              color: LottoRunnersColors.gray900,
+    // This method is deprecated - content is now in the main card
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildRecentActivityContent(bool isDesktop, bool isSmallMobile) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _getRecentTransactions(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            height: isSmallMobile ? 150 : 200,
+            child: Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Container(
-            padding: EdgeInsets.all(isDesktop ? 40 : 32),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Container(
+            padding: EdgeInsets.all(
+              isSmallMobile ? 24 : (isDesktop ? 40 : 32),
+            ),
             decoration: BoxDecoration(
-              color: LottoRunnersColors.gray50,
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: isSmallMobile ? 36 : (isDesktop ? 48 : 36),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                SizedBox(height: isSmallMobile ? 12 : 16),
+                Text(
+                  'Failed to load recent activity',
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        final recentItems = snapshot.data ?? [];
+
+        if (recentItems.isEmpty) {
+          return Container(
+            padding: EdgeInsets.all(
+              isSmallMobile ? 24 : (isDesktop ? 40 : 32),
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               children: [
                 Icon(
                   Icons.assignment_outlined,
-                  size: isDesktop ? 64 : 48,
-                  color: LottoRunnersColors.gray400,
+                  size: isSmallMobile ? 64 : 48,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No recent activity',
-                  style: TextStyle(
-                    fontSize: isDesktop ? 20 : 18,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: LottoRunnersColors.gray700,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your recent errands and updates will appear here once you start using the platform.',
-                  style: TextStyle(
-                    fontSize: isDesktop ? 16 : 14,
-                    color: LottoRunnersColors.gray600,
-                    height: 1.4,
-                  ),
+                  'Your recent errands and bookings will appear here once you start using the platform.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.4),
                   textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          children: recentItems
+              .take(3)
+              .map((item) => _buildRecentActivityItem(item, isDesktop))
+              .toList(),
+        );
+      },
+    );
+  }
+
+  // Widget _buildPopularServicesSection(bool isDesktop) {
+  //   final gridConfig = Responsive.getHomeServiceGridConfig(context);
+
+  //   return Container(
+  //     padding: EdgeInsets.all(gridConfig['sectionPadding']),
+  //     decoration: BoxDecoration(
+  //       color: Theme.of(context).colorScheme.surface,
+  //       borderRadius: BorderRadius.circular(20),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
+  //           blurRadius: 20,
+  //           offset: const Offset(0, 10),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'Popular Services',
+  //           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //         ),
+  //         SizedBox(height: gridConfig['sectionPadding'] * 0.75),
+  //         // Use responsive grid configuration to prevent overflow
+  //         GridView.builder(
+  //           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //             crossAxisCount: gridConfig['crossAxisCount'],
+  //             crossAxisSpacing: gridConfig['crossAxisSpacing'],
+  //             mainAxisSpacing: gridConfig['mainAxisSpacing'],
+  //             childAspectRatio: gridConfig['childAspectRatio'],
+  //           ),
+  //           shrinkWrap: true,
+  //           physics: const NeverScrollableScrollPhysics(),
+  //           itemCount: 4,
+  //           itemBuilder: (context, index) {
+  //             switch (index) {
+  //               case 0:
+  //                 return DocumentDeliveryCard(
+  //                   onTap: () => Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                         builder: (context) => const PostErrandPage()),
+  //                   ),
+  //                 );
+  //               case 1:
+  //                 return FoodDeliveryCard(
+  //                   onTap: () => Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                         builder: (context) => const PostErrandPage()),
+  //                   ),
+  //                 );
+  //               case 2:
+  //                 return PackageDeliveryCard(
+  //                   onTap: () => Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                         builder: (context) => const PostErrandPage()),
+  //                   ),
+  //                 );
+  //               case 3:
+  //                 return GroceryShoppingCard(
+  //                   onTap: () => Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                         builder: (context) => const PostErrandPage()),
+  //                   ),
+  //                 );
+  //               default:
+  //                 return const SizedBox.shrink();
+  //             }
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // Widget _buildTransportServicesSection(bool isDesktop) {
+  //   final gridConfig = Responsive.getTransportServiceGridConfig(context);
+
+  //   return Container(
+  //     padding: EdgeInsets.all(gridConfig['sectionPadding']),
+  //     decoration: BoxDecoration(
+  //       color: Theme.of(context).colorScheme.surface,
+  //       borderRadius: BorderRadius.circular(20),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
+  //           blurRadius: 20,
+  //           offset: const Offset(0, 10),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             Expanded(
+  //               child: Text(
+  //                 'Transport Services',
+  //                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //               ),
+  //             ),
+  //             TextButton(
+  //               onPressed: () => Navigator.push(
+  //                 context,
+  //                 MaterialPageRoute(
+  //                   builder: (context) => const TransportationPage(),
+  //                 ),
+  //               ),
+  //               child: Text(
+  //                 'View All',
+  //                 style: TextStyle(
+  //                   color: Theme.of(context).colorScheme.primary,
+  //                   fontWeight: FontWeight.w600,
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         SizedBox(height: gridConfig['sectionPadding'] * 0.75),
+  //         GridView.builder(
+  //           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //             crossAxisCount: gridConfig['crossAxisCount'],
+  //             crossAxisSpacing: gridConfig['crossAxisSpacing'],
+  //             mainAxisSpacing: gridConfig['mainAxisSpacing'],
+  //             childAspectRatio: gridConfig['childAspectRatio'],
+  //           ),
+  //           shrinkWrap: true,
+  //           physics: const NeverScrollableScrollPhysics(),
+  //           itemCount: 2,
+  //           itemBuilder: (context, index) {
+  //             switch (index) {
+  //               case 0:
+  //                 return ShuttleServiceCard(
+  //                   onTap: () => Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                       builder: (context) => const TransportationPage(),
+  //                     ),
+  //                   ),
+  //                 );
+  //               case 1:
+  //                 return BusServiceCard(
+  //                   onTap: () => Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                       builder: (context) => const TransportationPage(),
+  //                     ),
+  //                   ),
+  //                 );
+  //               default:
+  //                 return const SizedBox.shrink();
+  //             }
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  Future<List<Map<String, dynamic>>> _getRecentTransactions() async {
+    try {
+      final userId = SupabaseConfig.currentUser?.id;
+      if (userId == null) return [];
+
+      // Load recent errands and transportation bookings
+      final errands = await SupabaseConfig.getMyErrands(userId);
+      final bookings = await SupabaseConfig.getUserBookings(userId);
+
+      List<Map<String, dynamic>> recentItems = [];
+
+      // Add errands with type identifier
+      for (var errand in errands) {
+        recentItems.add({
+          ...errand,
+          'item_type': 'errand',
+          'sort_date': errand['created_at'] ?? DateTime.now().toIso8601String(),
+        });
+      }
+
+      // Add all bookings with appropriate type identifiers
+      for (var booking in bookings) {
+        String itemType = 'transportation';
+        String title = 'Shuttle Services';
+
+        // Determine type and title based on booking_type
+        if (booking['booking_type'] == 'bus') {
+          itemType = 'bus';
+          title = 'Bus Service';
+        } else if (booking['booking_type'] == 'contract') {
+          itemType = 'contract';
+          title = 'Contract Booking';
+        } else if (booking['booking_type'] == 'transportation') {
+          itemType = 'transportation';
+          title = 'Shuttle Services';
+        }
+
+        recentItems.add({
+          ...booking,
+          'item_type': itemType,
+          'title': title,
+          'category': itemType,
+          'description':
+              '${booking['pickup_location']} → ${booking['dropoff_location']}',
+          'sort_date':
+              booking['created_at'] ?? DateTime.now().toIso8601String(),
+        });
+      }
+
+      // Sort by creation date (newest first) and return only the most recent 5
+      recentItems.sort((a, b) {
+        final dateA = DateTime.tryParse(a['sort_date'] ?? '') ?? DateTime.now();
+        final dateB = DateTime.tryParse(b['sort_date'] ?? '') ?? DateTime.now();
+        return dateB.compareTo(dateA);
+      });
+
+      return recentItems.take(5).toList();
+    } catch (e) {
+      print('Error loading recent transactions: $e');
+      return [];
+    }
+  }
+
+  Widget _buildRecentActivityItem(Map<String, dynamic> item, bool isDesktop) {
+    final isErrand = item['item_type'] == 'errand';
+    final title = item['title'] ?? (isErrand ? 'Errand' : 'Service');
+    final subtitle = isErrand
+        ? item['description'] ?? ''
+        : '${item['pickup_location'] ?? ''} → ${item['dropoff_location'] ?? ''}';
+    final status = item['status']?.toString().toUpperCase() ?? 'PENDING';
+    final createdAt = item['created_at'] ?? item['sort_date'];
+    final isSmallMobile = Responsive.isSmallMobile(context);
+
+      Color statusColor;
+      switch (status.toLowerCase()) {
+        case 'completed':
+          statusColor = LottoRunnersColors.accent; // Green color for success
+          break;
+        case 'in_progress':
+        case 'accepted':
+          statusColor = LottoRunnersColors.primaryBlue;
+          break;
+        case 'cancelled':
+          statusColor = Theme.of(context).colorScheme.error; // Red color for error
+          break;
+        default:
+          statusColor = LottoRunnersColors.orange; // Orange for pending
+      }
+
+    return Container(
+      margin: EdgeInsets.only(bottom: isSmallMobile ? 12 : 16),
+      padding: EdgeInsets.all(isSmallMobile ? 16 : (isDesktop ? 20 : 18)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1), 
+          width: 1
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: isSmallMobile ? 40 : (isDesktop ? 48 : 44),
+            height: isSmallMobile ? 40 : (isDesktop ? 48 : 44),
+            decoration: BoxDecoration(
+              color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isErrand ? Icons.description_outlined : Icons.directions_bus_outlined,
+              color: LottoRunnersColors.primaryBlue,
+              size: isSmallMobile ? 20 : (isDesktop ? 24 : 22),
+            ),
+          ),
+          SizedBox(width: isSmallMobile ? 12 : 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: isSmallMobile ? 14 : 16,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  SizedBox(height: isSmallMobile ? 2 : 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: isSmallMobile ? 11 : 12,
+                      height: 1.2,
+                    ),
+                    maxLines: isSmallMobile ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                SizedBox(height: isSmallMobile ? 8 : 10),
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallMobile ? 8 : 10,
+                        vertical: isSmallMobile ? 4 : 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          fontSize: isSmallMobile ? 10 : 11,
+                          fontWeight: FontWeight.w600,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                      Text(
+                        _formatRecentDate(createdAt),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          fontSize: isSmallMobile ? 10 : 11,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -1125,29 +1649,51 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  String _formatRecentDate(String? dateString) {
+    if (dateString == null) return '';
+
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays > 7) {
+        return '${date.day}/${date.month}/${date.year}';
+      } else if (difference.inDays > 0) {
+        return '${difference.inDays}d ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}m ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
   Widget _buildDefaultAvatar(String userType, bool isDesktop) {
+    final isSmallMobile = Responsive.isSmallMobile(context);
+
     return Container(
-      width: isDesktop ? 76 : 56,
-      height: isDesktop ? 76 : 56,
+      width: isSmallMobile ? 48 : (isDesktop ? 58 : 53),
+      height: isSmallMobile ? 48 : (isDesktop ? 58 : 53),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.3),
-            Colors.white.withOpacity(0.1),
+            LottoRunnersColors.primaryBlue.withOpacity(0.1),
+            LottoRunnersColors.primaryBlue.withOpacity(0.05),
           ],
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(25),
       ),
       child: Icon(
-        userType == 'business'
-            ? Icons.business_center
-            : userType == 'runner'
-                ? Icons.directions_run
-                : Icons.person,
-        color: Colors.white,
-        size: isDesktop ? 40 : 28,
+        _getUserTypeIcon(userType),
+        color: LottoRunnersColors.primaryBlue.withOpacity(0.7),
+        size: isSmallMobile ? 20 : (isDesktop ? 28 : 24),
       ),
     );
   }
@@ -1166,6 +1712,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
+  IconData _getUserTypeIcon(String userType) {
+    switch (userType.toLowerCase()) {
+      case 'admin':
+      case 'super_admin':
+        return Icons.admin_panel_settings;
+      case 'runner':
+        return Icons.directions_run;
+      case 'business':
+        return Icons.business;
+      case 'individual':
+        return Icons.person;
+      default:
+        return Icons.person;
+    }
+  }
+
   // Admin Dashboard Methods
   Widget _buildAdminDashboard() {
     return const AdminHomePage();
@@ -1181,5 +1743,122 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildTransportationManagement() {
     return const TransportationManagementPage();
+  }
+
+  Widget _buildVehicleDiscountManagement() {
+    return const VehicleDiscountManagementPage();
+  }
+}
+
+// Animated shimmer button widget
+class _AnimatedShimmerButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final bool isSmallMobile;
+
+  const _AnimatedShimmerButton({
+    required this.child,
+    required this.onTap,
+    required this.isSmallMobile,
+  });
+
+  @override
+  State<_AnimatedShimmerButton> createState() => _AnimatedShimmerButtonState();
+}
+
+class _AnimatedShimmerButtonState extends State<_AnimatedShimmerButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat();
+
+    _animation = Tween<double>(
+      begin: -2,
+      end: 2,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: widget.onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return Container(
+            padding: EdgeInsets.all(widget.isSmallMobile ? 16 : 20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).colorScheme.surface
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? 0.2
+                          : 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Shimmer effect overlay
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Transform.translate(
+                      offset: Offset(_animation.value * 200, 0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.transparent,
+                              LottoRunnersColors.primaryYellow.withOpacity(0.1),
+                              LottoRunnersColors.primaryYellow.withOpacity(0.3),
+                              LottoRunnersColors.primaryYellow.withOpacity(0.1),
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Content
+                child!,
+              ],
+            ),
+          );
+        },
+        child: widget.child,
+      ),
+    );
   }
 }

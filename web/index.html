@@ -19,6 +19,7 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Lotto Runners - Your errand running companion">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,6 +32,34 @@
 
   <title>Lotto Runners</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Google Maps API key for web (required by google_maps_flutter on web) -->
+  <meta name="google_maps_api_key" content="AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo">
+  
+  <!-- Load Google Maps JavaScript API with Places library so `google.maps` is available -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo&libraries=places&loading=async"></script>
+  <!-- Prevent external navigation from Google Maps -->
+  <script>
+    // Prevent Google Maps from opening external links
+    window.addEventListener('beforeunload', function(e) {
+      // Allow navigation within the app
+      return undefined;
+    });
+    
+    // Prevent clicks on map links from navigating away
+    document.addEventListener('click', function(e) {
+      const target = e.target;
+      if (target && target.closest && target.closest('a[href^="http"]')) {
+        const href = target.closest('a[href^="http"]').href;
+        // Only prevent external Google Maps links
+        if (href.includes('maps.google.com') || href.includes('google.com/maps')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }
+    }, true);
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

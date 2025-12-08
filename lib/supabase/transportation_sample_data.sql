@@ -7,21 +7,22 @@ INSERT INTO service_categories (name, description, icon, color, sort_order) VALU
 ('Logistics', 'Cargo and delivery transportation', 'local_shipping', '#4CAF50', 3);
 
 -- 2. Service Subcategories
-INSERT INTO service_subcategories (category_id, name, description, icon, sort_order) VALUES
-((SELECT id FROM service_categories WHERE name = 'Transportation'), 'Bus Services', 'Intercity bus transportation', 'directions_bus', 1),
-((SELECT id FROM service_categories WHERE name = 'Transportation'), 'Shuttle Services', 'Door-to-door shuttle services', 'airport_shuttle', 2),
-((SELECT id FROM service_categories WHERE name = 'E-Hailing'), 'Ride Sharing', 'Individual and group ride sharing', 'local_taxi', 1),
-((SELECT id FROM service_categories WHERE name = 'E-Hailing'), 'Airport Transfers', 'Airport pickup and drop-off services', 'flight', 2),
-((SELECT id FROM service_categories WHERE name = 'Logistics'), 'Cargo Transport', 'Commercial cargo transportation', 'local_shipping', 1),
-((SELECT id FROM service_categories WHERE name = 'Logistics'), 'Moving Services', 'Household and office moving', 'home', 2);
+INSERT INTO service_subcategories (name, description, icon, sort_order) VALUES
+('Bus Services', 'Intercity bus transportation', 'directions_bus', 1),
+('Shuttle Services', 'Door-to-door shuttle services', 'airport_shuttle', 2),
+('Ride Sharing', 'Individual and group ride sharing', 'local_taxi', 3),
+('Airport Transfers', 'Airport pickup and drop-off services', 'flight', 4),
+('Cargo Transport', 'Commercial cargo transportation', 'local_shipping', 5),
+('Moving Services', 'Household and office moving', 'home', 6);
 
--- 3. Vehicle Types
+-- 3. Vehicle Types (Based on promotional image categories)
 INSERT INTO vehicle_types (name, capacity, description, features, icon) VALUES
-('4-Seater Car', 4, 'Compact car for small groups', ARRAY['AC', 'Radio', 'GPS'], 'directions_car'),
-('7-Seater Van', 7, 'Medium van for families and small groups', ARRAY['AC', 'Radio', 'GPS', 'Luggage Space'], 'airport_shuttle'),
-('9-Seater Van', 9, 'Large van for groups', ARRAY['AC', 'Radio', 'GPS', 'Extra Luggage'], 'directions_bus'),
-('23-Seater Bus', 23, 'Mini bus for large groups', ARRAY['AC', 'Radio', 'GPS', 'Luggage Compartment'], 'directions_bus'),
-('45-Seater Bus', 45, 'Full-size intercity bus', ARRAY['AC', 'Radio', 'WiFi', 'Toilet', 'Reclining Seats'], 'directions_bus'),
+('Sedan', 4, 'Comfortable 4-seater car for city trips', ARRAY['AC', 'Radio', 'GPS'], 'directions_car'),
+('Hatchback', 4, 'Compact and fuel-efficient for short trips', ARRAY['AC', 'Radio', 'GPS'], 'directions_car'),
+('Minivan', 7, 'Perfect for families and small groups', ARRAY['AC', 'Radio', 'GPS', 'Luggage Space'], 'airport_shuttle'),
+('Large Van', 12, 'Spacious van for groups and luggage', ARRAY['AC', 'Radio', 'GPS', 'Extra Luggage'], 'local_shipping'),
+('Minibus', 23, 'Medium bus for larger groups', ARRAY['AC', 'Radio', 'GPS', 'Luggage Compartment'], 'directions_bus'),
+('Bus', 45, 'Full-size bus for large groups and long distance', ARRAY['AC', 'Radio', 'WiFi', 'Toilet', 'Reclining Seats'], 'directions_bus'),
 ('Pickup Truck', 3, 'Open cargo vehicle', ARRAY['Radio', 'GPS', 'Cargo Bed'], 'local_shipping'),
 ('Cargo Van', 2, 'Enclosed cargo vehicle', ARRAY['Radio', 'GPS', 'Large Cargo Space'], 'local_shipping');
 
@@ -110,7 +111,7 @@ INSERT INTO transportation_services (subcategory_id, provider_id, vehicle_type_i
 -- Bus Services
 ((SELECT id FROM service_subcategories WHERE name = 'Bus Services'),
  (SELECT id FROM service_providers WHERE name = 'Intercape Mainliner'),
- (SELECT id FROM vehicle_types WHERE name = '45-Seater Bus'),
+ (SELECT id FROM vehicle_types WHERE name = 'Bus'),
  (SELECT id FROM routes WHERE name = 'Windhoek to Swakopmund'),
  'Windhoek-Swakopmund Express', 
  'Daily express bus service between Windhoek and Swakopmund',
@@ -119,7 +120,7 @@ INSERT INTO transportation_services (subcategory_id, provider_id, vehicle_type_i
 
 ((SELECT id FROM service_subcategories WHERE name = 'Bus Services'),
  (SELECT id FROM service_providers WHERE name = 'Intercape Mainliner'),
- (SELECT id FROM vehicle_types WHERE name = '45-Seater Bus'),
+ (SELECT id FROM vehicle_types WHERE name = 'Bus'),
  (SELECT id FROM routes WHERE name = 'Windhoek to Oshakati'),
  'Windhoek-Oshakati Service', 
  'Regular service to northern Namibia',
@@ -129,7 +130,7 @@ INSERT INTO transportation_services (subcategory_id, provider_id, vehicle_type_i
 -- Shuttle Services
 ((SELECT id FROM service_subcategories WHERE name = 'Shuttle Services'),
  (SELECT id FROM service_providers WHERE name = 'Capital City Shuttles'),
- (SELECT id FROM vehicle_types WHERE name = '7-Seater Van'),
+ (SELECT id FROM vehicle_types WHERE name = 'Minivan'),
  (SELECT id FROM routes WHERE name = 'Windhoek to Swakopmund'),
  'Premium Windhoek-Swakopmund Shuttle', 
  'Door-to-door shuttle service with home pickup',
@@ -138,7 +139,7 @@ INSERT INTO transportation_services (subcategory_id, provider_id, vehicle_type_i
 
 ((SELECT id FROM service_subcategories WHERE name = 'Shuttle Services'),
  (SELECT id FROM service_providers WHERE name = 'Capital City Shuttles'),
- (SELECT id FROM vehicle_types WHERE name = '4-Seater Car'),
+ (SELECT id FROM vehicle_types WHERE name = 'Sedan'),
  (SELECT id FROM routes WHERE name = 'Windhoek Airport Transfer'),
  'Airport Transfer Service', 
  'Quick airport transfers within Windhoek',
@@ -147,7 +148,7 @@ INSERT INTO transportation_services (subcategory_id, provider_id, vehicle_type_i
 
 ((SELECT id FROM service_subcategories WHERE name = 'Shuttle Services'),
  (SELECT id FROM service_providers WHERE name = 'Windhoek Express'),
- (SELECT id FROM vehicle_types WHERE name = '9-Seater Van'),
+ (SELECT id FROM vehicle_types WHERE name = 'Large Van'),
  (SELECT id FROM routes WHERE name = 'Windhoek to Otjiwarongo'),
  'Windhoek-Otjiwarongo Van Service', 
  'Comfortable van service to Otjiwarongo',
@@ -156,7 +157,7 @@ INSERT INTO transportation_services (subcategory_id, provider_id, vehicle_type_i
 
 ((SELECT id FROM service_subcategories WHERE name = 'Shuttle Services'),
  (SELECT id FROM service_providers WHERE name = 'Desert Express Transport'),
- (SELECT id FROM vehicle_types WHERE name = '23-Seater Bus'),
+ (SELECT id FROM vehicle_types WHERE name = 'Minibus'),
  (SELECT id FROM routes WHERE name = 'Windhoek to Walvis Bay'),
  'Desert Express Mini Bus', 
  'Mini bus service to coastal areas',

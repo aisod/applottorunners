@@ -35,6 +35,14 @@ CREATE POLICY "Users can update their own errands or accepted errands" ON errand
         auth.uid() = runner_id
     );
 
+-- Allow authenticated users to accept posted errands by assigning themselves as runner
+CREATE POLICY "Runners can accept posted errands" ON errands
+    FOR UPDATE USING (
+        auth.role() = 'authenticated' AND status = 'posted' AND runner_id IS NULL
+    ) WITH CHECK (
+        runner_id = auth.uid() AND status = 'accepted'
+    );
+
 CREATE POLICY "Users can delete their own errands" ON errands
     FOR DELETE USING (auth.uid() = customer_id);
 
@@ -123,3 +131,158 @@ CREATE POLICY "Users can update their own verification docs" ON storage.objects
 
 CREATE POLICY "Users can delete their own verification docs" ON storage.objects
     FOR DELETE USING (bucket_id = 'verification-docs' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ==============================================
+-- CHAT SYSTEM POLICIES
+-- ==============================================
+
+-- Enable RLS on chat tables
+ALTER TABLE chat_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+
+-- Chat conversations table policies
+CREATE POLICY "Users can view their conversations" ON chat_conversations
+FOR SELECT USING (
+  auth.uid() = customer_id OR auth.uid() = runner_id
+);
+
+CREATE POLICY "Users can create errand conversations" ON chat_conversations
+FOR INSERT WITH CHECK (
+  conversation_type = 'errand' AND 
+  (auth.uid() = customer_id OR auth.uid() = runner_id) AND
+  errand_id IS NOT NULL
+);
+
+CREATE POLICY "Users can create transportation conversations" ON chat_conversations
+FOR INSERT WITH CHECK (
+  conversation_type = 'transportation' AND 
+  (auth.uid() = customer_id OR auth.uid() = runner_id) AND
+  transportation_booking_id IS NOT NULL
+);
+
+CREATE POLICY "Users can create bus conversations" ON chat_conversations
+FOR INSERT WITH CHECK (
+  conversation_type = 'bus' AND 
+  bus_service_booking_id IS NOT NULL AND
+  (
+    (auth.uid() = customer_id OR auth.uid() = runner_id) OR
+    EXISTS (
+      SELECT 1 FROM users u 
+      WHERE u.id = auth.uid() AND u.user_type = 'admin'
+    )
+  )
+);
+
+CREATE POLICY "Users can create contract conversations" ON chat_conversations
+FOR INSERT WITH CHECK (
+  conversation_type = 'contract' AND 
+  (auth.uid() = customer_id OR auth.uid() = runner_id) AND
+  contract_booking_id IS NOT NULL
+);
+
+CREATE POLICY "Users can update their conversations" ON chat_conversations
+FOR UPDATE USING (
+  auth.uid() = customer_id OR auth.uid() = runner_id OR
+  EXISTS (
+    SELECT 1 FROM users u 
+    WHERE u.id = auth.uid() AND u.user_type = 'admin'
+  )
+) WITH CHECK (
+  auth.uid() = customer_id OR auth.uid() = runner_id OR
+  EXISTS (
+    SELECT 1 FROM users u 
+    WHERE u.id = auth.uid() AND u.user_type = 'admin'
+  )
+);
+
+CREATE POLICY "Users can delete their conversations" ON chat_conversations
+FOR DELETE USING (
+  auth.uid() = customer_id OR auth.uid() = runner_id OR
+  EXISTS (
+    SELECT 1 FROM users u 
+    WHERE u.id = auth.uid() AND u.user_type = 'admin'
+  )
+);
+
+-- Chat messages table policies
+CREATE POLICY "Users can view messages in their conversations" ON chat_messages
+FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM chat_conversations cc 
+    WHERE cc.id = chat_messages.conversation_id 
+    AND (
+      auth.uid() = cc.customer_id OR auth.uid() = cc.runner_id OR
+      EXISTS (
+        SELECT 1 FROM users u 
+        WHERE u.id = auth.uid() AND u.user_type = 'admin'
+      )
+    )
+  )
+);
+
+CREATE POLICY "Users can send messages in their conversations" ON chat_messages
+FOR INSERT WITH CHECK (
+  auth.uid() = sender_id AND
+  EXISTS (
+    SELECT 1 FROM chat_conversations cc 
+    WHERE cc.id = chat_messages.conversation_id 
+    AND (
+      auth.uid() = cc.customer_id OR auth.uid() = cc.runner_id OR
+      EXISTS (
+        SELECT 1 FROM users u 
+        WHERE u.id = auth.uid() AND u.user_type = 'admin'
+      )
+    )
+  )
+);
+
+CREATE POLICY "Users can update their own messages" ON chat_messages
+FOR UPDATE USING (
+  auth.uid() = sender_id OR
+  EXISTS (
+    SELECT 1 FROM chat_conversations cc 
+    WHERE cc.id = chat_messages.conversation_id 
+    AND (
+      auth.uid() = cc.customer_id OR auth.uid() = cc.runner_id OR
+      EXISTS (
+        SELECT 1 FROM users u 
+        WHERE u.id = auth.uid() AND u.user_type = 'admin'
+      )
+    )
+  )
+) WITH CHECK (
+  auth.uid() = sender_id OR
+  EXISTS (
+    SELECT 1 FROM chat_conversations cc 
+    WHERE cc.id = chat_messages.conversation_id 
+    AND (
+      auth.uid() = cc.customer_id OR auth.uid() = cc.runner_id OR
+      EXISTS (
+        SELECT 1 FROM users u 
+        WHERE u.id = auth.uid() AND u.user_type = 'admin'
+      )
+    )
+  )
+);
+
+CREATE POLICY "Users can delete their own messages" ON chat_messages
+FOR DELETE USING (
+  auth.uid() = sender_id
+);
+
+-- Admin policies
+CREATE POLICY "Admins can view all conversations" ON chat_conversations
+FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM users u 
+    WHERE u.id = auth.uid() AND u.user_type = 'admin'
+  )
+);
+
+CREATE POLICY "Admins can view all messages" ON chat_messages
+FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM users u 
+    WHERE u.id = auth.uid() AND u.user_type = 'admin'
+  )
+);

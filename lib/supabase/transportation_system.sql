@@ -17,7 +17,6 @@ CREATE TABLE service_categories (
 -- 2. Service Subcategories
 CREATE TABLE service_subcategories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  category_id UUID REFERENCES service_categories(id) ON DELETE CASCADE,
   name VARCHAR(100) NOT NULL,
   description TEXT,
   icon VARCHAR(50),
@@ -25,7 +24,7 @@ CREATE TABLE service_subcategories (
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(category_id, name)
+  UNIQUE(name)
 );
 
 -- 3. Vehicle Types
@@ -171,7 +170,7 @@ CREATE TABLE pricing_tiers (
 -- 12. Bookings (Enhanced from existing errands)
 CREATE TABLE transportation_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id),
+  user_id UUID REFERENCES users(id),
   service_id UUID REFERENCES transportation_services(id),
   schedule_id UUID REFERENCES service_schedules(id),
   pickup_location TEXT,
@@ -186,7 +185,7 @@ CREATE TABLE transportation_bookings (
   final_price DECIMAL(10, 2),
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed', 'no_show')),
   payment_status VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'refunded')),
-  driver_id UUID REFERENCES auth.users(id),
+  driver_id UUID REFERENCES users(id),
   vehicle_registration VARCHAR(20),
   booking_reference VARCHAR(20) UNIQUE,
   notes TEXT,
@@ -198,7 +197,7 @@ CREATE TABLE transportation_bookings (
 CREATE TABLE service_reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id UUID REFERENCES transportation_bookings(id),
-  user_id UUID REFERENCES auth.users(id),
+  user_id UUID REFERENCES users(id),
   service_id UUID REFERENCES transportation_services(id),
   rating INTEGER CHECK (rating >= 1 AND rating <= 5),
   review_text TEXT,
@@ -212,7 +211,7 @@ CREATE TABLE service_reviews (
 
 -- Add indexes for performance
 CREATE INDEX idx_service_categories_active ON service_categories(is_active, sort_order);
-CREATE INDEX idx_service_subcategories_category ON service_subcategories(category_id, is_active);
+CREATE INDEX idx_service_subcategories_active ON service_subcategories(is_active);
 CREATE INDEX idx_routes_towns ON routes(origin_town_id, destination_town_id);
 CREATE INDEX idx_transportation_services_subcategory ON transportation_services(subcategory_id, is_active);
 CREATE INDEX idx_service_schedules_service ON service_schedules(service_id, is_active);
@@ -271,89 +270,89 @@ CREATE POLICY "Public can view pricing tiers" ON pricing_tiers FOR SELECT USING 
 -- Admin policies for management
 CREATE POLICY "Admins can manage categories" ON service_categories FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage subcategories" ON service_subcategories FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage vehicle types" ON vehicle_types FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage towns" ON towns FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage routes" ON routes FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage route stops" ON route_stops FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage providers" ON service_providers FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage services" ON transportation_services FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage schedules" ON service_schedules FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage pricing" ON service_pricing FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage pricing tiers" ON pricing_tiers FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
@@ -382,17 +381,17 @@ CREATE POLICY "Drivers can update assigned bookings" ON transportation_bookings 
 
 CREATE POLICY "Admins can view all bookings" ON transportation_bookings FOR SELECT USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
 CREATE POLICY "Admins can manage all bookings" ON transportation_bookings FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 );
 
@@ -419,8 +418,8 @@ CREATE POLICY "Users can update their unverified reviews" ON service_reviews FOR
 
 CREATE POLICY "Admins can manage all reviews" ON service_reviews FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE user_profiles.user_id = auth.uid() 
-    AND user_profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.user_type IN ('admin')
   )
 ); 

@@ -6,7 +6,7 @@ import 'package:file_picker/file_picker.dart';
 
 /// Helper class for handling file uploads
 class FileUploadHelper {
-  static final _uuid = Uuid();
+  static const _uuid = Uuid();
 
   /// Upload a file and return its path
   /// Returns null if the operation was cancelled or failed
