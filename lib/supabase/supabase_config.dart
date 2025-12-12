@@ -2379,8 +2379,7 @@ class SupabaseConfig {
       // Try to get full service data with pricing
       final response = await client.from('transportation_services').select('''
           *,
-          route:service_routes(route_name, from_location, to_location),
-          service_schedules(*)
+          route:service_routes(route_name, from_location, to_location)
         ''').eq('id', serviceId).eq('is_active', true).order('name');
 
       // Pricing support removed: set empty pricing arrays to maintain structure
@@ -2431,57 +2430,6 @@ class SupabaseConfig {
     }
   }
 
-  // Schedules Management
-  static Future<List<Map<String, dynamic>>> getRouteSchedules(
-      String routeId) async {
-    try {
-      final response = await client
-          .from('service_schedules')
-          .select()
-          .eq('route_id', routeId)
-          .eq('is_active', true)
-          .order('departure_time');
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      throw Exception('Failed to fetch route schedules: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> createSchedule(
-      Map<String, dynamic> scheduleData) async {
-    try {
-      final response = await client
-          .from('service_schedules')
-          .insert(scheduleData)
-          .select()
-          .single();
-      return response;
-    } catch (e) {
-      throw Exception('Failed to create schedule: $e');
-    }
-  }
-
-  static Future<void> updateSchedule(
-      String scheduleId, Map<String, dynamic> updates) async {
-    try {
-      await client
-          .from('service_schedules')
-          .update(updates)
-          .eq('id', scheduleId);
-    } catch (e) {
-      throw Exception('Failed to update schedule: $e');
-    }
-  }
-
-  static Future<void> deleteSchedule(String scheduleId) async {
-    try {
-      await client
-          .from('service_schedules')
-          .update({'is_active': false}).eq('id', scheduleId);
-    } catch (e) {
-      throw Exception('Failed to delete schedule: $e');
-    }
-  }
 
   // Route Pricing Management
   static Future<List<Map<String, dynamic>>> getRoutePricing(
@@ -2515,7 +2463,6 @@ class SupabaseConfig {
       var query = client.from('transportation_services').select('''
           *,
           route:service_routes(route_name, from_location, to_location),
-          service_schedules(*)
         ''').eq('is_active', true);
 
       if (fromLocation != null) {
@@ -2543,8 +2490,7 @@ class SupabaseConfig {
     try {
       final response = await client.from('transportation_services').select('''
           *,
-          route:service_routes(route_name, from_location, to_location),
-          service_schedules(*)
+          route:service_routes(route_name, from_location, to_location)
         ''').eq('is_active', true).order('name');
 
       // Pricing support removed: set empty pricing arrays to maintain structure
@@ -2562,7 +2508,6 @@ class SupabaseConfig {
   // Transportation Booking
   static Future<Map<String, dynamic>> bookTransportation({
     required String routeId,
-    required String scheduleId,
     required String vehicleTypeId,
     required String pricingId,
     required bool includePickup,
@@ -2583,7 +2528,6 @@ class SupabaseConfig {
         'status': 'pending',
         'transportation_details': {
           'route_id': routeId,
-          'schedule_id': scheduleId,
           'vehicle_type_id': vehicleTypeId,
           'pricing_id': pricingId,
           'include_pickup': includePickup,
@@ -3820,32 +3764,6 @@ class SupabaseConfig {
     }
   }
 
-  // Service Schedules Management
-  static Future<List<Map<String, dynamic>>> getServiceSchedules(
-      String serviceId) async {
-    final response = await client
-        .from('service_schedules')
-        .select()
-        .eq('service_id', serviceId)
-        .eq('is_active', true)
-        .order('departure_time');
-    return List<Map<String, dynamic>>.from(response);
-  }
-
-  static Future<Map<String, dynamic>?> createServiceSchedule(
-      Map<String, dynamic> scheduleData) async {
-    try {
-      final response = await client
-          .from('service_schedules')
-          .insert(scheduleData)
-          .select()
-          .single();
-      return response;
-    } catch (e) {
-      print('Error creating service schedule: $e');
-      return null;
-    }
-  }
 
   // Service Pricing Management
   static Future<List<Map<String, dynamic>>> getServicePricing(
@@ -4725,8 +4643,14 @@ class SupabaseConfig {
       var transportationQuery =
           client.from('transportation_bookings').select('''
             *,
-            user:users!transportation_bookings_user_id_fkey(full_name, email, phone),
+            user:users!transportation_bookings_user_id_fkey(
+              id,
+              full_name,
+              email,
+              phone
+            ),
             service:transportation_services(
+              id,
               name
             )
           ''');
@@ -4748,8 +4672,14 @@ class SupabaseConfig {
       // Get bus service bookings
       var busQuery = client.from('bus_service_bookings').select('''
             *,
-            user:users!bus_service_bookings_user_id_fkey(full_name, email, phone),
+            user:users!bus_service_bookings_user_id_fkey(
+              id,
+              full_name,
+              email,
+              phone
+            ),
             service:transportation_services!bus_service_bookings_service_id_fkey(
+              id,
               name
             )
           ''');

@@ -1102,10 +1102,54 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Error saving service';
+        
+        // Check for specific database errors and provide user-friendly messages
+        final errorString = e.toString();
+        if (errorString.contains('discount_percentage') || 
+            errorString.contains('PGRST204') ||
+            errorString.contains('schema cache')) {
+          errorMessage = 'Database configuration error. Please contact support or check if database migrations have been run.';
+        } else if (errorString.contains('network') || 
+                   errorString.contains('connection') ||
+                   errorString.contains('timeout')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (errorString.contains('permission') || 
+                   errorString.contains('unauthorized')) {
+          errorMessage = 'Permission denied. You may not have access to perform this action.';
+        } else if (errorString.contains('duplicate') || 
+                   errorString.contains('unique')) {
+          errorMessage = 'A service with this name already exists. Please use a different name.';
+        } else if (errorString.contains('validation') || 
+                   errorString.contains('invalid')) {
+          errorMessage = 'Invalid data provided. Please check all fields and try again.';
+        } else {
+          errorMessage = 'Unable to save service. Please try again or contact support if the problem persists.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving service: $e'),
+            content: Row(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: Theme.of(context).colorScheme.onError,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    errorMessage,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onError,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }

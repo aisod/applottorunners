@@ -86,8 +86,6 @@ CREATE POLICY "Admins can manage all providers" ON service_providers FOR ALL USI
 -- Transportation services admin policies
 CREATE POLICY "Admins can manage all services" ON transportation_services FOR ALL USING (is_admin());
 
--- Service schedules admin policies
-CREATE POLICY "Admins can manage all schedules" ON service_schedules FOR ALL USING (is_admin());
 
 -- Service pricing admin policies
 CREATE POLICY "Admins can manage all pricing" ON service_pricing FOR ALL USING (is_admin());

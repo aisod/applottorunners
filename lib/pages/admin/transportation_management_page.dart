@@ -19,7 +19,6 @@ class _TransportationManagementPageState
   // Data lists
   List<Map<String, dynamic>> _vehicleTypes = [];
   //List<Map<String, dynamic>> _towns = [];
-  List<Map<String, dynamic>> _routes = [];
   List<Map<String, dynamic>> _providers = [];
   List<Map<String, dynamic>> _transportationServices = [];
   List<Map<String, dynamic>> _bookings = [];
@@ -87,7 +86,7 @@ class _TransportationManagementPageState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadData();
   }
 
@@ -104,9 +103,7 @@ class _TransportationManagementPageState
       await Future.wait([
         _loadVehicleTypes(),
         // _loadTowns(),
-        _loadRoutes(),
         _loadProviders(),
-        _loadTransportationServices(),
         _loadBookings(),
       ]);
     } catch (e) {
@@ -126,10 +123,6 @@ class _TransportationManagementPageState
   //   setState(() => _towns = towns);
   // }
 
-  Future<void> _loadRoutes() async {
-    final routes = await SupabaseConfig.getAllRoutes();
-    setState(() => _routes = routes);
-  }
 
   Future<void> _loadProviders() async {
     try {
@@ -225,26 +218,10 @@ class _TransportationManagementPageState
             ),
             Tab(
               icon: Icon(
-                Icons.route,
-                size: isSmallMobile ? 24 : (isMobile ? 26 : 28),
-              ),
-              text: isSmallMobile ? null : 'Routes',
-              height: isSmallMobile ? 56 : (isMobile ? 60 : 64),
-            ),
-            Tab(
-              icon: Icon(
                 Icons.person,
                 size: isSmallMobile ? 24 : (isMobile ? 26 : 28),
               ),
               text: isSmallMobile ? null : 'Providers',
-              height: isSmallMobile ? 56 : (isMobile ? 60 : 64),
-            ),
-            Tab(
-              icon: Icon(
-                Icons.local_shipping,
-                size: isSmallMobile ? 24 : (isMobile ? 26 : 28),
-              ),
-              text: isSmallMobile ? null : 'Services',
               height: isSmallMobile ? 56 : (isMobile ? 60 : 64),
             ),
             Tab(
@@ -282,9 +259,7 @@ class _TransportationManagementPageState
               children: [
                 _buildVehicleTypesTab(),
                 //  _buildTownsTab(),
-                _buildRoutesTab(),
                 _buildProvidersTab(),
-                _buildTransportationServicesTab(),
                 _buildBookingsTab(),
               ],
             ),
@@ -370,50 +345,6 @@ class _TransportationManagementPageState
   //   );
   // }
 
-  Widget _buildRoutesTab() {
-    final EdgeInsets padding = Responsive.getResponsivePadding(context);
-    if (_routes.isEmpty) {
-      return CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildSectionHeader(
-              'Routes',
-              'Manage transportation routes',
-              onAdd: () => _addRoute(),
-            ),
-          ),
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: Text('No routes found')),
-          ),
-        ],
-      );
-    }
-
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: _buildSectionHeader(
-            'Routes',
-            'Manage transportation routes',
-            onAdd: () => _addRoute(),
-          ),
-        ),
-        SliverPadding(
-          padding: padding,
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final route = _routes[index];
-                return _buildRouteCard(route);
-              },
-              childCount: _routes.length,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildProvidersTab() {
     final EdgeInsets padding = Responsive.getResponsivePadding(context);
@@ -858,47 +789,6 @@ class _TransportationManagementPageState
   //   );
   // }
 
-  Widget _buildRouteCard(Map<String, dynamic> route) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Icon(Icons.route),
-        title: Text(route['route_name'] ?? 'Unknown Route'),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${route['from_location']} → ${route['to_location']}'),
-            if (route['distance_km'] != null)
-              Text('Distance: ${route['distance_km']} km'),
-            if (route['estimated_duration_minutes'] != null)
-              Text('Duration: ${route['estimated_duration_minutes']} min'),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Switch(
-              value: route['is_active'] ?? false,
-              onChanged: (value) => _toggleRouteStatus(route['id'], value),
-            ),
-            PopupMenuButton(
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                const PopupMenuItem(value: 'delete', child: Text('Delete')),
-              ],
-              onSelected: (value) {
-                if (value == 'edit') {
-                  _editRoute(route);
-                } else if (value == 'delete') {
-                  _deleteRoute(route);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildProviderCard(Map<String, dynamic> provider) {
     return Card(
@@ -1224,7 +1114,7 @@ class _TransportationManagementPageState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        booking['booking_reference'] ?? 'Unknown',
+                        _getBookingTitle(booking),
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: isMobile ? 14 : 16,
@@ -1233,26 +1123,24 @@ class _TransportationManagementPageState
                         maxLines: 1,
                       ),
                       const SizedBox(height: 4),
-                      if (user != null)
-                        Text(
-                          'Customer: ${user['first_name']} ${user['last_name']}',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                            fontSize: isMobile ? 11 : 12,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                      Text(
+                        _getCustomerName(user),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          fontSize: isMobile ? 11 : 12,
                         ),
-                      if (service != null)
-                        Text(
-                          'Service: ${service['name']}',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                            fontSize: isMobile ? 11 : 12,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      Text(
+                        'Service: ${service != null && service['name'] != null ? service['name'] : 'Unknown Service'}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          fontSize: isMobile ? 11 : 12,
                         ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ],
                   ),
                 ),
@@ -1293,22 +1181,21 @@ class _TransportationManagementPageState
                 ),
                 SizedBox(width: isMobile ? 4 : 6),
                 Text(
-                  '${booking['booking_date']} ${booking['booking_time']}',
+                  _getBookingDateTime(booking),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontSize: isMobile ? 11 : 12,
                   ),
                 ),
                 const Spacer(),
-                if (booking['final_price'] != null)
-                  Text(
-                    'NAD ${booking['final_price']}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: isMobile ? 12 : 14,
-                      color: Colors.green.shade700,
-                    ),
+                Text(
+                  _getBookingPrice(booking),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: isMobile ? 12 : 14,
+                    color: Colors.green.shade700,
                   ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -1376,6 +1263,94 @@ class _TransportationManagementPageState
       default:
         return Theme.of(context).colorScheme.onSurface;
     }
+  }
+
+  // Helper method to get booking title
+  String _getBookingTitle(Map<String, dynamic> booking) {
+    // Try booking_reference first
+    if (booking['booking_reference'] != null && 
+        booking['booking_reference'].toString().trim().isNotEmpty) {
+      return booking['booking_reference'];
+    }
+    
+    // Try service name
+    final service = booking['service'];
+    if (service != null && service['name'] != null && 
+        service['name'].toString().trim().isNotEmpty) {
+      return service['name'];
+    }
+    
+    // Try booking ID (shortened)
+    if (booking['id'] != null) {
+      final id = booking['id'].toString();
+      if (id.length > 8) {
+        return 'Booking ${id.substring(0, 8)}...';
+      }
+      return 'Booking $id';
+    }
+    
+    // Fallback
+    return 'Transportation Booking';
+  }
+
+  // Helper method to get customer name
+  String _getCustomerName(Map<String, dynamic>? user) {
+    if (user == null) {
+      return 'Customer: Unknown';
+    }
+    
+    // Try full_name first (this is the primary field in the users table)
+    if (user['full_name'] != null && user['full_name'].toString().trim().isNotEmpty) {
+      return 'Customer: ${user['full_name']}';
+    }
+    
+    // Try email as fallback
+    if (user['email'] != null && user['email'].toString().trim().isNotEmpty) {
+      return 'Customer: ${user['email']}';
+    }
+    
+    return 'Customer: Unknown';
+  }
+
+  // Helper method to get booking date and time
+  String _getBookingDateTime(Map<String, dynamic> booking) {
+    final date = booking['booking_date']?.toString() ?? '';
+    final time = booking['booking_time']?.toString() ?? '';
+    
+    if (date.isNotEmpty && time.isNotEmpty) {
+      return '$date $time';
+    } else if (date.isNotEmpty) {
+      return date;
+    } else if (time.isNotEmpty) {
+      return time;
+    } else if (booking['created_at'] != null) {
+      try {
+        final createdAt = DateTime.parse(booking['created_at']);
+        return '${createdAt.toLocal().toString().split('.')[0]}';
+      } catch (e) {
+        return 'Date not available';
+      }
+    }
+    
+    return 'Date not available';
+  }
+
+  // Helper method to get booking price
+  String _getBookingPrice(Map<String, dynamic> booking) {
+    if (booking['final_price'] != null) {
+      final price = booking['final_price'];
+      if (price is num) {
+        return 'NAD ${price.toStringAsFixed(2)}';
+      }
+      return 'NAD ${price.toString()}';
+    } else if (booking['price'] != null) {
+      final price = booking['price'];
+      if (price is num) {
+        return 'NAD ${price.toStringAsFixed(2)}';
+      }
+      return 'NAD ${price.toString()}';
+    }
+    return 'NAD 0.00';
   }
 
   Future<void> _addVehicleType() async {
@@ -2242,21 +2217,6 @@ class _TransportationManagementPageState
     }
   }
 
-  Future<void> _toggleRouteStatus(String id, bool isActive) async {
-    try {
-      final success = await SupabaseConfig.updateRoute(id, {
-        'is_active': isActive,
-      });
-      if (success) {
-        _showSuccessSnackBar('Route status updated');
-        _loadRoutes();
-      } else {
-        _showErrorSnackBar('Failed to update route status');
-      }
-    } catch (e) {
-      _showErrorSnackBar('Error updating route status: $e');
-    }
-  }
 
   // Future<void> _addTown() async {
   //   final nameController = TextEditingController();
@@ -2486,6 +2446,8 @@ class _TransportationManagementPageState
     }
   }
 
+  // Route methods removed - all route functionality has been deleted
+  /*
   Future<void> _addRoute() async {
     final nameController = TextEditingController();
     final fromLocationController = TextEditingController();
@@ -2756,7 +2718,7 @@ class _TransportationManagementPageState
     }
   }
 
-  Future<void> _deleteRoute(Map<String, dynamic> route) async {
+  // Future<void> _deleteRoute(Map<String, dynamic> route) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -2792,6 +2754,7 @@ class _TransportationManagementPageState
       }
     }
   }
+  */
 
   Future<void> _toggleServiceStatus(String id, bool isActive) async {
     final success = await SupabaseConfig.updateTransportationServiceStatus(

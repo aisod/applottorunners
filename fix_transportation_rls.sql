@@ -131,16 +131,6 @@ CREATE POLICY "Admins can manage services" ON transportation_services FOR ALL US
   OR auth.role() = 'service_role'
 );
 
--- Service Schedules
-DROP POLICY IF EXISTS "Admins can manage schedules" ON service_schedules;
-CREATE POLICY "Admins can manage schedules" ON service_schedules FOR ALL USING (
-  EXISTS (
-    SELECT 1 FROM users 
-    WHERE users.id = auth.uid() 
-    AND users.user_type IN ('admin')
-  )
-  OR auth.role() = 'service_role'
-);
 
 -- Service Pricing
 DROP POLICY IF EXISTS "Admins can manage pricing" ON service_pricing;

@@ -176,33 +176,6 @@ CREATE POLICY "Admins can manage routes" ON routes
     );
 
 -- ====================================================================
--- SERVICE_SCHEDULES TABLE POLICIES
--- ====================================================================
-
--- Enable RLS on service_schedules table
-ALTER TABLE service_schedules ENABLE ROW LEVEL SECURITY;
-
--- Drop existing policies if they exist
-DROP POLICY IF EXISTS "Public can view active schedules" ON service_schedules;
-DROP POLICY IF EXISTS "Admins can manage schedules" ON service_schedules;
-
--- Policy: Public can view active service schedules
--- This allows all users to see available schedules
-CREATE POLICY "Public can view active schedules" ON service_schedules
-    FOR SELECT
-    USING (is_active = true);
-
--- Policy: Admins can manage all schedules
--- This allows administrators to create, update, and delete schedules
-CREATE POLICY "Admins can manage schedules" ON service_schedules
-    FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE users.id = auth.uid() 
-            AND users.user_type IN ('admin', 'super_admin')
-        )
-    );
 
 -- ====================================================================
 -- SERVICE_PRICING TABLE POLICIES

@@ -172,23 +172,6 @@ CREATE POLICY "Admins can manage all route stops" ON route_stops
 FOR ALL USING (is_admin());
 
 -- ============================================================================
--- SERVICE_SCHEDULES TABLE POLICIES
--- ============================================================================
-
--- Enable RLS
-ALTER TABLE service_schedules ENABLE ROW LEVEL SECURITY;
-
--- Drop existing policies
-DROP POLICY IF EXISTS "Public can view active schedules" ON service_schedules;
-DROP POLICY IF EXISTS "Admins can manage schedules" ON service_schedules;
-DROP POLICY IF EXISTS "Admins can manage all schedules" ON service_schedules;
-
--- Create new policies
-CREATE POLICY "Public can view active schedules" ON service_schedules 
-FOR SELECT USING (is_active = true);
-
-CREATE POLICY "Admins can manage all schedules" ON service_schedules 
-FOR ALL USING (is_admin());
 
 -- ============================================================================
 -- SERVICE_PRICING TABLE POLICIES
@@ -326,7 +309,7 @@ FOR ALL USING (is_admin());
 -- WHERE tablename IN (
 --     'service_providers', 'transportation_services', 'service_categories', 
 --     'service_subcategories', 'vehicle_types', 'towns', 'routes', 'route_stops',
---     'service_schedules', 'service_pricing', 'pricing_tiers', 
+--     'service_pricing', 'pricing_tiers', 
 --     'transportation_bookings', 'service_reviews'
 -- )
 -- ORDER BY tablename, policyname;
@@ -337,7 +320,7 @@ FOR ALL USING (is_admin());
 -- WHERE tablename IN (
 --     'service_providers', 'transportation_services', 'service_categories', 
 --     'service_subcategories', 'vehicle_types', 'towns', 'routes', 'route_stops',
---     'service_schedules', 'service_pricing', 'pricing_tiers', 
+--     'service_pricing', 'pricing_tiers', 
 --     'transportation_bookings', 'service_reviews'
 -- )
 -- ORDER BY tablename;

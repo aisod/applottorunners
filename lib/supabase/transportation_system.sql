@@ -117,22 +117,7 @@ CREATE TABLE transportation_services (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 9. Service Schedules
-CREATE TABLE service_schedules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  service_id UUID REFERENCES transportation_services(id) ON DELETE CASCADE,
-  departure_time TIME NOT NULL,
-  arrival_time TIME,
-  frequency_minutes INTEGER, -- For recurring services
-  days_of_week INTEGER[] DEFAULT '{1,2,3,4,5,6,7}',
-  effective_from DATE DEFAULT CURRENT_DATE,
-  effective_until DATE,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 10. Service Pricing
+-- 9. Service Pricing
 CREATE TABLE service_pricing (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   service_id UUID REFERENCES transportation_services(id) ON DELETE CASCADE,
@@ -172,7 +157,6 @@ CREATE TABLE transportation_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id),
   service_id UUID REFERENCES transportation_services(id),
-  schedule_id UUID REFERENCES service_schedules(id),
   pickup_location TEXT,
   pickup_coordinates POINT,
   dropoff_location TEXT,
@@ -214,7 +198,6 @@ CREATE INDEX idx_service_categories_active ON service_categories(is_active, sort
 CREATE INDEX idx_service_subcategories_active ON service_subcategories(is_active);
 CREATE INDEX idx_routes_towns ON routes(origin_town_id, destination_town_id);
 CREATE INDEX idx_transportation_services_subcategory ON transportation_services(subcategory_id, is_active);
-CREATE INDEX idx_service_schedules_service ON service_schedules(service_id, is_active);
 CREATE INDEX idx_service_pricing_service ON service_pricing(service_id, is_active);
 CREATE INDEX idx_transportation_bookings_user ON transportation_bookings(user_id, status);
 CREATE INDEX idx_transportation_bookings_service ON transportation_bookings(service_id, booking_date);
@@ -235,7 +218,6 @@ CREATE TRIGGER update_towns_updated_at BEFORE UPDATE ON towns FOR EACH ROW EXECU
 CREATE TRIGGER update_routes_updated_at BEFORE UPDATE ON routes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_service_providers_updated_at BEFORE UPDATE ON service_providers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_transportation_services_updated_at BEFORE UPDATE ON transportation_services FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_service_schedules_updated_at BEFORE UPDATE ON service_schedules FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_service_pricing_updated_at BEFORE UPDATE ON service_pricing FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_transportation_bookings_updated_at BEFORE UPDATE ON transportation_bookings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -248,7 +230,6 @@ ALTER TABLE routes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE route_stops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE service_providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transportation_services ENABLE ROW LEVEL SECURITY;
-ALTER TABLE service_schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE service_pricing ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pricing_tiers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transportation_bookings ENABLE ROW LEVEL SECURITY;
@@ -263,7 +244,6 @@ CREATE POLICY "Public can view active routes" ON routes FOR SELECT USING (is_act
 CREATE POLICY "Public can view route stops" ON route_stops FOR SELECT USING (true);
 CREATE POLICY "Public can view active providers" ON service_providers FOR SELECT USING (is_active = true);
 CREATE POLICY "Public can view active services" ON transportation_services FOR SELECT USING (is_active = true);
-CREATE POLICY "Public can view active schedules" ON service_schedules FOR SELECT USING (is_active = true);
 CREATE POLICY "Public can view active pricing" ON service_pricing FOR SELECT USING (is_active = true);
 CREATE POLICY "Public can view pricing tiers" ON pricing_tiers FOR SELECT USING (true);
 
@@ -332,13 +312,6 @@ CREATE POLICY "Admins can manage services" ON transportation_services FOR ALL US
   )
 );
 
-CREATE POLICY "Admins can manage schedules" ON service_schedules FOR ALL USING (
-  EXISTS (
-    SELECT 1 FROM users 
-    WHERE users.id = auth.uid() 
-    AND users.user_type IN ('admin')
-  )
-);
 
 CREATE POLICY "Admins can manage pricing" ON service_pricing FOR ALL USING (
   EXISTS (

@@ -6,10 +6,6 @@ ALTER TABLE transportation_bookings
 ADD CONSTRAINT IF NOT EXISTS transportation_bookings_service_id_fkey 
 FOREIGN KEY (service_id) REFERENCES transportation_services(id) ON DELETE SET NULL;
 
--- 2. Add missing foreign key constraint for schedule_id
-ALTER TABLE transportation_bookings 
-ADD CONSTRAINT IF NOT EXISTS transportation_bookings_schedule_id_fkey 
-FOREIGN KEY (schedule_id) REFERENCES service_schedules(id) ON DELETE SET NULL;
 
 -- 3. Verify all foreign key constraints exist
 SELECT 
@@ -35,5 +31,5 @@ SELECT
     data_type,
     is_nullable
 FROM information_schema.columns 
-WHERE table_name IN ('transportation_bookings', 'transportation_services', 'service_schedules')
+WHERE table_name IN ('transportation_bookings', 'transportation_services')
 ORDER BY table_name, ordinal_position;

@@ -164,34 +164,6 @@ INSERT INTO transportation_services (subcategory_id, provider_id, vehicle_type_i
  ARRAY['AC', 'Radio', 'Scenic Route'],
  '{1,2,3,4,5,6,7}', false, 0, 3);
 
--- 8. Service Schedules
-INSERT INTO service_schedules (service_id, departure_time, arrival_time, days_of_week) VALUES
--- Windhoek-Swakopmund Express (daily)
-((SELECT id FROM transportation_services WHERE name = 'Windhoek-Swakopmund Express'), '06:00', '10:30', '{1,2,3,4,5,6,7}'),
-((SELECT id FROM transportation_services WHERE name = 'Windhoek-Swakopmund Express'), '14:00', '18:30', '{1,2,3,4,5,6,7}'),
-
--- Windhoek-Oshakati Service (Mon, Wed, Fri, Sun)
-((SELECT id FROM transportation_services WHERE name = 'Windhoek-Oshakati Service'), '07:00', '15:00', '{1,3,5,7}'),
-
--- Shuttle services (multiple times daily)
-((SELECT id FROM transportation_services WHERE name = 'Premium Windhoek-Swakopmund Shuttle'), '06:00', '10:30', '{1,2,3,4,5,6,7}'),
-((SELECT id FROM transportation_services WHERE name = 'Premium Windhoek-Swakopmund Shuttle'), '10:00', '14:30', '{1,2,3,4,5,6,7}'),
-((SELECT id FROM transportation_services WHERE name = 'Premium Windhoek-Swakopmund Shuttle'), '14:00', '18:30', '{1,2,3,4,5,6,7}'),
-
--- Airport transfers (every hour)
-((SELECT id FROM transportation_services WHERE name = 'Airport Transfer Service'), '05:00', '05:30', '{1,2,3,4,5,6,7}'),
-((SELECT id FROM transportation_services WHERE name = 'Airport Transfer Service'), '06:00', '06:30', '{1,2,3,4,5,6,7}'),
-((SELECT id FROM transportation_services WHERE name = 'Airport Transfer Service'), '07:00', '07:30', '{1,2,3,4,5,6,7}'),
-((SELECT id FROM transportation_services WHERE name = 'Airport Transfer Service'), '08:00', '08:30', '{1,2,3,4,5,6,7}'),
-
--- Van services
-((SELECT id FROM transportation_services WHERE name = 'Windhoek-Otjiwarongo Van Service'), '08:00', '11:00', '{1,2,3,4,5,6}'),
-((SELECT id FROM transportation_services WHERE name = 'Windhoek-Otjiwarongo Van Service'), '16:00', '19:00', '{1,2,3,4,5,6}'),
-
--- Mini bus
-((SELECT id FROM transportation_services WHERE name = 'Desert Express Mini Bus'), '07:30', '11:45', '{1,2,3,4,5,6,7}'),
-((SELECT id FROM transportation_services WHERE name = 'Desert Express Mini Bus'), '15:30', '19:45', '{1,2,3,4,5,6,7}');
-
 -- 9. Service Pricing (Admin-fixed prices)
 INSERT INTO service_pricing (service_id, pricing_type, base_price, pickup_fee, minimum_fare, currency) VALUES
 -- Bus Services (fixed prices)

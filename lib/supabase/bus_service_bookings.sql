@@ -5,7 +5,6 @@ CREATE TABLE bus_service_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) NOT NULL,
   service_id UUID REFERENCES transportation_services(id) NOT NULL,
-  schedule_id UUID REFERENCES service_schedules(id),
   pickup_location TEXT NOT NULL,
   pickup_lat DECIMAL(10, 8),
   pickup_lng DECIMAL(11, 8),
