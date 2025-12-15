@@ -175,7 +175,17 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
               .replaceAll('PostgrestException: ', '');
 
           // Provide user-friendly error messages
-          if (cleanError.contains('Invalid login credentials')) {
+          if (cleanError.contains('EMAIL_SEND_FAILED')) {
+            _errorMessage =
+                'Unable to send confirmation email.\n\n'
+                'This could be due to:\n'
+                '• SMTP configuration issue\n'
+                '• SMTP authentication failed\n'
+                '• Email rate limits exceeded\n'
+                '• Email template misconfiguration\n\n'
+                'Please check your Supabase SMTP settings:\n'
+                'Settings → Authentication → SMTP Settings';
+          } else if (cleanError.contains('Invalid login credentials')) {
             _errorMessage =
                 'Invalid email or password. Please check your credentials and try again.';
           } else if (cleanError.contains('Email not confirmed') ||
@@ -193,13 +203,13 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
             _errorMessage = 'Password must be at least 6 characters long.';
           } else if (cleanError.contains('Unable to validate email address')) {
             _errorMessage = 'Please enter a valid email address.';
-          } else if (cleanError.contains('Network')) {
+          } else if (cleanError.contains('Network') || cleanError.contains('NETWORK_ERROR')) {
             _errorMessage =
                 'Network error. Please check your internet connection and try again.';
-          } else if (cleanError.contains('rate_limit_exceeded')) {
+          } else if (cleanError.contains('rate_limit_exceeded') || cleanError.contains('RATE_LIMIT')) {
             _errorMessage =
                 'Too many attempts. Please wait a moment before trying again.';
-          } else if (cleanError.contains('email_address_invalid')) {
+          } else if (cleanError.contains('email_address_invalid') || cleanError.contains('INVALID_EMAIL')) {
             _errorMessage = 'Please enter a valid email address.';
           } else {
             _errorMessage = cleanError.isNotEmpty
@@ -333,10 +343,49 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage;
+        
+        // Handle specific error cases
+        final errorString = e.toString();
+        if (errorString.contains('EMAIL_SEND_FAILED')) {
+          errorMessage =
+              'Unable to send confirmation email.\n\n'
+              'This could be due to:\n'
+              '• SMTP configuration issue\n'
+              '• SMTP authentication failed\n'
+              '• Email rate limits exceeded\n'
+              '• Email template misconfiguration\n\n'
+              'Please check your Supabase SMTP settings:\n'
+              'Settings → Authentication → SMTP Settings';
+        } else if (errorString.contains('INVALID_EMAIL')) {
+          errorMessage = 'The email address is invalid. Please enter a valid email address.';
+        } else if (errorString.contains('RATE_LIMIT')) {
+          errorMessage = 'Too many attempts. Please wait a few minutes and try again.';
+        } else if (errorString.contains('AUTH_ERROR')) {
+          // Extract the actual error message
+          final match = RegExp(r'AUTH_ERROR: (.+)').firstMatch(errorString);
+          errorMessage = match?.group(1) ?? 'Failed to resend email confirmation. Please try again.';
+        } else if (errorString.contains('NETWORK_ERROR')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else {
+          errorMessage = 'Failed to resend email confirmation. Please try again.';
+        }
+        
         setState(() {
-          _errorMessage =
-              'Failed to resend email confirmation. Please try again.';
+          _errorMessage = errorMessage;
         });
+        
+        // Also show as a snackbar for better visibility
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              errorMessage,
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } finally {
       if (mounted) {

@@ -79,13 +79,65 @@ class SupabaseConfig {
   static Future<AuthResponse> signUpWithEmail(
       String email, String password, Map<String, dynamic> userData) async {
     try {
+      print('📧 Signing up user: $email');
+      
+      // Use different redirect URLs based on platform
+      final redirectUrl = kIsWeb
+          ? 'http://localhost:3000/confirm-email'
+          : 'io.supabase.lottorunners://confirm-email';
+      
+      print('🔗 Email confirmation redirect URL: $redirectUrl');
+
       final response = await client.auth.signUp(
         email: email,
         password: password,
         data: userData,
+        emailRedirectTo: redirectUrl,
       );
+
+      print('✅ Sign up successful! Email confirmation sent to: $email');
       return response;
+    } on AuthApiException catch (e) {
+      print('❌ Sign up AuthApiException: $e');
+      print('❌ Error code: ${e.code}');
+      print('❌ Error message: ${e.message}');
+      print('❌ Status code: ${e.statusCode}');
+      
+      // Handle specific error cases
+      if (e.message.toLowerCase().contains('error sending confirmation email') ||
+          e.message.toLowerCase().contains('unexpected_failure')) {
+        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. This could be due to:\n1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n2. Email rate limits exceeded\n3. Email template configuration issue\n4. SMTP provider authentication failed\n\nPlease check your Supabase SMTP settings or try again later.');
+      } else if (e.code == 'email_address_invalid' || 
+                 e.message.toLowerCase().contains('invalid email')) {
+        throw Exception('INVALID_EMAIL');
+      } else if (e.statusCode == 429 || e.message.toLowerCase().contains('rate limit')) {
+        throw Exception('RATE_LIMIT');
+      } else {
+        throw Exception('AUTH_ERROR: ${e.message}');
+      }
+    } on AuthRetryableFetchException catch (e) {
+      print('❌ Sign up AuthRetryableFetchException: $e');
+      print('❌ Error message: ${e.message}');
+      print('❌ Status code: ${e.statusCode}');
+      
+      // Parse the error message
+      if (e.message.contains('Error sending confirmation email') ||
+          e.message.contains('unexpected_failure')) {
+        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. This is usually due to:\n1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n2. SMTP authentication failed (wrong credentials)\n3. Email rate limits exceeded\n4. Invalid email template configuration\n\nPlease check your Supabase SMTP settings or try again later.');
+      } else {
+        throw Exception('NETWORK_ERROR: ${e.message}');
+      }
     } catch (e) {
+      print('❌ Sign up error: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      
+      // Check for email sending errors in the error string
+      final errorString = e.toString();
+      if (errorString.contains('Error sending confirmation email') ||
+          errorString.contains('unexpected_failure')) {
+        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. Please check your Supabase SMTP configuration.');
+      }
+      
       throw Exception('Sign up failed: $e');
     }
   }
@@ -138,15 +190,61 @@ class SupabaseConfig {
     try {
       print('📧 Resending email confirmation to: $email');
 
+      // Use different redirect URLs based on platform
+      final redirectUrl = kIsWeb
+          ? 'http://localhost:3000/confirm-email'
+          : 'io.supabase.lottorunners://confirm-email';
+      
+      print('🔗 Email confirmation redirect URL: $redirectUrl');
+
       await client.auth.resend(
         type: OtpType.signup,
         email: email,
-        emailRedirectTo: 'io.supabase.lottorunners://confirm-email',
+        emailRedirectTo: redirectUrl,
       );
 
       print('✅ Email confirmation resent successfully');
+    } on AuthApiException catch (e) {
+      print('❌ Resend confirmation AuthApiException: $e');
+      print('❌ Error code: ${e.code}');
+      print('❌ Error message: ${e.message}');
+      print('❌ Status code: ${e.statusCode}');
+      
+      // Handle specific error cases
+      if (e.message.toLowerCase().contains('error sending confirmation email') ||
+          e.message.toLowerCase().contains('unexpected_failure')) {
+        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. This could be due to:\n1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n2. Email rate limits exceeded\n3. Email template configuration issue\n4. SMTP provider authentication failed\n\nPlease check your Supabase SMTP settings or try again later.');
+      } else if (e.code == 'email_address_invalid' || 
+                 e.message.toLowerCase().contains('invalid email')) {
+        throw Exception('INVALID_EMAIL');
+      } else if (e.statusCode == 429 || e.message.toLowerCase().contains('rate limit')) {
+        throw Exception('RATE_LIMIT');
+      } else {
+        throw Exception('AUTH_ERROR: ${e.message}');
+      }
+    } on AuthRetryableFetchException catch (e) {
+      print('❌ Resend confirmation AuthRetryableFetchException: $e');
+      print('❌ Error message: ${e.message}');
+      print('❌ Status code: ${e.statusCode}');
+      
+      // Parse the error message
+      if (e.message.contains('Error sending confirmation email') ||
+          e.message.contains('unexpected_failure')) {
+        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. This is usually due to:\n1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n2. SMTP authentication failed (wrong credentials)\n3. Email rate limits exceeded\n4. Invalid email template configuration\n\nPlease check your Supabase SMTP settings or try again later.');
+      } else {
+        throw Exception('NETWORK_ERROR: ${e.message}');
+      }
     } catch (e) {
       print('❌ Resend confirmation error: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      
+      // Check for email sending errors in the error string
+      final errorString = e.toString();
+      if (errorString.contains('Error sending confirmation email') ||
+          errorString.contains('unexpected_failure')) {
+        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. Check SMTP configuration in Supabase dashboard (Settings → Authentication → SMTP Settings).');
+      }
+      
       throw Exception('Failed to resend email confirmation: $e');
     }
   }
@@ -219,10 +317,33 @@ class SupabaseConfig {
   static Future<Map<String, dynamic>> createErrand(
       Map<String, dynamic> errandData) async {
     try {
+      // Check authentication
+      final user = currentUser;
+      if (user == null) {
+        print('❌ [DEBUG] createErrand - User not authenticated');
+        throw Exception('User must be authenticated to create errands');
+      }
+      print('✅ [DEBUG] createErrand - User authenticated: ${user.id}');
+      
+      // Remove customer_id if present - trigger will set it
+      final cleanData = Map<String, dynamic>.from(errandData);
+      if (cleanData.containsKey('customer_id')) {
+        print('⚠️ [DEBUG] createErrand - Removing customer_id from payload (trigger will set it)');
+        cleanData.remove('customer_id');
+      }
+      
+      print('📤 [DEBUG] createErrand - Inserting errand with category: ${cleanData['category']}');
       final response =
-          await client.from('errands').insert(errandData).select().single();
+          await client.from('errands').insert(cleanData).select().single();
+      print('✅ [DEBUG] createErrand - Errand created successfully: ${response['id']}');
       return response;
     } catch (e) {
+      print('❌ [DEBUG] createErrand - Error: $e');
+      if (e.toString().contains('RLS') || e.toString().contains('row-level security')) {
+        print('❌ [DEBUG] createErrand - RLS policy violation detected');
+        print('❌ [DEBUG] createErrand - Current user: ${currentUser?.id}');
+        print('❌ [DEBUG] createErrand - Run fix_errand_insert_rls_for_trigger.sql to fix RLS policy');
+      }
       throw Exception('Failed to create errand: $e');
     }
   }
@@ -1558,6 +1679,13 @@ class SupabaseConfig {
     try {
       // Create the user in Supabase Auth using signUp
       // The handle_new_user trigger will automatically create the user profile
+      final redirectUrl = kIsWeb
+          ? 'http://localhost:3000/confirm-email'
+          : 'io.supabase.lottorunners://confirm-email';
+      
+      print('📧 Creating admin user: ${adminData['email']}');
+      print('🔗 Email confirmation redirect URL: $redirectUrl');
+
       final authResponse = await client.auth.signUp(
         email: adminData['email'],
         password: adminData['password'],
@@ -1565,6 +1693,7 @@ class SupabaseConfig {
           'full_name': adminData['full_name'],
           'user_type': 'admin',
         },
+        emailRedirectTo: redirectUrl,
       );
 
       if (authResponse.user == null) {
@@ -1629,6 +1758,13 @@ class SupabaseConfig {
   static Future<void> createUser(Map<String, dynamic> userData) async {
     try {
       // Create the user in Supabase Auth using signUp
+      final redirectUrl = kIsWeb
+          ? 'http://localhost:3000/confirm-email'
+          : 'io.supabase.lottorunners://confirm-email';
+      
+      print('📧 Creating user: ${userData['email']}');
+      print('🔗 Email confirmation redirect URL: $redirectUrl');
+
       final authResponse = await client.auth.signUp(
         email: userData['email'],
         password: userData['password'],
@@ -1636,6 +1772,7 @@ class SupabaseConfig {
           'full_name': userData['full_name'],
           'user_type': userData['user_type'],
         },
+        emailRedirectTo: redirectUrl,
       );
 
       if (authResponse.user == null) {
