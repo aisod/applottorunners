@@ -11,6 +11,7 @@ import 'service_management_page.dart';
 import 'special_orders_management_page.dart';
 import 'transportation_management_page.dart';
 import 'user_management_page.dart';
+import 'feedback_management_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -396,6 +397,17 @@ class _AdminHomePageState extends State<AdminHomePage> {
               () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SpecialOrdersManagementPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
+            _buildManagementCard(
+              'Feedback',
+              Icons.feedback,
+              Colors.pink,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FeedbackManagementPage()),
               ),
               theme,
               isSmallMobile,

@@ -259,9 +259,16 @@ class _TransportationPageState extends State<TransportationPage> {
 
   /// Submit transportation booking
   Future<void> _submitBooking() async {
-    if (!_formKey.currentState!.validate()) return;
+    print('🚀 DEBUG: [TRANSPORTATION PAGE] _submitBooking called');
+    
+    if (!_formKey.currentState!.validate()) {
+      print('❌ DEBUG: [TRANSPORTATION PAGE] Form validation failed');
+      return;
+    }
+    print('✅ DEBUG: [TRANSPORTATION PAGE] Form validation passed');
 
     if (_selectedVehicleId == null) {
+      print('❌ DEBUG: [TRANSPORTATION PAGE] No vehicle selected');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select a vehicle type'),
@@ -270,11 +277,24 @@ class _TransportationPageState extends State<TransportationPage> {
       );
       return;
     }
+    print('✅ DEBUG: [TRANSPORTATION PAGE] Vehicle selected: $_selectedVehicleId');
 
     try {
-      print('Submitting transportation booking without pricing');
-      print('Current user ID: ${SupabaseConfig.currentUser?.id}');
-      print('Selected vehicle ID: $_selectedVehicleId');
+      print('🚀 DEBUG: [TRANSPORTATION PAGE] Starting booking submission...');
+      print('👤 DEBUG: [TRANSPORTATION PAGE] Current user ID: ${SupabaseConfig.currentUser?.id}');
+      print('👤 DEBUG: [TRANSPORTATION PAGE] Current user email: ${SupabaseConfig.currentUser?.email}');
+      print('🚗 DEBUG: [TRANSPORTATION PAGE] Selected vehicle ID: $_selectedVehicleId');
+      print('📍 DEBUG: [TRANSPORTATION PAGE] Pickup location: ${_pickupLocationController.text}');
+      print('📍 DEBUG: [TRANSPORTATION PAGE] Dropoff location: ${_dropoffLocationController.text}');
+      print('🗓️ DEBUG: [TRANSPORTATION PAGE] Is immediate booking: $_isImmediateBooking');
+      print('📅 DEBUG: [TRANSPORTATION PAGE] Selected date: $_selectedDate');
+      print('⏰ DEBUG: [TRANSPORTATION PAGE] Selected time: $_selectedTime');
+      print('📝 DEBUG: [TRANSPORTATION PAGE] Special requests: ${_specialRequestsController.text}');
+
+      // Validate coordinates
+      print('🌐 DEBUG: [TRANSPORTATION PAGE] Coordinate validation:');
+      print('   - Pickup lat: $_pickupLat, lng: $_pickupLng');
+      print('   - Dropoff lat: $_dropoffLat, lng: $_dropoffLng');
 
       final bookingData = {
         'user_id': SupabaseConfig.currentUser?.id,
@@ -301,11 +321,28 @@ class _TransportationPageState extends State<TransportationPage> {
         'is_immediate': _isImmediateBooking, // Add flag for immediate bookings
       };
 
-      print('Calling createTransportationBooking...');
+      print('📦 DEBUG: [TRANSPORTATION PAGE] Booking data prepared:');
+      print('   - user_id: ${bookingData['user_id']}');
+      print('   - vehicle_type_id: ${bookingData['vehicle_type_id']}');
+      print('   - pickup_location: ${bookingData['pickup_location']}');
+      print('   - dropoff_location: ${bookingData['dropoff_location']}');
+      print('   - is_immediate: ${bookingData['is_immediate']}');
+      print('   - booking_date: ${bookingData['booking_date']}');
+      print('   - booking_time: ${bookingData['booking_time']}');
+      print('   - status: ${bookingData['status']}');
+
+      print('🔄 DEBUG: [TRANSPORTATION PAGE] Calling createTransportationBooking...');
       final result =
           await SupabaseConfig.createTransportationBooking(bookingData);
 
-      print('Booking creation result: $result');
+      print('📊 DEBUG: [TRANSPORTATION PAGE] Booking creation result received');
+      print('📊 DEBUG: [TRANSPORTATION PAGE] Result is null: ${result == null}');
+      if (result != null) {
+        print('📊 DEBUG: [TRANSPORTATION PAGE] Result ID: ${result['id']}');
+        print('📊 DEBUG: [TRANSPORTATION PAGE] Full result: $result');
+      } else {
+        print('❌ DEBUG: [TRANSPORTATION PAGE] Booking creation returned null - check error logs above');
+      }
 
       if (result != null && result['id'] != null) {
         if (mounted) {
@@ -360,16 +397,22 @@ class _TransportationPageState extends State<TransportationPage> {
           }
         }
       } else {
+        print('❌ DEBUG: [TRANSPORTATION PAGE] Booking creation failed - result is null or missing ID');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Failed to create transportation booking'),
+              content: const Text('Failed to create transportation booking. Please check the console for details.'),
               backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 5),
             ),
           );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ DEBUG: [TRANSPORTATION PAGE] Exception caught in _submitBooking');
+      print('❌ DEBUG: [TRANSPORTATION PAGE] Error type: ${e.runtimeType}');
+      print('❌ DEBUG: [TRANSPORTATION PAGE] Error message: $e');
+      print('❌ DEBUG: [TRANSPORTATION PAGE] Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

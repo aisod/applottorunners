@@ -83,7 +83,7 @@ class SupabaseConfig {
       
       // Use different redirect URLs based on platform
       final redirectUrl = kIsWeb
-          ? 'http://localhost:3000/confirm-email'
+          ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
       
       print('🔗 Email confirmation redirect URL: $redirectUrl');
@@ -157,7 +157,7 @@ class SupabaseConfig {
 
       // Use different redirect URLs based on platform
       final redirectUrl = kIsWeb
-          ? 'http://localhost:3000/password-reset'
+          ? 'https://app.lottoerunners.com/password-reset'
           : 'io.supabase.lottorunners://reset-password';
       
       print('🔗 Redirect URL: $redirectUrl');
@@ -192,7 +192,7 @@ class SupabaseConfig {
 
       // Use different redirect URLs based on platform
       final redirectUrl = kIsWeb
-          ? 'http://localhost:3000/confirm-email'
+          ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
       
       print('🔗 Email confirmation redirect URL: $redirectUrl');
@@ -1680,7 +1680,7 @@ class SupabaseConfig {
       // Create the user in Supabase Auth using signUp
       // The handle_new_user trigger will automatically create the user profile
       final redirectUrl = kIsWeb
-          ? 'http://localhost:3000/confirm-email'
+          ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
       
       print('📧 Creating admin user: ${adminData['email']}');
@@ -1759,7 +1759,7 @@ class SupabaseConfig {
     try {
       // Create the user in Supabase Auth using signUp
       final redirectUrl = kIsWeb
-          ? 'http://localhost:3000/confirm-email'
+          ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
       
       print('📧 Creating user: ${userData['email']}');
@@ -3928,15 +3928,26 @@ class SupabaseConfig {
   // Transportation Bookings Management
   static Future<List<Map<String, dynamic>>> getUserBookings(
       [String? userId]) async {
+    print('🚀 DEBUG: [GET USER BOOKINGS] Starting getUserBookings...');
+    
     final user = client.auth.currentUser;
     final targetUserId = userId ?? user?.id;
 
-    if (targetUserId == null) return [];
+    print('👤 DEBUG: [GET USER BOOKINGS] Current user: ${user?.id}');
+    print('👤 DEBUG: [GET USER BOOKINGS] Target user ID: $targetUserId');
+
+    if (targetUserId == null) {
+      print('❌ DEBUG: [GET USER BOOKINGS] No user ID found - returning empty list');
+      return [];
+    }
 
     try {
+      print('📡 DEBUG: [GET USER BOOKINGS] Executing parallel queries...');
+      
       // Execute all queries in parallel for better performance
       final futures = await Future.wait([
-        // Get transportation bookings with driver info
+        // Get transportation bookings with driver info and vehicle type
+        // Note: service join is optional since shuttle bookings might not have service_id
         client
             .from('transportation_bookings')
             .select('''
@@ -3944,7 +3955,11 @@ class SupabaseConfig {
               service:transportation_services(
                 name
               ),
-              driver:users!transportation_bookings_driver_id_fkey(full_name, avatar_url)
+              driver:users!transportation_bookings_driver_id_fkey(full_name, avatar_url),
+              vehicle_type:vehicle_types(
+                name,
+                description
+              )
             ''')
             .eq('user_id', targetUserId)
             .order('created_at', ascending: false),
@@ -3972,9 +3987,33 @@ class SupabaseConfig {
             .order('created_at', ascending: false),
       ]);
 
+      print('✅ DEBUG: [GET USER BOOKINGS] All queries completed');
+      
       final transportationBookings = futures[0] as List;
       final contractBookings = futures[1] as List;
       final busBookings = futures[2] as List;
+
+      print('📊 DEBUG: [GET USER BOOKINGS] Query results:');
+      print('   - Transportation bookings: ${transportationBookings.length}');
+      print('   - Contract bookings: ${contractBookings.length}');
+      print('   - Bus bookings: ${busBookings.length}');
+
+      // Log each transportation booking for debugging
+      for (var i = 0; i < transportationBookings.length; i++) {
+        final booking = transportationBookings[i];
+        print('📋 DEBUG: [GET USER BOOKINGS] Transportation booking #${i + 1}:');
+        print('   - ID: ${booking['id']}');
+        print('   - Status: ${booking['status']}');
+        print('   - Pickup: ${booking['pickup_location']}');
+        print('   - Dropoff: ${booking['dropoff_location']}');
+        print('   - Vehicle type ID: ${booking['vehicle_type_id']}');
+        print('   - Service ID: ${booking['service_id']}');
+        print('   - Service name: ${booking['service']?['name']}');
+        print('   - Vehicle type: ${booking['vehicle_type']?['name']}');
+        print('   - Driver ID: ${booking['driver_id']}');
+        print('   - Is immediate: ${booking['is_immediate']}');
+        print('   - Created at: ${booking['created_at']}');
+      }
 
       // Combine all bookings efficiently
       List<Map<String, dynamic>> allBookings = [];
@@ -3986,6 +4025,7 @@ class SupabaseConfig {
           'booking_type': 'transportation',
           'title': 'Shuttle Services',
         });
+        print('✅ DEBUG: [GET USER BOOKINGS] Added transportation booking: ${booking['id']}');
       }
 
       // Add contract bookings with type identifier
@@ -3997,6 +4037,7 @@ class SupabaseConfig {
           'pickup_location': booking['pickup_location'],
           'dropoff_location': booking['dropoff_location'],
         });
+        print('✅ DEBUG: [GET USER BOOKINGS] Added contract booking: ${booking['id']}');
       }
 
       // Add bus service bookings with type identifier
@@ -4008,15 +4049,36 @@ class SupabaseConfig {
           'pickup_location': booking['pickup_location'],
           'dropoff_location': booking['dropoff_location'],
         });
+        print('✅ DEBUG: [GET USER BOOKINGS] Added bus booking: ${booking['id']}');
       }
 
       // Sort combined bookings by created_at
       allBookings.sort((a, b) => DateTime.parse(b['created_at'])
           .compareTo(DateTime.parse(a['created_at'])));
 
+      print('✅ DEBUG: [GET USER BOOKINGS] Total bookings after combining: ${allBookings.length}');
+      print('✅ DEBUG: [GET USER BOOKINGS] Returning ${allBookings.length} bookings');
+
       return allBookings;
-    } catch (e) {
-      print('Error fetching user bookings: $e');
+    } catch (e, stackTrace) {
+      print('❌ DEBUG: [GET USER BOOKINGS] Error fetching user bookings');
+      print('❌ DEBUG: [GET USER BOOKINGS] Error type: ${e.runtimeType}');
+      print('❌ DEBUG: [GET USER BOOKINGS] Error message: $e');
+      print('❌ DEBUG: [GET USER BOOKINGS] Stack trace: $stackTrace');
+      
+      // Check for specific error types
+      if (e.toString().contains('foreign key') || e.toString().contains('relation')) {
+        print('🚨 DEBUG: [GET USER BOOKINGS] FOREIGN KEY OR RELATION ERROR!');
+        print('🚨 DEBUG: [GET USER BOOKINGS] This might be a database relationship issue');
+      }
+      if (e.toString().contains('null')) {
+        print('🚨 DEBUG: [GET USER BOOKINGS] NULL VALUE ERROR!');
+      }
+      if (e.toString().contains('permission') || e.toString().contains('policy')) {
+        print('🚨 DEBUG: [GET USER BOOKINGS] PERMISSION/RLS POLICY ERROR!');
+        print('🚨 DEBUG: [GET USER BOOKINGS] Check Row Level Security policies');
+      }
+      
       return [];
     }
   }
@@ -4169,25 +4231,88 @@ class SupabaseConfig {
   static Future<Map<String, dynamic>?> createTransportationBooking(
       Map<String, dynamic> bookingData) async {
     try {
+      print('🚀 DEBUG: [CREATE TRANSPORTATION BOOKING] Starting booking creation...');
+      print('📋 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking data received: $bookingData');
+      
       final user = client.auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      print('👤 DEBUG: [CREATE TRANSPORTATION BOOKING] Current user: ${user?.id}');
+      print('👤 DEBUG: [CREATE TRANSPORTATION BOOKING] User email: ${user?.email}');
+      
+      if (user == null) {
+        print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] User not authenticated');
+        throw Exception('User not authenticated');
+      }
 
+      // Ensure user_id is set
       bookingData['user_id'] = user.id;
+      print('✅ DEBUG: [CREATE TRANSPORTATION BOOKING] User ID set: ${bookingData['user_id']}');
+      
+      // Log all booking data fields
+      print('📝 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking details:');
+      print('   - user_id: ${bookingData['user_id']}');
+      print('   - vehicle_type_id: ${bookingData['vehicle_type_id']}');
+      print('   - pickup_location: ${bookingData['pickup_location']}');
+      print('   - dropoff_location: ${bookingData['dropoff_location']}');
+      print('   - pickup_lat: ${bookingData['pickup_lat']}');
+      print('   - pickup_lng: ${bookingData['pickup_lng']}');
+      print('   - dropoff_lat: ${bookingData['dropoff_lat']}');
+      print('   - dropoff_lng: ${bookingData['dropoff_lng']}');
+      print('   - passenger_count: ${bookingData['passenger_count']}');
+      print('   - booking_date: ${bookingData['booking_date']}');
+      print('   - booking_time: ${bookingData['booking_time']}');
+      print('   - is_immediate: ${bookingData['is_immediate']}');
+      print('   - status: ${bookingData['status']}');
+      print('   - payment_status: ${bookingData['payment_status']}');
+      print('   - estimated_price: ${bookingData['estimated_price']}');
+      print('   - final_price: ${bookingData['final_price']}');
+      print('   - special_requests: ${bookingData['special_requests']}');
 
+      print('💾 DEBUG: [CREATE TRANSPORTATION BOOKING] Inserting into database...');
       final response = await client
           .from('transportation_bookings')
           .insert(bookingData)
           .select()
           .single();
 
+      print('✅ DEBUG: [CREATE TRANSPORTATION BOOKING] Booking created successfully!');
+      print('🆔 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking ID: ${response['id']}');
+      print('📊 DEBUG: [CREATE TRANSPORTATION BOOKING] Full response: $response');
+
       // If this is an immediate booking, notify runners with matching vehicle types
       if (bookingData['is_immediate'] == true) {
-        await _notifyRunnersOfNewTransportationBooking(response);
+        print('🔔 DEBUG: [CREATE TRANSPORTATION BOOKING] This is an immediate booking - notifying runners...');
+        try {
+          await _notifyRunnersOfNewTransportationBooking(response);
+          print('✅ DEBUG: [CREATE TRANSPORTATION BOOKING] Runners notified successfully');
+        } catch (notifyError) {
+          print('⚠️ DEBUG: [CREATE TRANSPORTATION BOOKING] Error notifying runners: $notifyError');
+          // Don't fail the booking if notification fails
+        }
+      } else {
+        print('📅 DEBUG: [CREATE TRANSPORTATION BOOKING] This is a scheduled booking - no immediate notification needed');
       }
 
       return response;
-    } catch (e) {
-      print('Error creating transportation booking: $e');
+    } catch (e, stackTrace) {
+      print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error creating transportation booking');
+      print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error type: ${e.runtimeType}');
+      print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error message: $e');
+      print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Stack trace: $stackTrace');
+      
+      // Check for specific error types
+      if (e.toString().contains('constraint')) {
+        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] CONSTRAINT VIOLATION DETECTED!');
+        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] This might be a database constraint issue');
+      }
+      if (e.toString().contains('null')) {
+        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] NULL VALUE ERROR DETECTED!');
+        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] A required field might be null');
+      }
+      if (e.toString().contains('foreign key')) {
+        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] FOREIGN KEY ERROR DETECTED!');
+        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] A referenced ID might not exist');
+      }
+      
       return null;
     }
   }

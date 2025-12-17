@@ -23,25 +23,40 @@ If you're seeing "confirmation email sent successfully" but not receiving emails
 Find the "Confirm Signup" template and ensure it contains the correct redirect URL.
 
 #### Required Configuration:
+
+**For Mobile Apps:**
 ```
 Redirect URL: io.supabase.lottorunners://confirm-email
 ```
 
+**For Web Apps:**
+```
+Redirect URL: https://app.lottoerunners.com/confirm-email
+```
+
 #### Template Should Look Like:
+
+**Important**: Supabase email templates support dynamic redirect URLs. The app code automatically sends the correct redirect URL based on the platform (web or mobile). However, you should configure the email template to handle both cases.
+
+**Recommended Template:**
 ```html
 <h2>Confirm Your Signup</h2>
 
 <p>Follow this link to confirm your user:</p>
 
 <p>
-  <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to=io.supabase.lottorunners://confirm-email">
+  <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}">
     Confirm Your Signup
   </a>
 </p>
 
 <p>Or copy and paste this URL into your browser:</p>
-<p>{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to=io.supabase.lottorunners://confirm-email</p>
+<p>{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}</p>
 ```
+
+**Note**: The `{{ .RedirectTo }}` variable will automatically use the redirect URL sent by your app code, which will be:
+- `https://app.lottoerunners.com/confirm-email` for web users
+- `io.supabase.lottorunners://confirm-email` for mobile users
 
 ### 3. Configure URL Configuration
 
@@ -49,11 +64,12 @@ Go to **Authentication** → **URL Configuration**
 
 Set **Redirect URLs** to include:
 ```
-io.supabase.lottorunners://**
-http://localhost:3000/** (for web testing)
+io.supabase.lottorunners://** (for mobile apps)
+https://app.lottoerunners.com/** (for web app)
+http://localhost:3000/** (for local development/testing)
 ```
 
-This allows Supabase to recognize your custom URL scheme.
+This allows Supabase to recognize both your custom URL scheme (mobile) and your web domain.
 
 ### 4. Check SMTP Settings
 
@@ -158,9 +174,13 @@ Sender Name: Lotto Runners
 5. Paste into a text editor
 6. **Verify** the URL contains: `redirect_to=io.supabase.lottorunners://confirm-email`
 
-Example correct URL:
+Example correct URLs:
 ```
+# For mobile users:
 https://irfbqpruvkkbylwwikwx.supabase.co/auth/v1/verify?token=abc123...&type=signup&redirect_to=io.supabase.lottorunners://confirm-email
+
+# For web users:
+https://irfbqpruvkkbylwwikwx.supabase.co/auth/v1/verify?token=abc123...&type=signup&redirect_to=https://app.lottoerunners.com/confirm-email
 ```
 
 ### Test 2: Test Deep Link Handling
@@ -189,7 +209,7 @@ Available variables in Supabase email templates:
 | `{{ .Token }}` | Magic link token | abc123... |
 | `{{ .TokenHash }}` | Hashed token for verification | def456... |
 | `{{ .SiteURL }}` | Your Supabase project URL | https://[project].supabase.co |
-| `{{ .RedirectTo }}` | Redirect URL | io.supabase.lottorunners://confirm-email |
+| `{{ .RedirectTo }}` | Redirect URL (automatically set by app) | `https://app.lottoerunners.com/confirm-email` (web) or `io.supabase.lottorunners://confirm-email` (mobile) |
 
 ## Email Template Best Practices
 
@@ -237,7 +257,7 @@ Available variables in Supabase email templates:
     </p>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to=io.supabase.lottorunners://confirm-email" 
+      <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}" 
          style="background-color: #2196F3; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
         Confirm Your Signup
       </a>
@@ -248,7 +268,7 @@ Available variables in Supabase email templates:
     </p>
     
     <p style="color: #2196F3; word-break: break-all; font-size: 12px;">
-      {{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to=io.supabase.lottorunners://confirm-email
+      {{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}
     </p>
     
     <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -313,7 +333,7 @@ The following code changes have been made to fix the email confirmation issue:
 4. **Updated `createUser` method** - Now includes `emailRedirectTo` parameter
 
 All methods now use platform-specific redirect URLs:
-- **Web**: `http://localhost:3000/confirm-email`
+- **Web**: `https://app.lottoerunners.com/confirm-email`
 - **Mobile**: `io.supabase.lottorunners://confirm-email`
 
 ## Next Steps

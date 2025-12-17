@@ -16,25 +16,40 @@ To ensure password reset works on mobile devices, you **MUST** configure the Sup
 Find the "Reset Password" template and ensure it contains the correct redirect URL.
 
 #### Required Configuration:
+
+**For Mobile Apps:**
 ```
 Redirect URL: io.supabase.lottorunners://reset-password
 ```
 
+**For Web Apps:**
+```
+Redirect URL: https://app.lottoerunners.com/password-reset
+```
+
 #### Template Should Look Like:
+
+**Important**: Supabase email templates support dynamic redirect URLs. The app code automatically sends the correct redirect URL based on the platform (web or mobile). However, you should configure the email template to handle both cases.
+
+**Recommended Template:**
 ```html
 <h2>Reset Password</h2>
 
 <p>Follow this link to reset the password for your account:</p>
 
 <p>
-  <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=recovery&redirect_to=io.supabase.lottorunners://reset-password">
+  <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=recovery&redirect_to={{ .RedirectTo }}">
     Reset Password
   </a>
 </p>
 
 <p>Or copy and paste this URL into your browser:</p>
-<p>{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=recovery&redirect_to=io.supabase.lottorunners://reset-password</p>
+<p>{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=recovery&redirect_to={{ .RedirectTo }}</p>
 ```
+
+**Note**: The `{{ .RedirectTo }}` variable will automatically use the redirect URL sent by your app code, which will be:
+- `https://app.lottoerunners.com/password-reset` for web users
+- `io.supabase.lottorunners://reset-password` for mobile users
 
 ### 3. Configure URL Configuration (Optional but Recommended)
 
@@ -42,11 +57,12 @@ Go to **Authentication** → **URL Configuration**
 
 Set **Redirect URLs** to include:
 ```
-io.supabase.lottorunners://**
-http://localhost:3000/** (for web testing)
+io.supabase.lottorunners://** (for mobile apps)
+https://app.lottoerunners.com/** (for web app)
+http://localhost:3000/** (for local development/testing)
 ```
 
-This allows Supabase to recognize your custom URL scheme.
+This allows Supabase to recognize both your custom URL scheme (mobile) and your web domain.
 
 ### 4. Test Email Sending
 
@@ -130,9 +146,13 @@ Sender Name: Lotto Runners
 5. Paste into a text editor
 6. **Verify** the URL contains: `redirect_to=io.supabase.lottorunners://reset-password`
 
-Example correct URL:
+Example correct URLs:
 ```
+# For mobile users:
 https://irfbqpruvkkbylwwikwx.supabase.co/auth/v1/verify?token=abc123...&type=recovery&redirect_to=io.supabase.lottorunners://reset-password
+
+# For web users:
+https://irfbqpruvkkbylwwikwx.supabase.co/auth/v1/verify?token=abc123...&type=recovery&redirect_to=https://app.lottoerunners.com/password-reset
 ```
 
 ### Test 2: Test Deep Link Handling
@@ -155,7 +175,7 @@ Available variables in Supabase email templates:
 | `{{ .Token }}` | Magic link token | abc123... |
 | `{{ .TokenHash }}` | Hashed token for verification | def456... |
 | `{{ .SiteURL }}` | Your Supabase project URL | https://[project].supabase.co |
-| `{{ .RedirectTo }}` | Redirect URL | io.supabase.lottorunners://reset-password |
+| `{{ .RedirectTo }}` | Redirect URL (automatically set by app) | `https://app.lottoerunners.com/password-reset` (web) or `io.supabase.lottorunners://reset-password` (mobile) |
 
 ## Email Template Best Practices
 
@@ -207,7 +227,7 @@ Available variables in Supabase email templates:
     </p>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=recovery&redirect_to=io.supabase.lottorunners://reset-password" 
+      <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=recovery&redirect_to={{ .RedirectTo }}" 
          style="background-color: #2196F3; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
         Reset Password
       </a>
@@ -218,7 +238,7 @@ Available variables in Supabase email templates:
     </p>
     
     <p style="color: #2196F3; word-break: break-all; font-size: 12px;">
-      {{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=recovery&redirect_to=io.supabase.lottorunners://reset-password
+      {{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=recovery&redirect_to={{ .RedirectTo }}
     </p>
     
     <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">

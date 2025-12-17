@@ -6,6 +6,7 @@ import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/widgets/document_upload_widget.dart';
 import 'package:lotto_runners/pages/terms_conditions_runner_page.dart';
 import 'package:lotto_runners/pages/terms_conditions_individual_page.dart';
+import 'package:lotto_runners/pages/feedback_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -945,6 +946,21 @@ class _ProfilePageState extends State<ProfilePage> {
           trailing: Icon(Icons.chevron_right,
               color: LottoRunnersColors.primaryYellow),
           onTap: () => _showHelpPage(),
+        ),
+        ListTile(
+          leading: Icon(Icons.feedback_outlined,
+              color: LottoRunnersColors.primaryYellow),
+          title: const Text('Feedback'),
+          trailing: Icon(Icons.chevron_right,
+              color: LottoRunnersColors.primaryYellow),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const FeedbackPage(),
+              ),
+            );
+          },
         ),
         ListTile(
           leading: Icon(Icons.privacy_tip_outlined,

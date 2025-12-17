@@ -49,38 +49,69 @@ class _MyTransportationRequestsPageState
   }
 
   Future<void> _loadMyBookings({bool forceRefresh = false}) async {
+    print('🚀 DEBUG: [MY TRANSPORTATION REQUESTS] _loadMyBookings called');
+    print('🔄 DEBUG: [MY TRANSPORTATION REQUESTS] Force refresh: $forceRefresh');
+    
     // Aggressive cache: don't reload if data is less than 2 minutes old
     if (!forceRefresh &&
         _lastLoadTime != null &&
         DateTime.now().difference(_lastLoadTime!).inMinutes < 2) {
+      print('⏭️ DEBUG: [MY TRANSPORTATION REQUESTS] Skipping reload - data is fresh (${DateTime.now().difference(_lastLoadTime!).inMinutes} minutes old)');
       return;
     }
 
     try {
       // Only show loading if we don't have cached data
       if (_bookings.isEmpty) {
+        print('⏳ DEBUG: [MY TRANSPORTATION REQUESTS] Showing loading indicator');
         setState(() => _isLoading = true);
       }
+      
       final userId = SupabaseConfig.currentUser?.id;
+      print('👤 DEBUG: [MY TRANSPORTATION REQUESTS] Current user ID: $userId');
+      
       if (userId != null) {
+        print('📡 DEBUG: [MY TRANSPORTATION REQUESTS] Calling getUserBookings...');
         // Driver profiles are now fetched in the getUserBookings method
         final bookings = await SupabaseConfig.getUserBookings(userId);
 
-        print('Loaded ${bookings.length} transportation bookings');
-        for (var booking in bookings) {
-          print(
-              'Booking: ${booking['id']}, Type: ${booking['booking_type']}, Status: ${booking['status']}, Vehicle: ${booking['vehicle_name']}');
+        print('✅ DEBUG: [MY TRANSPORTATION REQUESTS] Received ${bookings.length} bookings from getUserBookings');
+        
+        // Log detailed information about each booking
+        for (var i = 0; i < bookings.length; i++) {
+          final booking = bookings[i];
+          print('📋 DEBUG: [MY TRANSPORTATION REQUESTS] Booking #${i + 1}:');
+          print('   - ID: ${booking['id']}');
+          print('   - Type: ${booking['booking_type']}');
+          print('   - Status: ${booking['status']}');
+          print('   - Title: ${booking['title']}');
+          print('   - Pickup: ${booking['pickup_location']}');
+          print('   - Dropoff: ${booking['dropoff_location']}');
+          print('   - Vehicle type: ${booking['vehicle_type']?['name'] ?? booking['vehicle_name'] ?? 'N/A'}');
+          print('   - Service: ${booking['service']?['name'] ?? 'N/A'}');
+          print('   - Driver: ${booking['driver']?['full_name'] ?? 'No driver'}');
+          print('   - Created: ${booking['created_at']}');
         }
 
         if (mounted) {
+          print('✅ DEBUG: [MY TRANSPORTATION REQUESTS] Updating state with ${bookings.length} bookings');
           setState(() {
             _bookings = bookings;
             _isLoading = false;
             _lastLoadTime = DateTime.now();
           });
+          print('✅ DEBUG: [MY TRANSPORTATION REQUESTS] State updated successfully');
+        } else {
+          print('⚠️ DEBUG: [MY TRANSPORTATION REQUESTS] Widget not mounted - skipping state update');
         }
+      } else {
+        print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] No user ID - cannot load bookings');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error loading bookings');
+      print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error type: ${e.runtimeType}');
+      print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error message: $e');
+      print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Stack trace: $stackTrace');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
