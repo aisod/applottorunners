@@ -169,16 +169,62 @@ class SupabaseConfig {
 
       print('✅ Password reset email sent successfully');
     } on AuthApiException catch (e) {
-      print('❌ Password reset error: $e');
-      
+      print('❌ Password reset AuthApiException: $e');
+
       // Check for specific error codes
-      if (e.code == 'email_address_invalid' || e.message.toLowerCase().contains('invalid')) {
+      if (e.code == 'email_address_invalid' ||
+          e.message.toLowerCase().contains('invalid')) {
         throw Exception('INVALID_EMAIL');
-      } else if (e.statusCode == 429) {
+      } else if (e.statusCode == 429 ||
+          e.message.toLowerCase().contains('rate limit')) {
         throw Exception('RATE_LIMIT');
+      } else if (e.message
+              .toLowerCase()
+              .contains('error sending confirmation email') ||
+          e.message.toLowerCase().contains('unexpected_failure')) {
+        // Mirror the detailed messaging we use elsewhere
+        throw Exception(
+            'EMAIL_SEND_FAILED: Unable to send password reset email. This is usually due to:\n'
+            '1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n'
+            '2. SMTP authentication failed (wrong credentials)\n'
+            '3. Email rate limits exceeded\n'
+            '4. Invalid email template configuration\n\n'
+            'Please check your Supabase SMTP settings or try again later.');
       } else {
         throw Exception('AUTH_ERROR: ${e.message}');
       }
+    } on AuthRetryableFetchException catch (e) {
+      print('❌ Password reset AuthRetryableFetchException: $e');
+      print('❌ Error message: ${e.message}');
+      print('❌ Status code: ${e.statusCode}');
+
+      final lowerMessage = e.message.toLowerCase();
+
+      // Check for email sending failures first (500 with "Error sending recovery email")
+      if (lowerMessage.contains('error sending recovery email') ||
+          (lowerMessage.contains('error sending') && 
+           (lowerMessage.contains('unexpected_failure') || e.statusCode == 500))) {
+        throw Exception(
+            'EMAIL_SEND_FAILED: Unable to send password reset email. This is usually due to:\n'
+            '1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n'
+            '2. SMTP authentication failed (wrong credentials)\n'
+            '3. Email rate limits exceeded\n'
+            '4. Invalid email template configuration\n\n'
+            'Please check your Supabase SMTP settings or try again later.');
+      }
+      
+      // Check for network timeouts (504)
+      if (lowerMessage.contains('upstream request timeout') ||
+          lowerMessage.contains('504') ||
+          e.statusCode == 504) {
+        throw Exception(
+            'NETWORK_ERROR: The password reset service timed out while contacting the authentication server.\n'
+            'This is usually temporary and caused by network issues or email provider timeouts.\n'
+            'Please wait a minute and try again. If this keeps happening, contact support so we can check Supabase/SMTP status.');
+      }
+
+      // Generic network error for other cases
+      throw Exception('NETWORK_ERROR: ${e.message}');
     } catch (e) {
       print('❌ Password reset error: $e');
       throw Exception('Failed to send password reset email: $e');

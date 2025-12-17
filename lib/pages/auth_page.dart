@@ -279,6 +279,16 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
           errorMessage = 'The email address is invalid. Please enter a valid email address.';
         } else if (e.toString().contains('RATE_LIMIT')) {
           errorMessage = 'Too many attempts. Please wait a few minutes and try again.';
+        } else if (e.toString().contains('EMAIL_SEND_FAILED')) {
+          // Extract the detailed error message
+          final match = RegExp(r'EMAIL_SEND_FAILED: (.+)').firstMatch(e.toString());
+          errorMessage = match?.group(1) ?? 
+              'Unable to send password reset email. Please check your Supabase SMTP settings or try again later.';
+        } else if (e.toString().contains('NETWORK_ERROR')) {
+          // Extract the network error message
+          final match = RegExp(r'NETWORK_ERROR: (.+)').firstMatch(e.toString());
+          errorMessage = match?.group(1) ?? 
+              'Network error occurred. Please check your connection and try again.';
         } else if (e.toString().contains('AUTH_ERROR')) {
           // Extract the actual error message
           final match = RegExp(r'AUTH_ERROR: (.+)').firstMatch(e.toString());
