@@ -200,10 +200,15 @@ class SupabaseConfig {
 
       final lowerMessage = e.message.toLowerCase();
 
-      // Check for email sending failures first (500 with "Error sending recovery email")
-      if (lowerMessage.contains('error sending recovery email') ||
-          (lowerMessage.contains('error sending') && 
-           (lowerMessage.contains('unexpected_failure') || e.statusCode == 500))) {
+      // Check for email sending failures (500 status with "Error sending recovery email" or "unexpected_failure")
+      // The error message is often JSON: {"code":"unexpected_failure","message":"Error sending recovery email"}
+      final isEmailSendFailure = e.statusCode == 500 && 
+          (lowerMessage.contains('error sending recovery email') ||
+           lowerMessage.contains('error sending') ||
+           lowerMessage.contains('unexpected_failure'));
+      
+      if (isEmailSendFailure) {
+        print('📧 Detected email sending failure - providing user guidance');
         throw Exception(
             'EMAIL_SEND_FAILED: Unable to send password reset email. This is usually due to:\n'
             '1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n'
