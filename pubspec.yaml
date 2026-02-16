@@ -31,6 +31,7 @@ dependencies:
   printing: ^5.13.2
   share_plus: ^10.1.2
   webview_flutter: ^4.4.2
+  webview_flutter_web: ^0.2.3
   webview_windows: ^0.4.0
 
 dev_dependencies:

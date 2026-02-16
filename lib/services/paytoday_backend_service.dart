@@ -23,7 +23,17 @@ class PayTodayBackendService {
         throw Exception('Payment amount must be greater than 0');
       }
 
-      // Prepare request data
+      // Get current user details
+      final user = SupabaseConfig.currentUser;
+      final userEmail = user?.email;
+      
+      // Get the active session token or use the anon key
+      final session = SupabaseConfig.client.auth.currentSession;
+      final token = session?.accessToken ?? SupabaseConfig.supabaseAnonKey;
+      
+      PayTodayConfig.log('Using token (first 10 chars): ${token.substring(0, token.length > 10 ? 10 : token.length)}...');
+
+      // Prepare request data with new fields for SDK
       final requestData = {
         'errand_id': errandId,
         'amount': amount,
@@ -31,20 +41,35 @@ class PayTodayBackendService {
         'payment_type': paymentType,
         'customer_id': customerId,
         'runner_id': runnerId,
-        'return_url': PayTodayConfig.getSuccessUrl(errandId, paymentType),
-        'cancel_url': PayTodayConfig.getCancelUrl(errandId, paymentType),
-        'failure_url': PayTodayConfig.getFailureUrl(errandId, paymentType),
+        'return_url': PayTodayConfig.getReturnUrl(errandId, paymentType),
+        // New fields for the refactored Edge Function
+        'user_email': userEmail,
+        'user_phone_number': user?.phone ?? user?.userMetadata?['phone'] ?? '0000000000',
+        // Prioritize explicit first/last name fields from metadata, fallback to splitting full_name
+        'user_first_name': user?.userMetadata?['first_name'] ?? user?.userMetadata?['full_name']?.toString().split(' ').first ?? 'Customer',
+        'user_last_name': user?.userMetadata?['last_name'] ?? user?.userMetadata?['family_name'] ?? 
+            (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().split(' ').length > 1 
+                ? user.userMetadata!['full_name'].toString().split(' ').skip(1).join(' ') 
+                : ''),
       };
 
       PayTodayConfig.log('Request data: $requestData');
 
-      // Call Supabase Edge Function
-      final response = await SupabaseConfig.client.functions
-          .invoke(PayTodayConfig.createIntentFunction, body: requestData);
+      // Call Supabase Edge Function with explicit Authorization header
+      final response = await SupabaseConfig.client.functions.invoke(
+        PayTodayConfig.createIntentFunction,
+        body: requestData,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'apikey': SupabaseConfig.supabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
+      );
 
       PayTodayConfig.log('Response status: ${response.status}');
 
       if (response.status != 200) {
+        PayTodayConfig.logError('Function Error Body: ${response.data}');
         throw Exception(
             'Failed to create payment intent: ${response.status} - ${response.data}');
       }
@@ -154,8 +179,19 @@ class PayTodayBackendService {
         'errand_id': errandId,
       };
 
-      final response = await SupabaseConfig.client.functions
-          .invoke(PayTodayConfig.verifyPaymentFunction, body: requestData);
+      // Get the active session token or use the anon key
+      final session = SupabaseConfig.client.auth.currentSession;
+      final token = session?.accessToken ?? SupabaseConfig.supabaseAnonKey;
+
+      final response = await SupabaseConfig.client.functions.invoke(
+        PayTodayConfig.verifyPaymentFunction,
+        body: requestData,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'apikey': SupabaseConfig.supabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
+      );
 
       if (response.status != 200) {
         throw Exception(
@@ -190,8 +226,19 @@ class PayTodayBackendService {
         'additional_data': additionalData,
       };
 
-      await SupabaseConfig.client.functions
-          .invoke(PayTodayConfig.reportFailureFunction, body: requestData);
+      // Get the active session token or use the anon key
+      final session = SupabaseConfig.client.auth.currentSession;
+      final token = session?.accessToken ?? SupabaseConfig.supabaseAnonKey;
+
+      await SupabaseConfig.client.functions.invoke(
+        PayTodayConfig.reportFailureFunction,
+        body: requestData,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'apikey': SupabaseConfig.supabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
+      );
 
       PayTodayConfig.log('Failure reported successfully');
     } catch (e) {

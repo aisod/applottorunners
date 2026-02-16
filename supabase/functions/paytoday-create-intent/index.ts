@@ -1,119 +1,285 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import * as crypto from "https://deno.land/std@0.177.0/node/crypto.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
+const PAYTODAY_SDK_URL =
+  'https://nedbankstorage.blob.core.windows.net/nedbankclouddatadisk/staticazure/web/sdk/paytoday-sdk.js';
+
+// CORS headers helper
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
+  console.log('PayToday Function Invoked:', req.method, req.url);
+
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
   }
 
   try {
-    let amount, currency, errand_id, payment_type, return_url;
 
+    // Only allow POST and GET requests
+    if (req.method !== 'POST' && req.method !== 'GET') {
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }),
+        {
+          status: 405,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    // Get PayToday credentials from environment variables
+    const PAYTODAY_SHOP_KEY = Deno.env.get('PAYTODAY_SHOP_KEY');
+    const PAYTODAY_SHOP_HANDLE = Deno.env.get('PAYTODAY_SHOP_HANDLE');
+    const PAYTODAY_PRIVATE_KEY = Deno.env.get('PAYTODAY_PRIVATE_KEY');
+
+    // Validate credentials
+    if (!PAYTODAY_SHOP_KEY || !PAYTODAY_SHOP_HANDLE) {
+      console.error('PayToday credentials not configured properly');
+    }
+
+    // Parse request data from JSON body (POST) or query parameters (GET)
+    let requestData;
     if (req.method === 'POST') {
-      const body = await req.json();
-      amount = body.amount;
-      currency = body.currency;
-      errand_id = body.errand_id;
-      payment_type = body.payment_type;
-      return_url = body.return_url;
-    } else if (req.method === 'GET') {
+      try {
+        requestData = await req.json();
+      } catch (e) {
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid JSON in request body',
+            message: e.message || e.toString(),
+          }),
+          {
+            status: 400,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
+    } else {
+      // GET request - parse from query parameters
       const url = new URL(req.url);
-      amount = url.searchParams.get('amount');
-      currency = url.searchParams.get('currency');
-      errand_id = url.searchParams.get('errand_id');
-      payment_type = url.searchParams.get('payment_type');
-      return_url = url.searchParams.get('return_url');
+      requestData = {
+        amount: parseFloat(url.searchParams.get('amount') || '0'),
+        errand_id: url.searchParams.get('errand_id') || '',
+        payment_type: url.searchParams.get('payment_type') || '',
+        user_email: url.searchParams.get('user_email') || '',
+        user_phone_number: url.searchParams.get('user_phone_number') || '',
+        user_first_name: url.searchParams.get('user_first_name') || 'Customer',
+        user_last_name: url.searchParams.get('user_last_name') || 'Name',
+        return_url: url.searchParams.get('return_url') || '',
+      };
     }
 
-    // Validate request
+    /*
+      Mapping fields from our app to the PayToday SDK expectation:
+      - errand_id -> used for invoice_number
+      - payment_type -> used for invoice_number suffix
+      - amount -> amount
+      - user_email -> user_email
+    */
+
+    const {
+      amount,
+      errand_id,
+      payment_type,
+      user_email,
+      user_phone_number,
+      user_first_name, // Optional, can be passed from app
+      user_last_name, // Optional, can be passed from app
+      return_url,
+    } = requestData;
+
+    // Validate required fields
     if (!amount || !errand_id || !payment_type) {
-      throw new Error('Missing required fields');
+      return new Response(
+        JSON.stringify({
+          error: 'Missing required fields: amount, errand_id, payment_type',
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
     }
 
-    // Retrieve PayToday credentials from secrets
-    const shopKey = Deno.env.get('PAYTODAY_SHOP_KEY')
-    const shopHandle = Deno.env.get('PAYTODAY_SHOP_HANDLE')
+    // Construct invoice number (unique ref)
+    const invoice_number = `${errand_id}_${payment_type}_${Date.now()}`;
 
-    if (!shopKey || !shopHandle) {
-      throw new Error('PayToday credentials not configured')
+    // Validate amount is reasonable (not accidentally in cents)
+    if (amount > 1000000) {
+      console.warn(`⚠️ Amount seems unusually large: ${amount}. PayToday expects dollars (NAD), not cents`);
     }
 
-    // Construct HTML content
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>PayToday Payment</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
-          .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
-          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-          .message { text-align: center; margin-top: 20px; color: #666; }
-        </style>
-      </head>
-      <body>
-        <div>
-          <div class="loader"></div>
-          <div class="message">Initializing secure payment...</div>
-        </div>
-        
-        <form id="paytoday-form" action="https://paytoday.com.na/pay" method="POST" style="display:none;">
-          <input type="hidden" name="shop_key" value="${shopKey}">
-          <input type="hidden" name="shop_handle" value="${shopHandle}">
-          <input type="hidden" name="amount" value="${amount}">
-          <input type="hidden" name="currency" value="${currency || 'NAD'}">
-          <input type="hidden" name="ref" value="${errand_id}_${payment_type}_${Date.now()}">
-          <input type="hidden" name="return_url" value="${return_url}">
-          <input type="hidden" name="cancel_url" value="${return_url.replace('success', 'cancel')}">
-          <input type="hidden" name="notify_url" value="${Deno.env.get('SUPABASE_URL')}/functions/v1/paytoday-webhook">
-        </form>
+    // Defaults
+    const ptFirstName = user_first_name || 'Customer';
+    const ptLastName = user_last_name || 'Name';
+    const ptEmail = user_email || 'customer@example.com';
 
-        <script>
-          window.onload = function() {
-            document.getElementById('paytoday-form').submit();
-          };
-        </script>
-      </body>
-      </html>
-    `;
+    console.log('📤 Creating PayToday payment intent (SDK Style)...');
+    console.log(`💰 Amount: N$${amount}`);
+    console.log(`📝 Invoice: ${invoice_number}`);
 
+    // Generate HTML content with PayToday SDK (Reference Style)
+    // Using the spinner and simple layout from the working reference
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayToday Payment</title>
+    <script src="${PAYTODAY_SDK_URL}"></script>
+</head>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; margin: 0;">
+    <div id="status" style="text-align: center;">
+        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto 20px;"></div>
+        <p>Initializing secure payment...</p>
+        <div id="error-msg" style="color: red; margin-top: 10px; display: none;"></div>
+    </div>
+    <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+    <script>
+        window.onload = function() {
+            function showError(msg) {
+                const el = document.getElementById('error-msg');
+                if (el) {
+                    el.innerText = msg;
+                    el.style.display = 'block';
+                }
+                const status = document.getElementById('status');
+                if (status) {
+                     // Keep spinner or hide it? Reference keeps it but changes text.
+                     // We will append error.
+                }
+            }
+
+            if (typeof PayToday === 'undefined') {
+                showError('Error: PayToday SDK failed to load.');
+                return;
+            }
+
+            // PayToday credentials from Env
+            const shopKey = "${PAYTODAY_SHOP_KEY || ''}";
+            const shopHandle = "${PAYTODAY_SHOP_HANDLE || ''}";
+            const privateKey = "${PAYTODAY_PRIVATE_KEY || ''}";
+
+            const paytoday = new PayToday({
+                shopKey: shopKey,
+                shopHandle: shopHandle,
+                privateKey: privateKey,
+                environment: 'production',
+            });
+
+            console.log('PayToday: Initializing...');
+            
+            paytoday.initialize().then(success => {
+                if (success) {
+                    console.log('PayToday: Initialized. Creating intent...');
+                    
+                    const phoneNumber = "${user_phone_number || '0000000000'}".trim() || '0000000000';
+                    
+                    paytoday.createPaymentIntent({
+                        amount: ${amount}, // Keep as dollars/NAD per previous instructions
+                        invoice_number: "${invoice_number}",
+                        user_first_name: "${ptFirstName}",
+                        user_last_name: "${ptLastName}",
+                        user_email: "${ptEmail}",
+                        user_phone_number: phoneNumber,
+                        return_url: "${return_url || ''}",
+                    }).then(intent => {
+                        console.log('PayToday: Intent created', intent);
+                        const url = intent?.data?.payment_url || intent?.data?.checkout_url || intent?.payment_url;
+                        if (url) {
+                            console.log('PayToday: Redirecting to', url);
+                            window.location.href = url;
+                        } else {
+                            showError('Error: Could not get payment URL from PayToday response.');
+                            console.error('PayToday Response:', intent);
+                        }
+                    }).catch(e => {
+                        console.error('PayToday Intent Error:', e);
+                        showError('Error: ' + (e.message || e));
+                    });
+                } else {
+                    showError('Error: PayToday initialization failed.');
+                }
+            }).catch(e => {
+                console.error('PayToday Init Error:', e);
+                showError('Error: ' + (e.message || e));
+            });
+        };
+    </script>
+</body>
+</html>`;
+
+    // For GET requests (Web browsers), return HTML directly
+    // For POST requests (mobile apps), return data URI in JSON
     if (req.method === 'GET') {
       return new Response(htmlContent, {
-        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
         status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/html; charset=utf-8',
+        },
       });
     }
 
-    // Encode HTML to data URI for WebView (backwards compatibility for mobile/windows)
-    const dataUri = `data:text/html;base64,${btoa(htmlContent)}`;
+    // For POST requests, encode to data URI and return in JSON
+    const uint8Array = new TextEncoder().encode(htmlContent);
+    let binaryString = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, Math.min(i + chunkSize, uint8Array.length));
+      for (let j = 0; j < chunk.length; j++) {
+        binaryString += String.fromCharCode(chunk[j]);
+      }
+    }
+    const base64Content = btoa(binaryString);
+    const dataUri = `data:text/html;charset=utf-8;base64,${base64Content}`;
     const intentId = crypto.randomUUID();
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         data_uri: dataUri,
         intent_id: intentId,
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
-    )
+    );
 
   } catch (error) {
+    console.error('Error in function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: 'Internal server error',
+        message: error.message || error.toString(),
+      }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
-    )
+    );
   }
-})
+});

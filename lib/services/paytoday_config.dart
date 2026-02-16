@@ -24,16 +24,12 @@ class PayTodayConfig {
   static const String paymentTypeAdminPayout = 'admin_payout';
   
   /// Return URLs for payment flow
-  static String getSuccessUrl(String errandId, String paymentType) {
-    return 'lottorunners://payment/success?errand_id=$errandId&payment_type=$paymentType';
-  }
-  
-  static String getFailureUrl(String errandId, String paymentType) {
-    return 'lottorunners://payment/failure?errand_id=$errandId&payment_type=$paymentType';
-  }
-  
-  static String getCancelUrl(String errandId, String paymentType) {
-    return 'lottorunners://payment/cancel?errand_id=$errandId&payment_type=$paymentType';
+  /// Return URLs for payment flow
+  static String getReturnUrl(String errandId, String paymentType) {
+    if (kIsWeb) {
+      return 'https://app.lottoerunners.com/payment-return';
+    }
+    return 'lottorunners://payment-return';
   }
   
   /// Payment status codes

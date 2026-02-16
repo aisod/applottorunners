@@ -97,10 +97,44 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
       }
 
       if (kIsWeb) {
-        await _initializeWebPayment(dataUri);
+        // For Web, don't use data URI (browsers block it)
+        // Instead, launch the Edge Function URL directly with query params
+        // The Edge Function will return HTML directly for GET requests
+        final user = SupabaseConfig.client.auth.currentUser;
+        
+        // Get phone number with proper fallback (handle both null and empty string)
+        String phoneNumber = user?.phone ?? user?.userMetadata?['phone']?.toString() ?? '';
+        if (phoneNumber.trim().isEmpty) {
+          phoneNumber = '0000000000';
+        }
+        
+        final baseUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/${PayTodayConfig.createIntentFunction}';
+        final queryParams = {
+          'errand_id': widget.errandId,
+          'amount': widget.amount.toString(),
+          'payment_type': widget.paymentType,
+          'user_email': user?.email ?? 'customer@example.com',
+          'user_phone_number': phoneNumber,
+          'user_first_name': user?.userMetadata?['first_name'] ?? user?.userMetadata?['full_name']?.toString().split(' ').first ?? 'Customer',
+          'user_last_name': user?.userMetadata?['last_name'] ?? user?.userMetadata?['family_name'] ?? 
+              (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().split(' ').length > 1 
+                  ? user.userMetadata!['full_name'].toString().split(' ').skip(1).join(' ') 
+                  : 'Name'),
+          'return_url': PayTodayConfig.getReturnUrl(widget.errandId, widget.paymentType),
+          'apikey': SupabaseConfig.supabaseAnonKey, // Required for auth on GET requests
+        };
+        final webUrl = Uri.parse(baseUrl).replace(queryParameters: queryParams);
+        
+        setState(() {
+          _paymentDataUri = webUrl.toString();
+          _isLoading = false;
+        });
+        // Try auto-launching
+        _launchWebPaymentFromDataUri(webUrl.toString());
       } else if (_isWindows) {
         await _initializeWindowsWebView(dataUri);
       } else {
+        // Use Mobile WebView controller
         await _initializeMobileWebView(dataUri);
       }
 
@@ -125,43 +159,37 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
     }
   }
 
-  Future<void> _initializeWebPayment(String dataUri) async {
-    // For Web, we store the URI and wait for user to click "Pay Now"
-    // browsers block window.open if not triggered by a user gesture.
-    setState(() {
-      _paymentDataUri = dataUri;
-      _isLoading = false;
-    });
-    PayTodayConfig.log('Web Payment URI ready, waiting for user gesture');
+  Future<void> _launchWebPaymentFromDataUri(String dataUri) async {
+    try {
+      PayTodayConfig.log('Attempting to launch Web payment...');
+      final uri = Uri.parse(dataUri);
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        PayTodayConfig.log('Auto-launch blocked, user must click button');
+      }
+    } catch (e) {
+      PayTodayConfig.logError('Auto-launch failed', e);
+      // User will need to click the button manually
+    }
   }
 
   Future<void> _launchWebPayment() async {
-    // For Web, we use a standard URL that returns the payment form
-    // This avoids "about:blank" issues with long data URIs
-    final baseUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/paytoday-create-intent';
-    
-    final queryParams = {
-      'errand_id': widget.errandId,
-      'amount': widget.amount.toString(),
-      'currency': PayTodayConfig.currency,
-      'payment_type': widget.paymentType,
-      'return_url': PayTodayConfig.getSuccessUrl(widget.errandId, widget.paymentType),
-      'apikey': SupabaseConfig.supabaseAnonKey,
-    };
-
-    final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
+    if (_paymentDataUri == null) return;
     
     try {
-      PayTodayConfig.log('Launching Web payment URL: $uri');
+      PayTodayConfig.log('Launching Web payment from stored data URI');
+      final uri = Uri.parse(_paymentDataUri!);
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched) {
         throw Exception('Could not launch payment URL. Please check your browser popup blocker.');
       }
     } catch (e) {
       PayTodayConfig.logError('Failed to launch web payment', e);
-      setState(() {
-        _errorMessage = 'Failed to launch payment: ${e.toString()}';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to launch payment: ${e.toString()}';
+        });
+      }
     }
   }
 
@@ -203,7 +231,7 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
     
     _windowsController.url.listen((url) {
       PayTodayConfig.log('Windows Navigation: $url');
-      if (url.startsWith('lottorunners://payment/')) {
+      if (url.startsWith('lottorunners://payment-return') || url.contains('payment-return')) {
         _handleReturnUrl(url);
       }
     });
@@ -220,61 +248,67 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
   }
 
   Future<void> _initializeMobileWebView(String dataUri) async {
-      // Initialize WebView controller
-      _mobileController = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(Colors.white)
-        ..setNavigationDelegate(
-          NavigationDelegate(
-            onProgress: (int progress) {
-              setState(() {
-                _loadingProgress = progress / 100;
-              });
-            },
-            onPageStarted: (String url) {
-              PayTodayConfig.log('Page started: $url');
-              setState(() {
-                _isLoading = true;
-              });
-            },
-            onPageFinished: (String url) {
-              PayTodayConfig.log('Page finished: $url');
-              setState(() {
-                _isLoading = false;
-              });
-            },
-            onWebResourceError: (WebResourceError error) {
-              PayTodayConfig.logError('WebView error', error.description);
-              _handleWebViewError(error.description);
-            },
-            onNavigationRequest: (NavigationRequest request) {
-              PayTodayConfig.log('Navigation request: ${request.url}');
-              
-              // Check if this is a return URL
-              if (request.url.startsWith('lottorunners://payment/')) {
-                _handleReturnUrl(request.url);
-                return NavigationDecision.prevent;
-              }
-              
-              return NavigationDecision.navigate;
-            },
-          ),
-        )
-        ..loadRequest(Uri.parse(dataUri));
+    if (kIsWeb) {
+      // On Web, we don't use WebViewController at all - it's handled in _initializePayment
+      // This branch shouldn't actually be reached because _initializePayment handles Web separately
+      return;
+    }
+
+    // Initialize WebView controller for Mobile
+    _mobileController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            if (mounted) setState(() => _loadingProgress = progress / 100);
+          },
+          onPageStarted: (String url) {
+            PayTodayConfig.log('Page started: $url');
+            if (mounted) setState(() => _isLoading = true);
+          },
+          onPageFinished: (String url) {
+            PayTodayConfig.log('Page finished: $url');
+            if (mounted) setState(() => _isLoading = false);
+          },
+          onWebResourceError: (WebResourceError error) {
+            PayTodayConfig.logError('WebView error', error.description);
+            // Don't fail immediately on resource error, might be minor
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            if (request.url.startsWith('lottorunners://payment-return') || request.url.contains('payment-return')) {
+              _handleReturnUrl(request.url);
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(dataUri));
   }
+
+
 
   void _handleReturnUrl(String url) {
     PayTodayConfig.log('Handling return URL: $url');
 
     final uri = Uri.parse(url);
-    final path = uri.path;
+    // Parse query parameters
+    // PayToday often returns ?status=success or ?status=cancelled
+    // Or sometimes ?success=true/false
+    final status = uri.queryParameters['status']?.toLowerCase();
+    final success = uri.queryParameters['success']?.toLowerCase();
+    final transactionId = uri.queryParameters['transaction_id'] ?? uri.queryParameters['id']; 
 
-    if (path.contains('/success')) {
+    PayTodayConfig.log('Return URL params - status: $status, success: $success, txId: $transactionId');
+
+    if (status == 'success' || success == 'true' || status == 'completed') {
       _handlePaymentSuccess(uri);
-    } else if (path.contains('/failure')) {
-      _handlePaymentFailure(uri);
-    } else if (path.contains('/cancel')) {
+    } else if (status == 'cancelled' || status == 'canceled' || success == 'false') {
       _handlePaymentCancel(uri);
+    } else {
+      // Default fallback if logic is unclear but we hit return url
+       _handlePaymentSuccess(uri);
     }
   }
 
@@ -470,7 +504,7 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () {
-            _handlePaymentCancel(Uri.parse('lottorunners://payment/cancel'));
+            _handlePaymentCancel(Uri.parse('lottorunners://payment-return?status=cancelled'));
           },
         ),
       ),
@@ -499,6 +533,9 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
       );
     }
 
+    // Web now uses the standard WebViewWidget (iframe)
+    // if (kIsWeb) { ... } block removed to allow fall-through to WebViewWidget
+
     if (kIsWeb) {
       return Center(
         child: SingleChildScrollView(
@@ -506,57 +543,31 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                _paymentDataUri == null ? Icons.hourglass_empty : Icons.account_balance_wallet,
-                size: 64,
-                color: LottoRunnersColors.primaryBlue,
-              ),
+               if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                ),
+              Icon(Icons.payment, size: 64, color: LottoRunnersColors.primaryBlue),
               const SizedBox(height: 24),
-              Text(
-                _paymentDataUri == null ? 'Preparing Payment...' : 'Ready to Pay',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              const Text('Payment Window Opened', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+               const SizedBox(height: 16),
+              const Text('Please complete payment in the new tab, then click below.', textAlign: TextAlign.center),
+              const SizedBox(height: 32),
+              if (_paymentDataUri != null)
+              ElevatedButton(
+                  onPressed: _launchWebPayment,
+                  child: const Text('Re-open Payment Window'),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'On Web, you must manually initiate the payment to open a secure tab.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: LottoRunnersColors.gray600),
+              OutlinedButton.icon(
+                onPressed: _verifyWebPayment,
+                icon: const Icon(Icons.verified),
+                label: const Text('I HAVE PAID - CHECK STATUS'),
               ),
-              const SizedBox(height: 32),
-              if (_paymentDataUri != null) ...[
-                ElevatedButton.icon(
-                  onPressed: _launchWebPayment,
-                  icon: const Icon(Icons.open_in_new, color: Colors.white),
-                  label: const Text('OPEN SECURE PAYMENT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: LottoRunnersColors.primaryBlue,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    minimumSize: const Size(250, 50),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 24),
-                const Text(
-                  'Once you have finished paying in the other tab:',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: _verifyWebPayment,
-                  icon: const Icon(Icons.verified),
-                  label: const Text('I HAVE PAID - CHECK STATUS'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    minimumSize: const Size(250, 50),
-                  ),
-                ),
-              ],
               const SizedBox(height: 48),
               TextButton(
-                onPressed: () => _handlePaymentCancel(Uri.parse('lottorunners://payment/cancel')),
+                onPressed: () => _handlePaymentCancel(Uri.parse('lottorunners://payment-return?status=cancelled')),
                 child: const Text('Cancel Payment'),
               ),
             ],
