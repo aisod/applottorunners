@@ -1,9 +1,11 @@
 import 'dart:io' show Platform;
+import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_windows/webview_windows.dart' as windows;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:lotto_runners/utils/web_payment_helper.dart';
 import 'package:lotto_runners/services/paytoday_config.dart';
 import 'package:lotto_runners/services/paytoday_backend_service.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
@@ -97,41 +99,22 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
       }
 
       if (kIsWeb) {
-        // For Web, don't use data URI (browsers block it)
-        // Instead, launch the Edge Function URL directly with query params
-        // The Edge Function will return HTML directly for GET requests
-        final user = SupabaseConfig.client.auth.currentUser;
+        // For Web, if "Verify JWT" is ON, we must use the HTML content returned from the POST request
+        // because standard URL navigation/launching cannot send the required Authorization headers.
+        final htmlContent = intentData['html_content'] as String?;
         
-        // Get phone number with proper fallback (handle both null and empty string)
-        String phoneNumber = user?.phone ?? user?.userMetadata?['phone']?.toString() ?? '';
-        if (phoneNumber.trim().isEmpty) {
-          phoneNumber = '0000000000';
+        if (htmlContent != null) {
+          setState(() {
+            _paymentDataUri = htmlContent; // Store the HTML string
+            _isLoading = false;
+          });
+          // On Web, we open a new tab and write the HTML directly
+          _openWebPaymentWindow(htmlContent);
+        } else {
+          throw Exception('No HTML content received for Web payment');
         }
-        
-        final baseUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/${PayTodayConfig.createIntentFunction}';
-        final queryParams = {
-          'errand_id': widget.errandId,
-          'amount': widget.amount.toString(),
-          'payment_type': widget.paymentType,
-          'user_email': user?.email ?? 'customer@example.com',
-          'user_phone_number': phoneNumber,
-          'user_first_name': user?.userMetadata?['first_name'] ?? user?.userMetadata?['full_name']?.toString().split(' ').first ?? 'Customer',
-          'user_last_name': user?.userMetadata?['last_name'] ?? user?.userMetadata?['family_name'] ?? 
-              (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().split(' ').length > 1 
-                  ? user.userMetadata!['full_name'].toString().split(' ').skip(1).join(' ') 
-                  : 'Name'),
-          'return_url': PayTodayConfig.getReturnUrl(widget.errandId, widget.paymentType),
-          'apikey': SupabaseConfig.supabaseAnonKey, // Required for auth on GET requests
-        };
-        final webUrl = Uri.parse(baseUrl).replace(queryParameters: queryParams);
-        
-        setState(() {
-          _paymentDataUri = webUrl.toString();
-          _isLoading = false;
-        });
-        // Try auto-launching
-        _launchWebPaymentFromDataUri(webUrl.toString());
       } else if (_isWindows) {
+
         await _initializeWindowsWebView(dataUri);
       } else {
         // Use Mobile WebView controller
@@ -173,22 +156,51 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
     }
   }
 
-  Future<void> _launchWebPayment() async {
-    if (_paymentDataUri == null) return;
-    
+  Future<void> _openWebPaymentWindow(String htmlContent) async {
     try {
-      PayTodayConfig.log('Launching Web payment from stored data URI');
-      final uri = Uri.parse(_paymentDataUri!);
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!launched) {
-        throw Exception('Could not launch payment URL. Please check your browser popup blocker.');
+      if (kIsWeb) {
+        PayTodayConfig.log('Opening Web payment window via Blob URL...');
+        openWebPayment(htmlContent);
+      } else {
+        PayTodayConfig.log('Opening Web payment via Data URI (Non-Web)...');
+        final uri = Uri.dataFromString(
+          htmlContent,
+          mimeType: 'text/html',
+          encoding: utf8,
+        );
+        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (!launched) throw Exception('Could not launch payment window.');
       }
     } catch (e) {
-      PayTodayConfig.logError('Failed to launch web payment', e);
+      PayTodayConfig.logError('Failed to open payment window', e);
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to launch payment: ${e.toString()}';
         });
+      }
+    }
+  }
+
+  Future<void> _launchWebPayment() async {
+    if (_paymentDataUri == null) return;
+    
+    if (kIsWeb) {
+      await _openWebPaymentWindow(_paymentDataUri!);
+    } else {
+      try {
+        PayTodayConfig.log('Launching Web payment from stored data URI');
+        final uri = Uri.parse(_paymentDataUri!);
+        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (!launched) {
+          throw Exception('Could not launch payment URL. Please check your browser popup blocker.');
+        }
+      } catch (e) {
+        PayTodayConfig.logError('Failed to launch web payment', e);
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Failed to launch payment: ${e.toString()}';
+          });
+        }
       }
     }
   }

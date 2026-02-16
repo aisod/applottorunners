@@ -7,7 +7,7 @@ import 'package:geolocator/geolocator.dart';
 class LocationService {
   // Prefer passing your key at build/run time: --dart-define=GOOGLE_MAPS_API_KEY=YOUR_KEY
   static const String _envApiKey =
-      String.fromEnvironment('AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo');
+      String.fromEnvironment('GOOGLE_MAPS_API_KEY');
 
   // Fallback API keys for each platform (these should match your platform configs)
   static const String _androidApiKey =
@@ -23,8 +23,7 @@ class LocationService {
 
   // Get the resolved API key, preferring environment variable, then platform-specific
   static String get _resolvedApiKey {
-    if (_envApiKey.isNotEmpty &&
-        _envApiKey != 'AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo') {
+    if (_envApiKey.isNotEmpty) {
       return _envApiKey;
     }
 
@@ -362,9 +361,9 @@ class LocationService {
 
     final apiKey = _resolvedApiKey;
 
-    if (apiKey.isEmpty || apiKey == 'AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo') {
+    if (apiKey.isEmpty) {
       print(
-          '⚠️ No valid API key found or using placeholder key, using fallback search');
+          '⚠️ No valid API key found, using fallback search');
       // Fallback to basic search without API key
       final results = await _basicPlaceSearch(query);
       _cacheResults(normalizedQuery, results);

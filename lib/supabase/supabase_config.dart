@@ -562,23 +562,26 @@ class SupabaseConfig {
       print('🔄 Updating errand status to accepted...');
 
       // Update errand status
-      final updateResult = await client.from('errands').update({
-        'runner_id': runnerId,
-        'status': 'accepted',
-        'accepted_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', errandId);
+      // Use select() to ensure the row is returned, confirming update success (and RLS permission)
+      final updateResult = await client
+          .from('errands')
+          .update({
+            'runner_id': runnerId,
+            'status': 'accepted',
+            'accepted_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', errandId)
+          .select()
+          .maybeSingle();
+
+      if (updateResult == null) {
+        throw Exception(
+            'Failed to accept errand: Errand update returned no data. This usually means the errand is no longer available or you do not have permission to update it.');
+      }
 
       print('✅ Errand acceptance update result: $updateResult');
-
-      // Verify the update was successful
-      final verifyResponse = await client
-          .from('errands')
-          .select('status, runner_id, accepted_at')
-          .eq('id', errandId)
-          .single();
-
-      print('🔍 Verification - Updated errand: $verifyResponse');
+      print('🔍 Verification - Updated errand: $updateResult');
 
       // Create chat conversation
       await _createErrandChat(errandId, customerId, runnerId, errandTitle);
@@ -620,6 +623,13 @@ class SupabaseConfig {
 
       print('✅ Chat conversation created for errand: $errandId');
     } catch (e) {
+      // Handle unique constraint violation (duplicate key)
+      // This happens if the chat was already created (e.g. from a previous attempt)
+      if (e is PostgrestException && e.code == '23505') {
+        print('⚠️ Chat conversation already exists (duplicate key error handled).');
+        return;
+      }
+
       print('❌ Error creating chat conversation: $e');
       // Don't throw here as the errand was accepted successfully
     }

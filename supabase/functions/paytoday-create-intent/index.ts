@@ -39,6 +39,56 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // AUTHENTICATION CHECK
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    );
+
+    let user = null;
+    let isAnon = false;
+    const authHeader = req.headers.get('Authorization');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
+
+    // 1. Try standard header auth
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      if (token === SUPABASE_ANON_KEY) {
+        isAnon = true;
+      } else {
+        const { data: { user: u } } = await supabaseClient.auth.getUser(token);
+        if (u) user = u;
+      }
+    }
+
+
+    // 2. If no user from header, check query param (for Web GET requests)
+    if (!user && req.method === 'GET') {
+      const url = new URL(req.url);
+      const authToken = url.searchParams.get('auth_token');
+      if (authToken) {
+        // Create a new client to verify this specific token
+        const authClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        );
+        const { data: { user: u }, error } = await authClient.auth.getUser(authToken);
+        if (u) user = u;
+      }
+    }
+
+    // If still no user and not anon, block access
+    if (!user && !isAnon) {
+      console.error('Unauthorized: No valid user found via Header or Query Param');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', message: 'Valid token or anon key required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+
+
     // Get PayToday credentials from environment variables
     const PAYTODAY_SHOP_KEY = Deno.env.get('PAYTODAY_SHOP_KEY');
     const PAYTODAY_SHOP_HANDLE = Deno.env.get('PAYTODAY_SHOP_HANDLE');
@@ -130,7 +180,7 @@ Deno.serve(async (req: Request) => {
     // Defaults
     const ptFirstName = user_first_name || 'Customer';
     const ptLastName = user_last_name || 'Name';
-    const ptEmail = user_email || 'customer@example.com';
+    const ptEmail = user_email || user?.email || 'customer@example.com';
 
     console.log('📤 Creating PayToday payment intent (SDK Style)...');
     console.log(`💰 Amount: N$${amount}`);
@@ -255,6 +305,7 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         data_uri: dataUri,
+        html_content: htmlContent,
         intent_id: intentId,
       }),
       {
