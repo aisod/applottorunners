@@ -355,7 +355,8 @@ class SupabaseConfig {
           .select('''
         *,
         customer:customer_id(full_name, phone),
-        runner:runner_id(full_name, phone)
+        runner:runner_id(full_name, phone),
+        paytoday_transactions(amount, status, payment_type)
       ''')
           .or('customer_id.eq.$userId,runner_id.eq.$userId')
           .order('created_at', ascending: false);
@@ -759,19 +760,48 @@ class SupabaseConfig {
   }
 
   // Complete an errand (change status from in_progress to completed)
-  static Future<void> completeErrand(String errandId) async {
+  /// Complete an errand with payment requirement
+  /// Returns true if payment is required, false if errand is completed
+  static Future<Map<String, dynamic>> completeErrand(String errandId) async {
     try {
       // Get errand details first
       final errandResponse = await client
           .from('errands')
-          .select('customer_id, runner_id, title')
+          .select('customer_id, runner_id, title, price_amount, status')
           .eq('id', errandId)
           .single();
 
       final customerId = errandResponse['customer_id'];
       final runnerId = errandResponse['runner_id'];
       final errandTitle = errandResponse['title'];
+      final totalPrice = (errandResponse['price_amount'] as num?)?.toDouble() ?? 0.0;
+      final currentStatus = errandResponse['status'];
 
+      // Check if errand is in a valid state for completion
+      if (currentStatus != 'in_progress' && currentStatus != 'accepted') {
+        throw Exception('Errand must be in progress or accepted to be completed');
+      }
+
+      // Check if second payment has been made
+      final secondPaymentExists = await client
+          .from('paytoday_transactions')
+          .select('id, status')
+          .eq('errand_id', errandId)
+          .eq('payment_type', 'second_half')
+          .maybeSingle();
+
+      if (secondPaymentExists == null || secondPaymentExists['status'] != 'completed') {
+        // Payment required
+        return {
+          'payment_required': true,
+          'amount': totalPrice / 2,
+          'customer_id': customerId,
+          'runner_id': runnerId,
+          'errand_title': errandTitle,
+        };
+      }
+
+      // Payment completed - proceed with errand completion
       await client.from('errands').update({
         'status': 'completed',
         'completed_at': DateTime.now().toIso8601String(),
@@ -786,6 +816,11 @@ class SupabaseConfig {
 
       // Notify customer that errand is completed
       await _notifyCustomerErrandCompleted(customerId, runnerId, errandTitle);
+
+      return {
+        'payment_required': false,
+        'completed': true,
+      };
     } catch (e) {
       throw Exception('Failed to complete errand: $e');
     }

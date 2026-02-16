@@ -14,6 +14,9 @@ class ErrandCard extends StatelessWidget {
   final VoidCallback? onCancel;
   final bool showChatButton;
   final VoidCallback? onChat;
+  final bool showPayButton;
+  final VoidCallback? onPay;
+  final String? payButtonText;
 
   const ErrandCard({
     super.key,
@@ -27,6 +30,9 @@ class ErrandCard extends StatelessWidget {
     this.onCancel,
     this.showChatButton = false,
     this.onChat,
+    this.showPayButton = false,
+    this.onPay,
+    this.payButtonText,
   });
 
   @override
@@ -497,6 +503,32 @@ class ErrandCard extends StatelessWidget {
                 color: theme.colorScheme.error,
                 fontWeight: FontWeight.w600,
                 fontSize: isMobile ? 12 : 14,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (showPayButton && onPay != null) {
+      buttons.add(
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onPay,
+            icon: Icon(Icons.payment, color: theme.colorScheme.onPrimary, size: 18),
+            label: Text(
+              payButtonText ?? 'Pay Now',
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: isMobile ? 14 : 16,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),

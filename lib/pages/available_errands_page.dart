@@ -13,6 +13,9 @@ import 'package:lotto_runners/utils/responsive.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lotto_runners/pages/profile_page.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:lotto_runners/services/paytoday_config.dart';
+import 'package:lotto_runners/services/paytoday_backend_service.dart';
+import 'package:lotto_runners/pages/paytoday_payment_page.dart';
 
 class AvailableErrandsPage extends StatefulWidget {
   const AvailableErrandsPage({super.key});
@@ -1386,59 +1389,238 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         return;
       }
 
-      // Show loading
-      showDialog(
+      // Show simple confirmation dialog
+      final confirmed = await showDialog<bool>(
         context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+        builder: (context) => AlertDialog(
+          title: const Text('Accept Errand'),
+          content: Text('Are you sure you want to accept "${errand['title']}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
             ),
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation(LottoRunnersColors.primaryBlue),
-                ),
-                SizedBox(height: 16),
-                Text('Accepting errand...'),
-              ],
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: LottoRunnersColors.primaryBlue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Accept'),
             ),
-          ),
+          ],
         ),
       );
 
-      // Accept the errand (works for both pending and regular errands)
-      print(
-          '🎯 ACCEPTING ERRAND: ${errand['id']} (Status: ${errand['status']})');
+      if (confirmed != true) return;
 
-      try {
-        await SupabaseConfig.acceptErrand(errand['id'], userId);
-        print('✅ ERRAND: Status updated to accepted');
-      } catch (dbError) {
-        print('❌ DATABASE ERROR: $dbError');
-        throw Exception('Database update failed: $dbError');
+      // Show loading
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
       }
 
-      // Remove from pending tracking if it was a pending errand
-      if (errand['status'] == 'pending') {
-        await ImmediateErrandService.removePendingErrand(errand['id']);
-        print('🗑️ PENDING ERRAND: Removed from pending tracking');
-      }
+      // Call Supabase function to accept errand
+      await SupabaseConfig.acceptErrand(errand['id'], userId);
 
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        _showSuccessSnackBar(
-            'Errand accepted successfully! Check your dashboard for accepted contracts.');
-        _loadAvailableErrands(); // Refresh the list
+        Navigator.pop(context); // Close loading
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Errand accepted successfully! The customer has been notified.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Refresh list
+        _loadAvailableErrands();
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        // Close loading if open
+        Navigator.canPop(context) ? Navigator.pop(context) : null;
+        
+        print('❌ Contract acceptance error: $e');
+
+        // Show more detailed error message
+        String errorMessage = 'Failed to accept errand. Please try again.';
+        if (e.toString().contains('Database update failed')) {
+          errorMessage =
+              'Database error occurred. Please check your connection and try again.';
+        } else if (e.toString().contains('Cannot accept errand with status')) {
+          errorMessage = 'This errand cannot be accepted in its current state.';
+        } else if (e.toString().contains('RLS')) {
+          errorMessage = 'Permission denied. Please contact support.';
+        }
+        
+        _showErrorSnackBar(errorMessage);
+      }
+    }
+  }
+
+  Future<void> _acceptErrandDeprecated(Map<String, dynamic> errand) async {
+    try {
+      final userId = SupabaseConfig.currentUser?.id;
+      if (userId == null) return;
+
+      // Check runner limits first
+      final runnerLimits = await SupabaseConfig.checkRunnerLimits(userId);
+      if (!(runnerLimits['can_accept_errands'] ?? false)) {
+        _showErrorSnackBar(
+          '🚫 You have reached your maximum of 2 active jobs.\n\nPlease complete at least one job before accepting new ones.\n\nGo to "My Orders" to see your current jobs.',
+        );
+        return;
+      }
+
+      // Check if errand requires vehicle and runner doesn't have one
+      if (errand['needs_vehicle'] == true &&
+          _userProfile?['has_vehicle'] != true) {
+        _showErrorSnackBar(
+            'This errand requires a vehicle. Please update your profile if you have one.');
+        return;
+      }
+
+      // Get errand price for payment calculation
+      final totalPrice = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+      if (totalPrice <= 0) {
+        _showErrorSnackBar('Invalid errand price. Please contact support.');
+        return;
+      }
+
+      // Calculate first payment (50%)
+      final firstPaymentAmount = totalPrice / 2;
+
+      // Show payment confirmation dialog
+      final shouldProceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Payment Required'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'To accept this errand, you need to pay 50% upfront:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: LottoRunnersColors.gray50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Total Price:'),
+                        Text(
+                          'NAD ${totalPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Pay Now (50%):'),
+                        Text(
+                          'NAD ${firstPaymentAmount.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: LottoRunnersColors.primaryBlue,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Remaining 50% due on completion',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: LottoRunnersColors.gray600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: LottoRunnersColors.primaryBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Proceed to Payment', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldProceed != true) return;
+
+      // Navigate to payment page
+      if (mounted) {
+        final paymentSuccess = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PayTodayPaymentPage(
+              errandId: errand['id'],
+              amount: firstPaymentAmount,
+              paymentType: PayTodayConfig.paymentTypeFirstHalf,
+              customerId: errand['customer_id'],
+              runnerId: userId,
+              onSuccess: () async {
+                // Payment successful - now finalize errand acceptance
+                try {
+                  print('🎯 ACCEPTING ERRAND: ${errand['id']} (Status: ${errand['status']})');
+                  
+                  await SupabaseConfig.acceptErrand(errand['id'], userId);
+                  print('✅ ERRAND: Status updated to accepted');
+
+                  // Remove from pending tracking if it was a pending errand
+                  if (errand['status'] == 'pending') {
+                    await ImmediateErrandService.removePendingErrand(errand['id']);
+                    print('🗑️ PENDING ERRAND: Removed from pending tracking');
+                  }
+                } catch (e) {
+                  print('❌ Error finalizing errand acceptance: $e');
+                  throw e;
+                }
+              },
+              onFailure: () {
+                // Payment failed - do nothing, errand remains available
+                print('❌ Payment failed for errand ${errand['id']}');
+              },
+            ),
+          ),
+        );
+
+        if (paymentSuccess == true) {
+          _showSuccessSnackBar(
+              'Errand accepted successfully! Check your dashboard for accepted contracts.');
+          _loadAvailableErrands(); // Refresh the list
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         print('❌ Contract acceptance error: $e');
 
         // Show more detailed error message
@@ -1456,6 +1638,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       }
     }
   }
+
 
   Widget _buildTransportationBookingsList(ThemeData theme) {
     final availableBookings = _filteredTransportationBookings;

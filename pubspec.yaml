@@ -30,6 +30,8 @@ dependencies:
   pdf: ^3.11.1
   printing: ^5.13.2
   share_plus: ^10.1.2
+  webview_flutter: ^4.4.2
+  webview_windows: ^0.4.0
 
 dev_dependencies:
   flutter_test:

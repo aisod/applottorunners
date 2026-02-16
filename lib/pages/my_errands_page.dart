@@ -7,6 +7,8 @@ import 'package:lotto_runners/pages/chat_page.dart';
 import 'package:lotto_runners/services/chat_service.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:lotto_runners/pages/paytoday_payment_page.dart';
+import 'package:lotto_runners/services/paytoday_config.dart';
 
 class MyErrandsPage extends StatefulWidget {
   const MyErrandsPage({super.key});
@@ -131,6 +133,67 @@ class _MyErrandsPageState extends State<MyErrandsPage>
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+
+  Map<String, dynamic> _calculatePaymentStatus(Map<String, dynamic> errand) {
+    final transactions = (errand['paytoday_transactions'] as List?) ?? [];
+    double totalPaid = 0.0;
+    
+    for (var tx in transactions) {
+      // Consider successful statuses
+      final status = tx['status']?.toString().toLowerCase();
+      if (status == 'paid' || status == 'captured' || status == 'verified' || status == 'completed') {
+        totalPaid += (tx['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+    }
+    
+    final price = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+    
+    return {
+      'totalPaid': totalPaid,
+      'hasFirstPayment': price > 0 && totalPaid >= (price / 2) - 1.0, // Small tolerance
+      'hasFullPayment': price > 0 && totalPaid >= price - 1.0,
+    };
+  }
+
+  Future<void> _handlePayment(Map<String, dynamic> errand, double amount, String paymentType) async {
+    final success = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PayTodayPaymentPage(
+          errandId: errand['id'],
+          amount: amount,
+          paymentType: paymentType,
+          customerId: SupabaseConfig.currentUser?.id ?? '',
+          runnerId: errand['runner_id'],
+          onSuccess: () async {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Payment successful! Updating status...'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            
+            // Wait for DB trigger/edge function to process
+            await Future.delayed(const Duration(seconds: 2));
+            _loadMyErrands(forceRefresh: true);
+          },
+          onFailure: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Payment failed. Please try again.'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    if (success == true) {
+      _loadMyErrands(forceRefresh: true);
     }
   }
 
@@ -491,6 +554,28 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           final isCustomer =
               errand['customer_id'] == SupabaseConfig.currentUser?.id;
 
+          // Calculate payment status
+          bool showPayButton = false;
+          String? payButtonText;
+          VoidCallback? onPay;
+
+          if (isCustomer) {
+            final paymentStatus = _calculatePaymentStatus(errand);
+            final price = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+            
+            if (errand['status'] == 'accepted' && !(paymentStatus['hasFirstPayment'] as bool)) {
+              showPayButton = true;
+              payButtonText = 'Pay Deposit (50%)';
+              onPay = () => _handlePayment(errand, price / 2, PayTodayConfig.paymentTypeFirstHalf);
+            } else if (errand['status'] == 'completed' && !(paymentStatus['hasFullPayment'] as bool)) {
+              showPayButton = true;
+              payButtonText = 'Pay Balance (50%)';
+              // Calculate remaining amount precisely: price - totalPaid
+              final remaining = price - (paymentStatus['totalPaid'] as double);
+              onPay = () => _handlePayment(errand, remaining > 0 ? remaining : price / 2, PayTodayConfig.paymentTypeSecondHalf);
+            }
+          }
+
           return Padding(
             padding: EdgeInsets.only(
               bottom: Responsive.isSmallMobile(context) ? 16 : 16,
@@ -509,6 +594,9 @@ class _MyErrandsPageState extends State<MyErrandsPage>
                   (errand['status'] == 'posted' ||
                       errand['status'] == 'accepted'),
               onCancel: () => _showCancelErrandDialog(errand),
+              showPayButton: showPayButton,
+              onPay: onPay,
+              payButtonText: payButtonText,
             ),
           );
         },

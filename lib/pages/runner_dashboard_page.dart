@@ -18,6 +18,9 @@ import 'package:lotto_runners/services/global_ride_popup_service.dart';
 import 'package:lotto_runners/services/global_errand_popup_service.dart';
 import 'package:lotto_runners/services/global_transportation_popup_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:lotto_runners/services/paytoday_config.dart';
+import 'package:lotto_runners/services/paytoday_backend_service.dart';
+import 'package:lotto_runners/pages/paytoday_payment_page.dart';
 import 'package:lotto_runners/pages/profile_page.dart';
 import 'package:lotto_runners/pages/runner_wallet_page.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
@@ -1986,7 +1989,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                   valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
                 ),
                 const SizedBox(height: 16),
-                Text('Completing errand...',
+                Text('Checking payment status...',
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               ],
             ),
@@ -1994,6 +1997,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         ),
       );
 
+      // Call complete errand directly
       await SupabaseConfig.completeErrand(errand['id']);
 
       if (mounted) {
@@ -2006,16 +2010,30 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           await ChatService.deleteConversation(conversation['id']);
         }
 
-        _showSuccessSnackBar('Errand completed successfully!');
-        _loadRunnerErrands(); // Refresh the list
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Errand marked as completed! The customer has been notified.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Refresh list
+        _loadRunnerErrands();
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
-        _showErrorSnackBar('Failed to complete errand. Please try again.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error completing errand: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     }
   }
+
+
 
   Widget _buildErrandsTab(ThemeData theme) {
     return RefreshIndicator(
