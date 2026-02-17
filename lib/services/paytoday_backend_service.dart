@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/paytoday_config.dart';
 
@@ -206,6 +205,40 @@ class PayTodayBackendService {
       PayTodayConfig.logError('Failed to verify payment', e);
       rethrow;
     }
+  }
+
+  /// Complete payment return from /payment-return page. Calls Edge Function that
+  /// uses service role to update paytoday_transactions (so DB updates and logs appear).
+  static Future<Map<String, dynamic>> completePaymentReturn({
+    required String errandId,
+    required String paymentType,
+    required String status,
+    String? transactionId,
+  }) async {
+    final session = SupabaseConfig.client.auth.currentSession;
+    final token = session?.accessToken ?? SupabaseConfig.supabaseAnonKey;
+
+    final response = await SupabaseConfig.client.functions.invoke(
+      PayTodayConfig.completeReturnFunction,
+      body: {
+        'errand_id': errandId,
+        'payment_type': paymentType,
+        'transaction_id': transactionId,
+        'status': status,
+      },
+      headers: {
+        'Authorization': 'Bearer $token',
+        'apikey': SupabaseConfig.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.status != 200) {
+      throw Exception(
+          'Complete return failed: ${response.status} - ${response.data}');
+    }
+
+    return response.data as Map<String, dynamic>;
   }
 
   /// Report WebView failure to backend for logging

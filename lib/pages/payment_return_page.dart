@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/services/paytoday_config.dart';
 import 'package:lotto_runners/services/paytoday_backend_service.dart';
+import 'package:lotto_runners/supabase/supabase_config.dart';
 
 /// Standalone page shown when the user is redirected to /payment-return
 /// (e.g. after completing PayToday payment in a new tab on web).
@@ -41,6 +42,38 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
     return (errandId: errandId, paymentType: paymentType);
   }
 
+  /// Wait for auth to be ready then call complete-return Edge Function (service role update + logs).
+  Future<bool> _completeReturnWithRetry({
+    required String errandId,
+    required String paymentType,
+    required String status,
+    String? transactionId,
+  }) async {
+    const maxAttempts = 5;
+    const delay = Duration(milliseconds: 600);
+
+    for (var i = 0; i < maxAttempts; i++) {
+      final session = SupabaseConfig.client.auth.currentSession;
+      if (session != null) {
+        try {
+          final result = await PayTodayBackendService.completePaymentReturn(
+            errandId: errandId,
+            paymentType: paymentType,
+            status: status,
+            transactionId: transactionId,
+          );
+          return result['updated'] == true;
+        } catch (e) {
+          PayTodayConfig.logError('Complete return failed', e);
+          return false;
+        }
+      }
+      await Future.delayed(delay);
+    }
+    PayTodayConfig.logError('Auth not ready after ${maxAttempts} attempts');
+    return false;
+  }
+
   Future<void> _handleReturnUrl() async {
     if (!kIsWeb) {
       setState(() {
@@ -72,16 +105,14 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
     if (status == 'success' || status == 'completed') {
       final parsed = _parseInvoiceNumber(invoiceNumber);
       if (parsed != null) {
-        try {
-          await PayTodayBackendService.updateTransactionStatus(
-            errandId: parsed.errandId,
-            paymentType: parsed.paymentType,
-            status: PayTodayConfig.statusCompleted,
-            transactionId: reference,
-          );
-        } catch (e) {
-          PayTodayConfig.logError('Failed to update transaction on return', e);
-          // Still show success to user; backend may have been updated by gateway
+        final updated = await _completeReturnWithRetry(
+          errandId: parsed.errandId,
+          paymentType: parsed.paymentType,
+          status: PayTodayConfig.statusCompleted,
+          transactionId: reference,
+        );
+        if (!updated && mounted) {
+          setState(() => _error = 'Status could not be saved. Check My Orders in the app.');
         }
       }
       if (mounted) {
@@ -94,16 +125,11 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
     } else if (status == 'cancelled' || status == 'canceled') {
       final parsed = _parseInvoiceNumber(invoiceNumber);
       if (parsed != null) {
-        try {
-          await PayTodayBackendService.updateTransactionStatus(
-            errandId: parsed.errandId,
-            paymentType: parsed.paymentType,
-            status: PayTodayConfig.statusFailed,
-            errorMessage: 'Payment cancelled by user',
-          );
-        } catch (e) {
-          PayTodayConfig.logError('Failed to update transaction on cancel', e);
-        }
+        await _completeReturnWithRetry(
+          errandId: parsed.errandId,
+          paymentType: parsed.paymentType,
+          status: PayTodayConfig.statusFailed,
+        );
       }
       if (mounted) {
         setState(() {
