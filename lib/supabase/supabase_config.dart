@@ -561,19 +561,30 @@ class SupabaseConfig {
 
       print('🔄 Updating errand status to accepted...');
 
-      // Update errand status
-      // Use select() to ensure the row is returned, confirming update success (and RLS permission)
-      final updateResult = await client
-          .from('errands')
-          .update({
-            'runner_id': runnerId,
-            'status': 'accepted',
-            'accepted_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', errandId)
-          .select()
-          .maybeSingle();
+      // Update errand status. Use select() to confirm update success (and RLS permission).
+      // If RLS blocks the update (e.g. no policy for runner accept), 0 rows are updated
+      // and PostgREST returns 406 PGRST116 when we request a single object.
+      dynamic updateResult;
+      try {
+        updateResult = await client
+            .from('errands')
+            .update({
+              'runner_id': runnerId,
+              'status': 'accepted',
+              'accepted_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', errandId)
+            .select()
+            .maybeSingle();
+      } on PostgrestException catch (e) {
+        if (e.code == '406' || e.code == 'PGRST116' || (e.message ?? '').contains('PGRST116')) {
+          throw Exception(
+              'Failed to accept errand: the errand could not be updated (no permission or no longer available). '
+              'If you are a runner, ensure the database has an RLS policy allowing runners to accept errands.');
+        }
+        rethrow;
+      }
 
       if (updateResult == null) {
         throw Exception(

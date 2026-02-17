@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/pages/auth_page.dart';
@@ -16,6 +16,7 @@ import 'package:lotto_runners/services/scheduled_bus_notification_service.dart';
 import 'package:lotto_runners/services/deep_link_service.dart';
 import 'package:lotto_runners/pages/my_orders_page.dart';
 import 'package:lotto_runners/pages/password_reset_page.dart';
+import 'package:lotto_runners/pages/payment_return_page.dart';
 import 'package:lotto_runners/services/navigation_service.dart';
 
 void main() async {
@@ -55,17 +56,19 @@ class LottoRunnersApp extends StatelessWidget {
       create: (_) => ThemeProvider(),
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
+          final isPaymentReturn = kIsWeb && Uri.base.path.endsWith('payment-return');
           return MaterialApp(
             title: 'Lotto Runners',
             theme: lightTheme,
             darkTheme: darkTheme,
             themeMode: themeProvider.themeMode,
             navigatorKey: NavigationService.navigatorKey,
-            home: const AuthWrapper(),
+            home: isPaymentReturn ? const PaymentReturnPage() : const AuthWrapper(),
             routes: {
               '/my-orders': (context) => const MyOrdersPage(),
               '/password-reset': (context) => const PasswordResetPage(),
               '/auth': (context) => const AuthPage(),
+              '/payment-return': (context) => const PaymentReturnPage(),
             },
             // Page transitions are handled by custom routes
             debugShowCheckedModeBanner: false,
