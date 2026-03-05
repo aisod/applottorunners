@@ -13,6 +13,8 @@ class PayTodayConfig {
   static const String createIntentFunction = 'paytoday-create-intent';
   static const String reportFailureFunction = 'paytoday-report-failure';
   static const String verifyPaymentFunction = 'paytoday-verify-payment';
+  /// Called from /payment-return page; uses service role so DB update always runs.
+  static const String completeReturnFunction = 'paytoday-complete-return';
   
   /// Payment configuration
   static const String currency = 'NAD'; // Namibian Dollar
