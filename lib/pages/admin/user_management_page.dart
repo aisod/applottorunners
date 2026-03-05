@@ -56,7 +56,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Unable to load users. Please check your internet connection and try again.'),
+              content: const Text(
+                  'Unable to load users. Please check your internet connection and try again.'),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -128,7 +129,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
         if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Unable to deactivate user. Please check your internet connection and try again.'),
+              content: const Text(
+                  'Unable to deactivate user. Please check your internet connection and try again.'),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -218,7 +220,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
         if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Unable to ${action} user. Please check your internet connection and try again.'),
+              content: Text(
+                  'Unable to $action user. Please check your internet connection and try again.'),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -274,7 +277,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
         if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Unable to delete user. Please check your internet connection and try again.'),
+              content: const Text(
+                  'Unable to delete user. Please check your internet connection and try again.'),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -490,7 +494,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: LottoRunnersColors.gray300),
+                      borderSide:
+                          const BorderSide(color: LottoRunnersColors.gray300),
                     ),
                     filled: true,
                     fillColor: Colors.white,
@@ -530,7 +535,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.people_outline,
-                                size: 64, color: Theme.of(context).colorScheme.outline),
+                                size: 64,
+                                color: Theme.of(context).colorScheme.outline),
                             const SizedBox(height: 16),
                             Text(
                               'No users found',
@@ -676,13 +682,17 @@ class _UserManagementPageState extends State<UserManagementPage> {
                             Icon(
                               isVerified ? Icons.verified : Icons.pending,
                               size: 16,
-                              color: isVerified ? Colors.green : theme.colorScheme.outline,
+                              color: isVerified
+                                  ? Colors.green
+                                  : theme.colorScheme.outline,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               isVerified ? 'Verified' : 'Unverified',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: isVerified ? Colors.green : theme.colorScheme.outline,
+                                color: isVerified
+                                    ? Colors.green
+                                    : theme.colorScheme.outline,
                                 fontSize: 11,
                               ),
                             ),
@@ -761,13 +771,15 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   Icon(
                     isVerified ? Icons.verified : Icons.pending,
                     size: 18,
-                    color: isVerified ? Colors.green : theme.colorScheme.outline,
+                    color:
+                        isVerified ? Colors.green : theme.colorScheme.outline,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     isVerified ? 'Verified' : 'Unverified',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: isVerified ? Colors.green : theme.colorScheme.outline,
+                      color:
+                          isVerified ? Colors.green : theme.colorScheme.outline,
                       fontSize: 12,
                     ),
                   ),
@@ -945,7 +957,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
           if (isMultiple && count > 0)
             Text(
               '($count)',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10,
                 color: LottoRunnersColors.gray600,
               ),

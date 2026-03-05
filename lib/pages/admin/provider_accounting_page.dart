@@ -169,7 +169,8 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
           Row(
             children: [
               Icon(Icons.account_balance,
-                  color: Theme.of(context).colorScheme.onPrimary, size: isMobile ? 24 : 28),
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  size: isMobile ? 24 : 28),
               SizedBox(width: isMobile ? 8 : 12),
               Text(
                 'Company Overview',
@@ -312,7 +313,8 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
           child: Column(
             children: [
               Icon(Icons.people_outline,
-                  size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  size: 64,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(height: 16),
               Text(
                 'No runners found',
@@ -367,7 +369,8 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
                     child: Text(
                       runnerName.substring(0, 1).toUpperCase(),
                       style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                   SizedBox(width: isMobile ? 8 : 12),
@@ -387,7 +390,8 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
                           runnerEmail,
                           style: TextStyle(
                             fontSize: isSmallMobile ? 11 : (isMobile ? 12 : 14),
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -399,7 +403,9 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
               ),
               SizedBox(height: isMobile ? 12 : 16),
               Divider(
-                  height: 1, color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+                  height: 1,
+                  color:
+                      Theme.of(context).colorScheme.outline.withOpacity(0.2)),
               SizedBox(height: isMobile ? 12 : 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -557,11 +563,12 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
     final amount = (booking['amount'] as num?)?.toDouble() ?? 0;
     final commission = (booking['company_commission'] as num?)?.toDouble() ?? 0;
     final earnings = (booking['runner_earnings'] as num?)?.toDouble() ?? 0;
-    
+
     // Extract service type information
     final serviceType = booking['service_type'] as String?;
     final pricingModifiers = booking['pricing_modifiers'] as Map?;
-    final serviceTypeFromModifiers = pricingModifiers?['service_type'] as String?;
+    final serviceTypeFromModifiers =
+        pricingModifiers?['service_type'] as String?;
     final finalServiceType = serviceType ?? serviceTypeFromModifiers;
 
     return Card(
@@ -575,14 +582,14 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
               children: [
                 Chip(
                   label:
-                      Text(bookingType, style: TextStyle(fontSize: 11)),
+                      Text(bookingType, style: const TextStyle(fontSize: 11)),
                   backgroundColor:
                       LottoRunnersColors.primaryBlue.withOpacity(0.2),
                   padding: EdgeInsets.zero,
                 ),
                 const SizedBox(width: 8),
                 Chip(
-                  label: Text(status, style: TextStyle(fontSize: 11)),
+                  label: Text(status, style: const TextStyle(fontSize: 11)),
                   backgroundColor: _getStatusColor(status).withOpacity(0.2),
                   padding: EdgeInsets.zero,
                 ),
@@ -591,16 +598,17 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
                   Chip(
                     label: Text(
                       _getServiceTypeName(finalServiceType),
-                      style: TextStyle(fontSize: 10),
+                      style: const TextStyle(fontSize: 10),
                     ),
-                    backgroundColor: LottoRunnersColors.primaryYellow.withOpacity(0.2),
+                    backgroundColor:
+                        LottoRunnersColors.primaryYellow.withOpacity(0.2),
                     padding: EdgeInsets.zero,
                   ),
                 ],
                 const Spacer(),
                 Text(
                   'N\$${amount.toStringAsFixed(2)}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -630,7 +638,7 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
                     const Text('Commission',
                         style: TextStyle(fontSize: 11, color: Colors.grey)),
                     Text('N\$${commission.toStringAsFixed(2)}',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
                 Column(
@@ -638,7 +646,7 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
                     const Text('Runner Earnings',
                         style: TextStyle(fontSize: 11, color: Colors.grey)),
                     Text('N\$${earnings.toStringAsFixed(2)}',
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.green)),
                   ],
                 ),
@@ -694,6 +702,7 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
       'specific_items': 'Specific Items',
     };
 
-    return serviceTypeNames[serviceType] ?? serviceType.replaceAll('_', ' ').toUpperCase();
+    return serviceTypeNames[serviceType] ??
+        serviceType.replaceAll('_', ' ').toUpperCase();
   }
 }

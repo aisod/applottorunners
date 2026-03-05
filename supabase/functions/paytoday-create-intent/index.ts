@@ -245,6 +245,8 @@ Deno.serve(async (req: Request) => {
                     
                     const phoneNumber = "${user_phone_number || '0000000000'}".trim() || '0000000000';
                     
+                    const baseReturn = "${return_url || ''}".replace(/\/$/, '');
+                    const returnWithInvoice = baseReturn + (baseReturn.includes('?') ? '&' : '?') + 'invoice_number=' + encodeURIComponent("${invoice_number}");
                     paytoday.createPaymentIntent({
                         amount: ${amount}, // Keep as dollars/NAD per previous instructions
                         invoice_number: "${invoice_number}",
@@ -252,7 +254,7 @@ Deno.serve(async (req: Request) => {
                         user_last_name: "${ptLastName}",
                         user_email: "${ptEmail}",
                         user_phone_number: phoneNumber,
-                        return_url: "${return_url || ''}",
+                        return_url: returnWithInvoice,
                     }).then(intent => {
                         console.log('PayToday: Intent created', intent);
                         const url = intent?.data?.payment_url || intent?.data?.checkout_url || intent?.payment_url;

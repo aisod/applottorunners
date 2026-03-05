@@ -4,7 +4,6 @@ import 'package:lotto_runners/image_upload.dart';
 import 'package:lotto_runners/widgets/simple_location_picker.dart';
 import 'package:lotto_runners/services/runner_search_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
-import 'package:lotto_runners/utils/responsive.dart';
 import 'dart:typed_data';
 import 'package:lotto_runners/theme.dart';
 
@@ -39,7 +38,6 @@ class _DeliveryFormPageState extends State<DeliveryFormPage> {
   String? _vehicleType; // selected vehicle type name from DB
   List<Map<String, dynamic>> _vehicleTypes = [];
   bool _isLoadingVehicleTypes = false;
-  bool _requiresSignature = false;
   bool _isLoading = false;
   bool _isImmediateRequest = false; // For immediate errand requests
   DateTime? _scheduledDate;
@@ -71,7 +69,7 @@ class _DeliveryFormPageState extends State<DeliveryFormPage> {
       setState(() => _isLoadingVehicleTypes = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Unable to load vehicle types. Please check your internet connection and try again.'),
+          content: const Text('Unable to load vehicle types. Please check your internet connection and try again.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -175,8 +173,6 @@ class _DeliveryFormPageState extends State<DeliveryFormPage> {
                   _buildItemDescriptionField(theme, isMobile, isTablet),
                   SizedBox(height: isMobile ? 20 : 24),
                   _buildRecipientInfoFields(theme, isMobile, isTablet),
-                  SizedBox(height: isMobile ? 20 : 24),
-                  _buildDeliveryOptionsField(theme, isMobile, isTablet),
                   SizedBox(height: isMobile ? 20 : 24),
                   _buildInstructionsField(theme, isMobile, isTablet),
                   SizedBox(height: isMobile ? 20 : 24),
@@ -923,53 +919,6 @@ class _DeliveryFormPageState extends State<DeliveryFormPage> {
     );
   }
 
-  Widget _buildDeliveryOptionsField(ThemeData theme, bool isMobile, bool isTablet) {
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 12 : 16),
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            _requiresSignature ? Icons.verified : Icons.receipt,
-            color: theme.colorScheme.primary,
-            size: isMobile ? 24 : 28,
-          ),
-          SizedBox(width: isMobile ? 12 : 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Signature Required',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: isMobile ? 15 : 17,
-                  ),
-                ),
-                Text(
-                  _requiresSignature
-                      ? 'Recipient must sign upon delivery'
-                      : 'Delivery without signature requirement',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                    fontSize: isMobile ? 12 : 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: _requiresSignature,
-            onChanged: (value) => setState(() => _requiresSignature = value),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildInstructionsField(ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1145,7 +1094,7 @@ class _DeliveryFormPageState extends State<DeliveryFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add image. Please try again or select a different image.'),
+            content: const Text('Unable to add image. Please try again or select a different image.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -1338,7 +1287,6 @@ class _DeliveryFormPageState extends State<DeliveryFormPage> {
       'Pickup: ${_pickupLocationController.text.trim()}',
       'Delivery: ${_deliveryLocationController.text.trim()}',
       'Recipient: ${_recipientNameController.text.trim()} (${_recipientPhoneController.text.trim()})',
-      'Signature Required: ${_requiresSignature ? 'Yes' : 'No'}',
       '',
       'Item Description:',
       _itemDescriptionController.text.trim(),
@@ -1363,7 +1311,6 @@ class _DeliveryFormPageState extends State<DeliveryFormPage> {
         .add('• Item Description: ${_itemDescriptionController.text.trim()}');
     details.add('• Recipient Name: ${_recipientNameController.text.trim()}');
     details.add('• Recipient Phone: ${_recipientPhoneController.text.trim()}');
-    details.add('• Signature Required: ${_requiresSignature ? 'Yes' : 'No'}');
 
     // Add custom instructions if provided
     if (_instructionsController.text.trim().isNotEmpty) {

@@ -32,9 +32,7 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
       setState(() => _isLoading = true);
 
       // Fetch all feedback with user information
-      final response = await SupabaseConfig.client
-          .from('feedback')
-          .select('''
+      final response = await SupabaseConfig.client.from('feedback').select('''
             *,
             users!feedback_user_id_fkey (
               id,
@@ -42,8 +40,7 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
               email,
               user_type
             )
-          ''')
-          .order('created_at', ascending: false);
+          ''').order('created_at', ascending: false);
 
       if (mounted) {
         setState(() {
@@ -75,17 +72,33 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
       _filteredFeedback = _feedbackList.where((feedback) {
         // Search filter
         final matchesSearch = _searchQuery.isEmpty ||
-            (feedback['subject']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-            (feedback['message']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-            (feedback['users']?['full_name']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-            (feedback['users']?['email']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+            (feedback['subject']
+                    ?.toString()
+                    .toLowerCase()
+                    .contains(_searchQuery.toLowerCase()) ??
+                false) ||
+            (feedback['message']
+                    ?.toString()
+                    .toLowerCase()
+                    .contains(_searchQuery.toLowerCase()) ??
+                false) ||
+            (feedback['users']?['full_name']
+                    ?.toString()
+                    .toLowerCase()
+                    .contains(_searchQuery.toLowerCase()) ??
+                false) ||
+            (feedback['users']?['email']
+                    ?.toString()
+                    .toLowerCase()
+                    .contains(_searchQuery.toLowerCase()) ??
+                false);
 
         // Status filter
-        final matchesStatus = _selectedStatusFilter == 'all' || 
+        final matchesStatus = _selectedStatusFilter == 'all' ||
             feedback['status'] == _selectedStatusFilter;
 
         // Type filter
-        final matchesType = _selectedTypeFilter == 'all' || 
+        final matchesType = _selectedTypeFilter == 'all' ||
             feedback['feedback_type'] == _selectedTypeFilter;
 
         return matchesSearch && matchesStatus && matchesType;
@@ -93,19 +106,20 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
     });
   }
 
-  Future<void> _updateFeedbackStatus(String feedbackId, String newStatus) async {
+  Future<void> _updateFeedbackStatus(
+      String feedbackId, String newStatus) async {
     try {
       await SupabaseConfig.client
           .from('feedback')
-          .update({'status': newStatus})
-          .eq('id', feedbackId);
+          .update({'status': newStatus}).eq('id', feedbackId);
 
       if (mounted) {
         _loadFeedback();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Feedback status updated to ${newStatus.replaceAll('_', ' ')}'),
+              content: Text(
+                  'Feedback status updated to ${newStatus.replaceAll('_', ' ')}'),
               backgroundColor: Colors.green,
             ),
           );
@@ -150,13 +164,14 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
               const Text('Update Status:'),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: statusController.text,
+                initialValue: statusController.text,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                 ),
                 items: const [
                   DropdownMenuItem(value: 'new', child: Text('New')),
-                  DropdownMenuItem(value: 'in_review', child: Text('In Review')),
+                  DropdownMenuItem(
+                      value: 'in_review', child: Text('In Review')),
                   DropdownMenuItem(value: 'resolved', child: Text('Resolved')),
                   DropdownMenuItem(value: 'closed', child: Text('Closed')),
                 ],
@@ -190,15 +205,12 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
     if (result != null) {
       try {
         final userId = SupabaseConfig.currentUser?.id;
-        await SupabaseConfig.client
-            .from('feedback')
-            .update({
-              'admin_response': result['response'],
-              'status': result['status'],
-              'responded_at': DateTime.now().toIso8601String(),
-              'responded_by': userId,
-            })
-            .eq('id', feedbackId);
+        await SupabaseConfig.client.from('feedback').update({
+          'admin_response': result['response'],
+          'status': result['status'],
+          'responded_at': DateTime.now().toIso8601String(),
+          'responded_by': userId,
+        }).eq('id', feedbackId);
 
         if (mounted) {
           _loadFeedback();
@@ -245,7 +257,8 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
               _buildDetailRow('User', userName),
               _buildDetailRow('Email', userEmail),
               _buildDetailRow('User Type', userType.toUpperCase()),
-              _buildDetailRow('Feedback Type', _formatFeedbackType(feedbackType)),
+              _buildDetailRow(
+                  'Feedback Type', _formatFeedbackType(feedbackType)),
               _buildDetailRow('Status', _formatStatus(status)),
               if (rating != null) _buildDetailRow('Rating', '⭐ ' * rating),
               const SizedBox(height: 16),
@@ -272,7 +285,8 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: LottoRunnersColors.primaryBlue.withValues(alpha: 0.1),
+                    color:
+                        LottoRunnersColors.primaryBlue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(feedback['admin_response']),
@@ -283,7 +297,10 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                 'Submitted: ${_formatDate(feedback['created_at'])}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -451,7 +468,7 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedStatusFilter,
+                        initialValue: _selectedStatusFilter,
                         decoration: InputDecoration(
                           labelText: 'Status',
                           border: OutlineInputBorder(
@@ -463,11 +480,15 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                           ),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'all', child: Text('All Status')),
+                          DropdownMenuItem(
+                              value: 'all', child: Text('All Status')),
                           DropdownMenuItem(value: 'new', child: Text('New')),
-                          DropdownMenuItem(value: 'in_review', child: Text('In Review')),
-                          DropdownMenuItem(value: 'resolved', child: Text('Resolved')),
-                          DropdownMenuItem(value: 'closed', child: Text('Closed')),
+                          DropdownMenuItem(
+                              value: 'in_review', child: Text('In Review')),
+                          DropdownMenuItem(
+                              value: 'resolved', child: Text('Resolved')),
+                          DropdownMenuItem(
+                              value: 'closed', child: Text('Closed')),
                         ],
                         onChanged: (value) {
                           if (value != null) {
@@ -482,7 +503,7 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedTypeFilter,
+                        initialValue: _selectedTypeFilter,
                         decoration: InputDecoration(
                           labelText: 'Type',
                           border: OutlineInputBorder(
@@ -494,12 +515,19 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                           ),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'all', child: Text('All Types')),
-                          DropdownMenuItem(value: 'general_feedback', child: Text('General')),
-                          DropdownMenuItem(value: 'bug_report', child: Text('Bug Report')),
-                          DropdownMenuItem(value: 'feature_request', child: Text('Feature')),
-                          DropdownMenuItem(value: 'complaint', child: Text('Complaint')),
-                          DropdownMenuItem(value: 'compliment', child: Text('Compliment')),
+                          DropdownMenuItem(
+                              value: 'all', child: Text('All Types')),
+                          DropdownMenuItem(
+                              value: 'general_feedback',
+                              child: Text('General')),
+                          DropdownMenuItem(
+                              value: 'bug_report', child: Text('Bug Report')),
+                          DropdownMenuItem(
+                              value: 'feature_request', child: Text('Feature')),
+                          DropdownMenuItem(
+                              value: 'complaint', child: Text('Complaint')),
+                          DropdownMenuItem(
+                              value: 'compliment', child: Text('Compliment')),
                         ],
                         onChanged: (value) {
                           if (value != null) {
@@ -534,7 +562,9 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                             Text(
                               'No feedback found',
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -545,12 +575,15 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                         itemCount: _filteredFeedback.length,
                         itemBuilder: (context, index) {
                           final feedback = _filteredFeedback[index];
-                          final user = feedback['users'] as Map<String, dynamic>?;
+                          final user =
+                              feedback['users'] as Map<String, dynamic>?;
                           final userName = user?['full_name'] ?? 'Unknown User';
                           final status = feedback['status'] ?? 'new';
-                          final feedbackType = feedback['feedback_type'] ?? 'general_feedback';
+                          final feedbackType =
+                              feedback['feedback_type'] ?? 'general_feedback';
                           final rating = feedback['rating'];
-                          final hasResponse = feedback['admin_response'] != null;
+                          final hasResponse =
+                              feedback['admin_response'] != null;
 
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -570,7 +603,8 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                           decoration: BoxDecoration(
                                             color: _getStatusColor(status)
                                                 .withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: Icon(
                                             _getFeedbackTypeIcon(feedbackType),
@@ -581,11 +615,15 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                feedback['subject'] ?? 'No Subject',
-                                                style: theme.textTheme.titleMedium?.copyWith(
+                                                feedback['subject'] ??
+                                                    'No Subject',
+                                                style: theme
+                                                    .textTheme.titleMedium
+                                                    ?.copyWith(
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                                 maxLines: 1,
@@ -594,7 +632,8 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                               const SizedBox(height: 4),
                                               Text(
                                                 'By: $userName',
-                                                style: theme.textTheme.bodySmall?.copyWith(
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
                                                   color: Theme.of(context)
                                                       .colorScheme
                                                       .onSurfaceVariant,
@@ -610,7 +649,8 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: _getStatusColor(status),
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Text(
                                             _formatStatus(status),
@@ -639,12 +679,14 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                               const Icon(
                                                 Icons.star,
                                                 size: 16,
-                                                color: LottoRunnersColors.primaryYellow,
+                                                color: LottoRunnersColors
+                                                    .primaryYellow,
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
                                                 rating.toString(),
-                                                style: theme.textTheme.bodySmall,
+                                                style:
+                                                    theme.textTheme.bodySmall,
                                               ),
                                             ],
                                           ),
@@ -652,7 +694,8 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                         ],
                                         Text(
                                           _formatFeedbackType(feedbackType),
-                                          style: theme.textTheme.bodySmall?.copyWith(
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .onSurfaceVariant,
@@ -666,8 +709,10 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: Colors.green.withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(8),
+                                              color: Colors.green
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: Row(
                                               children: [
@@ -679,7 +724,9 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   'Responded',
-                                                  style: theme.textTheme.bodySmall?.copyWith(
+                                                  style: theme
+                                                      .textTheme.bodySmall
+                                                      ?.copyWith(
                                                     color: Colors.green,
                                                     fontWeight: FontWeight.w600,
                                                   ),
@@ -689,7 +736,8 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
                                           ),
                                         Text(
                                           _formatDate(feedback['created_at']),
-                                          style: theme.textTheme.bodySmall?.copyWith(
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .onSurfaceVariant,
@@ -710,4 +758,3 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
     );
   }
 }
-

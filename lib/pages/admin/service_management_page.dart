@@ -149,8 +149,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         iconTheme: IconThemeData(color: theme.colorScheme.primary),
-        actionsIconTheme:
-            IconThemeData(color: theme.colorScheme.primary),
+        actionsIconTheme: IconThemeData(color: theme.colorScheme.primary),
         actions: [
           Padding(
             padding: EdgeInsets.all(isSmallMobile ? 4 : 8),
@@ -369,12 +368,16 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isActive ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
+                    color: isActive
+                        ? theme.colorScheme.primaryContainer
+                        : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     ServiceIcons.getIcon(service['icon_name']),
-                    color: isActive ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
+                    color: isActive
+                        ? theme.colorScheme.onPrimaryContainer
+                        : theme.colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                 ),
@@ -459,15 +462,20 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                   const SizedBox(width: 8),
                 ],
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isActive ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
+                    color: isActive
+                        ? theme.colorScheme.primaryContainer
+                        : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     isActive ? 'Active' : 'Inactive',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: isActive ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
+                      color: isActive
+                          ? theme.colorScheme.onPrimaryContainer
+                          : theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -592,7 +600,8 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
     _businessPriceController.text = service['business_price']?.toString() ?? '';
 
-    _discountPercentageController.text = service['discount_percentage']?.toString() ?? '0';
+    _discountPercentageController.text =
+        service['discount_percentage']?.toString() ?? '0';
 
     _requiresVehicle = service['requires_vehicle'] == true;
 
@@ -745,7 +754,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                 DropdownButtonFormField<String>(
                   // Guard against invalid/legacy icon values to prevent the
                   // DropdownButton assertion: there must be exactly one item
-                  value:
+                  initialValue:
                       _availableIcons.any((icon) => icon['name'] == _iconName)
                           ? _iconName
                           : null,
@@ -1004,7 +1013,8 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
         return;
       }
 
-      final discountPercentage = double.tryParse(_discountPercentageController.text) ?? 0.0;
+      final discountPercentage =
+          double.tryParse(_discountPercentageController.text) ?? 0.0;
 
       if (discountPercentage < 0 || discountPercentage > 100) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1057,30 +1067,36 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
     } catch (e) {
       if (mounted) {
         String errorMessage = 'Error saving service';
-        
+
         // Check for specific database errors and provide user-friendly messages
         final errorString = e.toString();
-        if (errorString.contains('discount_percentage') || 
+        if (errorString.contains('discount_percentage') ||
             errorString.contains('PGRST204') ||
             errorString.contains('schema cache')) {
-          errorMessage = 'Database configuration error. Please contact support or check if database migrations have been run.';
-        } else if (errorString.contains('network') || 
-                   errorString.contains('connection') ||
-                   errorString.contains('timeout')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (errorString.contains('permission') || 
-                   errorString.contains('unauthorized')) {
-          errorMessage = 'Permission denied. You may not have access to perform this action.';
-        } else if (errorString.contains('duplicate') || 
-                   errorString.contains('unique')) {
-          errorMessage = 'A service with this name already exists. Please use a different name.';
-        } else if (errorString.contains('validation') || 
-                   errorString.contains('invalid')) {
-          errorMessage = 'Invalid data provided. Please check all fields and try again.';
+          errorMessage =
+              'Database configuration error. Please contact support or check if database migrations have been run.';
+        } else if (errorString.contains('network') ||
+            errorString.contains('connection') ||
+            errorString.contains('timeout')) {
+          errorMessage =
+              'Network error. Please check your internet connection and try again.';
+        } else if (errorString.contains('permission') ||
+            errorString.contains('unauthorized')) {
+          errorMessage =
+              'Permission denied. You may not have access to perform this action.';
+        } else if (errorString.contains('duplicate') ||
+            errorString.contains('unique')) {
+          errorMessage =
+              'A service with this name already exists. Please use a different name.';
+        } else if (errorString.contains('validation') ||
+            errorString.contains('invalid')) {
+          errorMessage =
+              'Invalid data provided. Please check all fields and try again.';
         } else {
-          errorMessage = 'Unable to save service. Please try again or contact support if the problem persists.';
+          errorMessage =
+              'Unable to save service. Please try again or contact support if the problem persists.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(

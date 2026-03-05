@@ -80,7 +80,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load analytics. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to load analytics. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -96,8 +97,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       final monthAgo = DateTime(now.year, now.month - 1, now.day);
 
       // Get provider commissions (33.3% of transportation bookings)
-      final providerCommissions = await SupabaseConfig.getCompanyCommissionTotals();
-      final totalProviderCommission = (providerCommissions['total_commission'] ?? 0.0) as double;
+      final providerCommissions =
+          await SupabaseConfig.getCompanyCommissionTotals();
+      final totalProviderCommission =
+          (providerCommissions['total_commission'] ?? 0.0) as double;
 
       // Get bus bookings (100% to company)
       final busBookings = await SupabaseConfig.client
@@ -111,13 +114,15 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
       for (var booking in busBookings) {
         // Use final_price if available, otherwise use estimated_price
-        final amount = (booking['final_price'] as num?)?.toDouble() ?? 
-                       (booking['estimated_price'] as num?)?.toDouble() ?? 0.0;
+        final amount = (booking['final_price'] as num?)?.toDouble() ??
+            (booking['estimated_price'] as num?)?.toDouble() ??
+            0.0;
         totalBusRevenue += amount;
 
         final bookingDate = DateTime.tryParse(booking['booking_date'] ?? '');
         if (bookingDate != null) {
-          if (bookingDate.isAfter(today) || bookingDate.isAtSameMomentAs(today)) {
+          if (bookingDate.isAfter(today) ||
+              bookingDate.isAtSameMomentAs(today)) {
             dailyBusRevenue += amount;
           }
           if (bookingDate.isAfter(weekAgo)) {
@@ -132,7 +137,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       // Get transportation bookings for time-based calculations
       final transportationBookings = await SupabaseConfig.client
           .from('transportation_bookings')
-          .select('estimated_price, final_price, company_commission, created_at, status');
+          .select(
+              'estimated_price, final_price, company_commission, created_at, status');
 
       double dailyProviderCommission = 0;
       double weeklyProviderCommission = 0;
@@ -140,9 +146,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
       for (var booking in transportationBookings) {
         // Use company_commission if available, otherwise calculate 33.3%
-        final commission = (booking['company_commission'] as num?)?.toDouble() ?? 
-                          ((booking['final_price'] as num?)?.toDouble() ?? 
-                           (booking['estimated_price'] as num?)?.toDouble() ?? 0.0) * 0.333;
+        final commission =
+            (booking['company_commission'] as num?)?.toDouble() ??
+                ((booking['final_price'] as num?)?.toDouble() ??
+                        (booking['estimated_price'] as num?)?.toDouble() ??
+                        0.0) *
+                    0.333;
 
         final createdAt = DateTime.tryParse(booking['created_at'] ?? '');
         if (createdAt != null) {
@@ -159,14 +168,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       }
 
       print('🔍 Company Earnings Debug:');
-      print('   Provider Commission Total: N\$${totalProviderCommission.toStringAsFixed(2)}');
+      print(
+          '   Provider Commission Total: N\$${totalProviderCommission.toStringAsFixed(2)}');
       print('   Bus Revenue Total: N\$${totalBusRevenue.toStringAsFixed(2)}');
-      print('   Total Earnings: N\$${(totalProviderCommission + totalBusRevenue).toStringAsFixed(2)}');
-      print('   Daily: N\$${(dailyProviderCommission + dailyBusRevenue).toStringAsFixed(2)}');
-      print('   Weekly: N\$${(weeklyProviderCommission + weeklyBusRevenue).toStringAsFixed(2)}');
-      print('   Monthly: N\$${(monthlyProviderCommission + monthlyBusRevenue).toStringAsFixed(2)}');
+      print(
+          '   Total Earnings: N\$${(totalProviderCommission + totalBusRevenue).toStringAsFixed(2)}');
+      print(
+          '   Daily: N\$${(dailyProviderCommission + dailyBusRevenue).toStringAsFixed(2)}');
+      print(
+          '   Weekly: N\$${(weeklyProviderCommission + weeklyBusRevenue).toStringAsFixed(2)}');
+      print(
+          '   Monthly: N\$${(monthlyProviderCommission + monthlyBusRevenue).toStringAsFixed(2)}');
       print('   Bus Bookings Count: ${busBookings.length}');
-      print('   Transportation Bookings Count: ${transportationBookings.length}');
+      print(
+          '   Transportation Bookings Count: ${transportationBookings.length}');
 
       return {
         'total_earnings': totalProviderCommission + totalBusRevenue,
@@ -459,12 +474,15 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final isMobile = Responsive.isMobile(context);
     final theme = Theme.of(context);
 
-    final providerTotal = (earnings['provider_commission_total'] ?? 0.0) as double;
+    final providerTotal =
+        (earnings['provider_commission_total'] ?? 0.0) as double;
     final busTotal = (earnings['bus_revenue_total'] ?? 0.0) as double;
     final totalEarnings = (earnings['total_earnings'] ?? 0.0) as double;
 
-    final providerPercentage = totalEarnings > 0 ? (providerTotal / totalEarnings * 100) : 0.0;
-    final busPercentage = totalEarnings > 0 ? (busTotal / totalEarnings * 100) : 0.0;
+    final providerPercentage =
+        totalEarnings > 0 ? (providerTotal / totalEarnings * 100) : 0.0;
+    final busPercentage =
+        totalEarnings > 0 ? (busTotal / totalEarnings * 100) : 0.0;
 
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 20),

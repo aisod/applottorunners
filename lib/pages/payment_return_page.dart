@@ -27,19 +27,36 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
     _handleReturnUrl();
   }
 
-  /// Parse invoice_number in form: errandId_first_half_timestamp or errandId_second_half_timestamp
+  /// Parse invoice_number in form from paytoday-create-intent:
+  /// errand_id_payment_type_booking_type_timestamp
+  /// e.g. "abc123_first_half_errand_1234567890" or "id_full_payment_errand_1234567890"
   static ({String errandId, String paymentType})? _parseInvoiceNumber(
       String? invoiceNumber) {
     if (invoiceNumber == null || invoiceNumber.isEmpty) return null;
     final parts = invoiceNumber.split('_');
-    if (parts.length < 3) return null;
-    final errandId = parts[0];
-    final paymentType = '${parts[1]}_${parts[2]}';
-    if (paymentType != PayTodayConfig.paymentTypeFirstHalf &&
-        paymentType != PayTodayConfig.paymentTypeSecondHalf) {
-      return null;
+    // Need at least: errandId, payment_type (1 or 2 segments), booking_type, timestamp
+    if (parts.length < 4) return null;
+    // Last two segments are booking_type and timestamp
+    final remaining = parts.sublist(0, parts.length - 2);
+    if (remaining.length >= 3 &&
+        remaining[remaining.length - 2] == 'first' &&
+        remaining[remaining.length - 1] == 'half') {
+      final errandId = remaining.sublist(0, remaining.length - 2).join('_');
+      return (errandId: errandId, paymentType: PayTodayConfig.paymentTypeFirstHalf);
     }
-    return (errandId: errandId, paymentType: paymentType);
+    if (remaining.length >= 3 &&
+        remaining[remaining.length - 2] == 'second' &&
+        remaining[remaining.length - 1] == 'half') {
+      final errandId = remaining.sublist(0, remaining.length - 2).join('_');
+      return (errandId: errandId, paymentType: PayTodayConfig.paymentTypeSecondHalf);
+    }
+    if (remaining.length >= 2 &&
+        remaining[remaining.length - 2] == 'full' &&
+        remaining[remaining.length - 1] == 'payment') {
+      final errandId = remaining.sublist(0, remaining.length - 2).join('_');
+      return (errandId: errandId, paymentType: PayTodayConfig.paymentTypeFull);
+    }
+    return null;
   }
 
   /// Wait for auth to be ready then call complete-return Edge Function (service role update + logs).
@@ -96,30 +113,37 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
     }
 
     final status = uri.queryParameters['status']?.toLowerCase();
-    final reference = uri.queryParameters['reference'];
-    final invoiceNumber = uri.queryParameters['invoice_number'];
+    // PayToday may send transaction id as 'reference' or 'transaction_id'
+    final reference = uri.queryParameters['reference'] ??
+        uri.queryParameters['transaction_id'] ??
+        uri.queryParameters['ref'];
+    final invoiceNumber = uri.queryParameters['invoice_number'] ??
+        uri.queryParameters['invoice'];
 
     PayTodayConfig.log(
         'Payment return: status=$status, reference=$reference, invoice_number=$invoiceNumber');
 
     if (status == 'success' || status == 'completed') {
       final parsed = _parseInvoiceNumber(invoiceNumber);
+      bool updated = false;
       if (parsed != null) {
-        final updated = await _completeReturnWithRetry(
+        updated = await _completeReturnWithRetry(
           errandId: parsed.errandId,
           paymentType: parsed.paymentType,
           status: PayTodayConfig.statusCompleted,
           transactionId: reference,
         );
-        if (!updated && mounted) {
-          setState(() => _error = 'Status could not be saved. Check My Orders in the app.');
-        }
       }
       if (mounted) {
         setState(() {
           _isLoading = false;
           _success = true;
           _message = 'Payment completed successfully. You can close this tab and return to the app.';
+          if (!updated) {
+            _error = parsed == null
+                ? 'We could not identify this payment to update the order. Please check My Orders in the app; if status is still pending, contact support with your order ID.'
+                : 'Status could not be saved. Check My Orders in the app.';
+          }
         });
       }
     } else if (status == 'cancelled' || status == 'canceled') {

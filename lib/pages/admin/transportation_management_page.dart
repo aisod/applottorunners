@@ -123,7 +123,6 @@ class _TransportationManagementPageState
   //   setState(() => _towns = towns);
   // }
 
-
   Future<void> _loadProviders() async {
     try {
       final providers = await SupabaseConfig.getAllProviders();
@@ -235,7 +234,7 @@ class _TransportationManagementPageState
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: () {
               print('🔄 Manual refresh triggered');
               _loadData();
@@ -332,7 +331,6 @@ class _TransportationManagementPageState
   //     ],
   //   );
   // }
-
 
   Widget _buildProvidersTab() {
     final EdgeInsets padding = Responsive.getResponsivePadding(context);
@@ -487,10 +485,14 @@ class _TransportationManagementPageState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withOpacity(0.3),
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+            color:
+                Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
             width: 1,
           ),
         ),
@@ -504,16 +506,16 @@ class _TransportationManagementPageState
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
               ],
             ),
@@ -609,7 +611,8 @@ class _TransportationManagementPageState
               Text(
                 'Service Types:',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   fontSize: Responsive.isSmallMobile(context) ? 9 : 11,
                   fontWeight: FontWeight.w500,
                 ),
@@ -804,7 +807,6 @@ class _TransportationManagementPageState
   //   );
   // }
 
-
   Widget _buildProviderCard(Map<String, dynamic> provider) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -982,7 +984,10 @@ class _TransportationManagementPageState
                         Text(
                           'Route: ${route['route_name']}',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6),
                             fontSize: isMobile ? 11 : 12,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -991,7 +996,10 @@ class _TransportationManagementPageState
                       Text(
                         'Providers: ${providers.length}',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
                           fontSize: isMobile ? 11 : 12,
                         ),
                       ),
@@ -1022,7 +1030,10 @@ class _TransportationManagementPageState
                       fontWeight: FontWeight.w500,
                       color: (service['is_active'] ?? false)
                           ? Colors.green.shade700
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
                     ),
                   ),
                 ),
@@ -1072,7 +1083,7 @@ class _TransportationManagementPageState
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _editTransportationService(service),
-                      icon: Icon(Icons.edit, size: 16),
+                      icon: const Icon(Icons.edit, size: 16),
                       label: const Text('Edit'),
                     ),
                   ),
@@ -1080,7 +1091,7 @@ class _TransportationManagementPageState
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _deleteTransportationService(service),
-                      icon: Icon(Icons.delete_forever, size: 16),
+                      icon: const Icon(Icons.delete_forever, size: 16),
                       label: const Text('Delete'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
@@ -1153,7 +1164,10 @@ class _TransportationManagementPageState
                       Text(
                         _getCustomerName(user),
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
                           fontSize: isMobile ? 11 : 12,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -1162,7 +1176,10 @@ class _TransportationManagementPageState
                       Text(
                         'Service: ${service != null && service['name'] != null ? service['name'] : 'Unknown Service'}',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
                           fontSize: isMobile ? 11 : 12,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -1204,13 +1221,17 @@ class _TransportationManagementPageState
                 Icon(
                   Icons.calendar_today,
                   size: isMobile ? 14 : 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 SizedBox(width: isMobile ? 4 : 6),
                 Text(
                   _getBookingDateTime(booking),
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                     fontSize: isMobile ? 11 : 12,
                   ),
                 ),
@@ -1231,7 +1252,7 @@ class _TransportationManagementPageState
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _showBookingDetails(booking),
-                icon: Icon(Icons.info_outline, size: 16),
+                icon: const Icon(Icons.info_outline, size: 16),
                 label: const Text('View Details'),
               ),
             ),
@@ -1295,18 +1316,19 @@ class _TransportationManagementPageState
   // Helper method to get booking title
   String _getBookingTitle(Map<String, dynamic> booking) {
     // Try booking_reference first
-    if (booking['booking_reference'] != null && 
+    if (booking['booking_reference'] != null &&
         booking['booking_reference'].toString().trim().isNotEmpty) {
       return booking['booking_reference'];
     }
-    
+
     // Try service name
     final service = booking['service'];
-    if (service != null && service['name'] != null && 
+    if (service != null &&
+        service['name'] != null &&
         service['name'].toString().trim().isNotEmpty) {
       return service['name'];
     }
-    
+
     // Try booking ID (shortened)
     if (booking['id'] != null) {
       final id = booking['id'].toString();
@@ -1315,7 +1337,7 @@ class _TransportationManagementPageState
       }
       return 'Booking $id';
     }
-    
+
     // Fallback
     return 'Transportation Booking';
   }
@@ -1325,17 +1347,18 @@ class _TransportationManagementPageState
     if (user == null) {
       return 'Customer: Unknown';
     }
-    
+
     // Try full_name first (this is the primary field in the users table)
-    if (user['full_name'] != null && user['full_name'].toString().trim().isNotEmpty) {
+    if (user['full_name'] != null &&
+        user['full_name'].toString().trim().isNotEmpty) {
       return 'Customer: ${user['full_name']}';
     }
-    
+
     // Try email as fallback
     if (user['email'] != null && user['email'].toString().trim().isNotEmpty) {
       return 'Customer: ${user['email']}';
     }
-    
+
     return 'Customer: Unknown';
   }
 
@@ -1343,7 +1366,7 @@ class _TransportationManagementPageState
   String _getBookingDateTime(Map<String, dynamic> booking) {
     final date = booking['booking_date']?.toString() ?? '';
     final time = booking['booking_time']?.toString() ?? '';
-    
+
     if (date.isNotEmpty && time.isNotEmpty) {
       return '$date $time';
     } else if (date.isNotEmpty) {
@@ -1353,12 +1376,12 @@ class _TransportationManagementPageState
     } else if (booking['created_at'] != null) {
       try {
         final createdAt = DateTime.parse(booking['created_at']);
-        return '${createdAt.toLocal().toString().split('.')[0]}';
+        return createdAt.toLocal().toString().split('.')[0];
       } catch (e) {
         return 'Date not available';
       }
     }
-    
+
     return 'Date not available';
   }
 
@@ -1428,7 +1451,7 @@ class _TransportationManagementPageState
               StatefulBuilder(
                 builder: (context, setDialogState) {
                   return DropdownButtonFormField<String>(
-                    value: selectedIconName,
+                    initialValue: selectedIconName,
                     decoration: const InputDecoration(labelText: 'Icon'),
                     items: const [
                       DropdownMenuItem(
@@ -1479,7 +1502,8 @@ class _TransportationManagementPageState
               ),
               Text(
                 'Select the service types this vehicle can provide:',
-                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline),
+                style: TextStyle(
+                    fontSize: 12, color: Theme.of(context).colorScheme.outline),
               ),
               const SizedBox(height: 8),
               StatefulBuilder(
@@ -1692,7 +1716,7 @@ class _TransportationManagementPageState
               StatefulBuilder(
                 builder: (context, setDialogState) {
                   return DropdownButtonFormField<String>(
-                    value: allowedIconValues.contains(selectedIconName)
+                    initialValue: allowedIconValues.contains(selectedIconName)
                         ? selectedIconName
                         : null,
                     decoration: const InputDecoration(labelText: 'Icon'),
@@ -1745,7 +1769,8 @@ class _TransportationManagementPageState
               ),
               Text(
                 'Select the service types this vehicle can provide:',
-                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline),
+                style: TextStyle(
+                    fontSize: 12, color: Theme.of(context).colorScheme.outline),
               ),
               const SizedBox(height: 8),
               StatefulBuilder(
@@ -1976,7 +2001,7 @@ class _TransportationManagementPageState
             children: [
               Text(
                 'Cannot delete "${vehicleType['name']}" because it is currently used by ${dependencies.length} transportation service(s):',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               ...dependencies.map(
@@ -2068,7 +2093,7 @@ class _TransportationManagementPageState
                 if (services.isNotEmpty) ...[
                   Text(
                     'Transportation Services (${services.length}):',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   ...services.map(
@@ -2096,7 +2121,7 @@ class _TransportationManagementPageState
                 if (pricing.isNotEmpty) ...[
                   Text(
                     'Pricing Tiers (${pricing.length}):',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   ...pricing.map(
@@ -2104,7 +2129,7 @@ class _TransportationManagementPageState
                       padding: const EdgeInsets.only(left: 16, top: 4),
                       child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.attach_money,
                             size: 16,
                             color: Colors.blue,
@@ -2178,7 +2203,7 @@ class _TransportationManagementPageState
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: selectedVehicleTypeId,
+              initialValue: selectedVehicleTypeId,
               decoration: const InputDecoration(
                 labelText: 'New Vehicle Type',
                 border: OutlineInputBorder(),
@@ -2198,7 +2223,7 @@ class _TransportationManagementPageState
             const SizedBox(height: 16),
             Text(
               'Warning: This action will update all transportation services currently using "${vehicleType['name']}" to use the selected vehicle type instead.',
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.orange,
                 fontSize: 12,
                 fontStyle: FontStyle.italic,
@@ -2243,7 +2268,6 @@ class _TransportationManagementPageState
       }
     }
   }
-
 
   // Future<void> _addTown() async {
   //   final nameController = TextEditingController();
@@ -3147,7 +3171,7 @@ class _TransportationManagementPageState
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
-                            value: selectedRouteId,
+                            initialValue: selectedRouteId,
                             decoration: const InputDecoration(
                               labelText: 'Route *',
                               border: OutlineInputBorder(),
@@ -3197,7 +3221,7 @@ class _TransportationManagementPageState
                                   serviceProviders,
                                   setDialogState,
                                 ),
-                                icon: Icon(Icons.add),
+                                icon: const Icon(Icons.add),
                                 label: const Text('Add Provider'),
                               ),
                             ],
@@ -3214,7 +3238,10 @@ class _TransportationManagementPageState
                                 child: Text(
                                   'No providers added yet.\nClick "Add Provider" to add at least one provider.',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .outline),
                                 ),
                               ),
                             )
@@ -3251,7 +3278,7 @@ class _TransportationManagementPageState
                                           Text(
                                             providerInfo['name'] ??
                                                 'Unknown Provider',
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
@@ -3267,7 +3294,7 @@ class _TransportationManagementPageState
                                                   setDialogState,
                                                   '', // No service ID yet for new services
                                                 ),
-                                                icon: Icon(Icons.edit,
+                                                icon: const Icon(Icons.edit,
                                                     size: 20),
                                                 tooltip: 'Edit',
                                               ),
@@ -3278,7 +3305,7 @@ class _TransportationManagementPageState
                                                         .removeAt(index);
                                                   });
                                                 },
-                                                icon: Icon(Icons.delete,
+                                                icon: const Icon(Icons.delete,
                                                     size: 20,
                                                     color: Colors.red),
                                                 tooltip: 'Remove',
@@ -3317,7 +3344,10 @@ class _TransportationManagementPageState
                                       Text(
                                         'Booking: ${provider['advance_booking_hours'] ?? 1}h advance, ${provider['cancellation_hours'] ?? 2}h cancellation',
                                         style: TextStyle(
-                                            fontSize: 12, color: Theme.of(context).colorScheme.outline),
+                                            fontSize: 12,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .outline),
                                       ),
                                     ],
                                   ),
@@ -3418,7 +3448,7 @@ class _TransportationManagementPageState
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: selectedProviderId,
+                  initialValue: selectedProviderId,
                   decoration: const InputDecoration(
                     labelText: 'Service Provider *',
                     border: OutlineInputBorder(),
@@ -3528,8 +3558,10 @@ class _TransportationManagementPageState
                           ),
                           selected: selected,
                           selectedColor: Theme.of(context).colorScheme.primary,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.08),
                           checkmarkColor: Colors.white,
                           side: BorderSide(
                             color: selected
@@ -3738,8 +3770,10 @@ class _TransportationManagementPageState
                           ),
                           selected: selected,
                           selectedColor: Theme.of(context).colorScheme.primary,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.08),
                           checkmarkColor: Colors.white,
                           side: BorderSide(
                             color: selected
@@ -3899,7 +3933,7 @@ class _TransportationManagementPageState
                       serviceProviders,
                       setDialogState,
                     ),
-                    icon: Icon(Icons.add),
+                    icon: const Icon(Icons.add),
                     label: const Text('Add Provider'),
                   ),
                   const SizedBox(height: 16),
@@ -3926,7 +3960,10 @@ class _TransportationManagementPageState
                                     Text(
                                         'Booking: ${provider['advance_booking_hours'] ?? 1}h advance, ${provider['cancellation_hours'] ?? 2}h cancellation',
                                         style: TextStyle(
-                                            fontSize: 12, color: Theme.of(context).colorScheme.outline)),
+                                            fontSize: 12,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .outline)),
                                   ],
                                 ),
                                 trailing: IconButton(
@@ -3935,7 +3972,7 @@ class _TransportationManagementPageState
                                       serviceProviders.removeAt(index);
                                     });
                                   },
-                                  icon: Icon(Icons.delete,
+                                  icon: const Icon(Icons.delete,
                                       color: Colors.red),
                                 ),
                               );
@@ -4101,8 +4138,10 @@ class _TransportationManagementPageState
                       ),
                       selected: selected,
                       selectedColor: Theme.of(context).colorScheme.primary,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.08),
                       checkmarkColor: Colors.white,
                       side: BorderSide(
                         color: selected
@@ -4307,7 +4346,7 @@ class _TransportationManagementPageState
               //   onChanged: (value) => selectedVehicleTypeId = value,
               // ),
               DropdownButtonFormField<String>(
-                value: selectedRouteId,
+                initialValue: selectedRouteId,
                 decoration: const InputDecoration(labelText: 'Route'),
                 items: activeRoutes
                     .map<DropdownMenuItem<String>>(
@@ -4428,7 +4467,7 @@ class _TransportationManagementPageState
               children: [
                 Text(
                   'Cannot delete service: ${service['name']}',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(errorMessage),
@@ -4610,7 +4649,7 @@ class _TransportationManagementPageState
           children: [
             Text(
               'Are you sure you want to deactivate "${service['name']}"?',
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
             Container(
@@ -4699,7 +4738,7 @@ class _TransportationManagementPageState
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               color: Colors.red,
               size: 28,
@@ -4708,7 +4747,7 @@ class _TransportationManagementPageState
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -4722,7 +4761,7 @@ class _TransportationManagementPageState
           children: [
             Text(
               message,
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
             if (details != null) ...[
               const SizedBox(height: 16),

@@ -37,7 +37,8 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load errands. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to load errands. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -206,7 +207,7 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
       case 'cancelled':
         return Colors.red;
       default:
-        return theme.colorScheme.outline;
+        return Colors.grey;
     }
   }
 
@@ -221,9 +222,9 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
       case 'shopping':
         return Colors.purple;
       case 'other':
-        return theme.colorScheme.outline;
+        return Colors.grey;
       default:
-        return theme.colorScheme.outline;
+        return Colors.grey;
     }
   }
 
@@ -373,13 +374,16 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredErrands.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.assignment_outlined,
-                                size: 64, color: theme.colorScheme.outline),
-                            SizedBox(height: 16),
+                            Icon(
+                              Icons.assignment_outlined,
+                              size: 64,
+                              color: theme.colorScheme.outline,
+                            ),
+                            const SizedBox(height: 16),
                             Text(
                               'No errands found',
                               style: TextStyle(
@@ -431,6 +435,7 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
     final category = errand['category'] ?? 'other';
     final statusColor = _getStatusColor(status);
     final categoryColor = _getCategoryColor(category);
+    final theme = Theme.of(context);
 
     return Card(
       margin:
@@ -470,7 +475,7 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                       Text(
                         errand['description'] ?? 'No description',
                         style: TextStyle(
-                          color: theme.colorScheme.outline[600],
+                          color: theme.colorScheme.outline,
                           fontSize: Responsive.isSmallMobile(context) ? 12 : 14,
                         ),
                         maxLines: 2,
@@ -509,23 +514,25 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.access_time, size: 16, color: theme.colorScheme.outline[600]),
+                Icon(Icons.access_time,
+                    size: 16, color: theme.colorScheme.outline),
                 const SizedBox(width: 4),
                 Text(
                   '${errand['time_limit_hours'] ?? 0}h',
                   style: TextStyle(
-                    color: theme.colorScheme.outline[600],
+                    color: theme.colorScheme.outline,
                     fontSize: 12,
                   ),
                 ),
                 if (errand['requires_vehicle']) ...[
                   const SizedBox(width: 16),
-                  Icon(Icons.directions_car, size: 16, color: theme.colorScheme.outline[600]),
+                  Icon(Icons.directions_car,
+                      size: 16, color: theme.colorScheme.outline),
                   const SizedBox(width: 4),
                   Text(
                     'Vehicle',
                     style: TextStyle(
-                      color: theme.colorScheme.outline[600],
+                      color: theme.colorScheme.outline,
                       fontSize: 12,
                     ),
                   ),
@@ -534,7 +541,7 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                 Text(
                   _formatDate(errand['created_at']),
                   style: TextStyle(
-                    color: theme.colorScheme.outline[500],
+                    color: theme.colorScheme.outline,
                     fontSize: 12,
                   ),
                 ),
@@ -545,12 +552,13 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
               Row(
                 children: [
                   if (errand['customer'] != null) ...[
-                    Icon(Icons.person, size: 16, color: theme.colorScheme.outline[600]),
+                    Icon(Icons.person,
+                        size: 16, color: theme.colorScheme.outline),
                     const SizedBox(width: 4),
                     Text(
                       'Customer: ${errand['customer']['full_name']}',
                       style: TextStyle(
-                        color: theme.colorScheme.outline[600],
+                        color: theme.colorScheme.outline,
                         fontSize: 12,
                       ),
                     ),
@@ -558,12 +566,12 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   if (errand['runner'] != null) ...[
                     if (errand['customer'] != null) const SizedBox(width: 16),
                     Icon(Icons.directions_run,
-                        size: 16, color: theme.colorScheme.outline[600]),
+                        size: 16, color: theme.colorScheme.outline),
                     const SizedBox(width: 4),
                     Text(
                       'Runner: ${errand['runner']['full_name']}',
                       style: TextStyle(
-                        color: theme.colorScheme.outline[600],
+                        color: theme.colorScheme.outline,
                         fontSize: 12,
                       ),
                     ),

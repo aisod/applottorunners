@@ -591,7 +591,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               PageTransitions.slideAndFade(const RunnerWalletPage()),
             );
           },
-          icon: Icon(
+          icon: const Icon(
             Icons.account_balance_wallet,
             color: LottoRunnersColors.primaryYellow,
           ),
@@ -958,7 +958,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.person,
+                    const Icon(Icons.person,
                         color: LottoRunnersColors.primaryYellow, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
@@ -993,7 +993,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               // Category information
               Row(
                 children: [
-                  Icon(Icons.category,
+                  const Icon(Icons.category,
                       color: LottoRunnersColors.primaryYellow, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
@@ -1011,7 +1011,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               // Location and time info
               Row(
                 children: [
-                  Icon(Icons.location_on,
+                  const Icon(Icons.location_on,
                       color: LottoRunnersColors.primaryYellow, size: 16),
                   const SizedBox(width: 4),
                   Expanded(
@@ -1024,7 +1024,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.schedule,
+                  const Icon(Icons.schedule,
                       color: LottoRunnersColors.primaryYellow, size: 16),
                   const SizedBox(width: 4),
                   Text(
@@ -1042,7 +1042,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.attach_money,
+                    const Icon(Icons.attach_money,
                         color: LottoRunnersColors.primaryYellow, size: 16),
                     const SizedBox(width: 4),
                     Text(
@@ -1070,7 +1070,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => _startErrand(errand),
-                          icon: Icon(Icons.play_arrow,
+                          icon: const Icon(Icons.play_arrow,
                               color: LottoRunnersColors.primaryBlue, size: 18),
                           label: Text(
                             'Start Errand',
@@ -1223,7 +1223,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 color: LottoRunnersColors.primaryYellow.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.assignment_outlined,
                 size: 60,
                 color: LottoRunnersColors.primaryYellow,
@@ -1290,7 +1290,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 color: LottoRunnersColors.primaryBlue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.verified_user_outlined,
                 size: 60,
                 color: LottoRunnersColors.primaryBlue,
@@ -1325,7 +1325,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.info_outline,
                     color: LottoRunnersColors.primaryBlue,
                     size: 20,
@@ -1997,29 +1997,51 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         ),
       );
 
-      // Call complete errand directly
-      await SupabaseConfig.completeErrand(errand['id']);
+      // Call complete errand and handle payment requirement
+      final result = await SupabaseConfig.completeErrand(errand['id']);
 
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+      if (!mounted) return;
 
-        // Delete the chat conversation completely since the errand is completed
-        final conversation =
-            await ChatService.getConversationByErrand(errand['id']);
-        if (conversation != null) {
-          await ChatService.deleteConversation(conversation['id']);
-        }
+      Navigator.pop(context); // Close loading dialog
+
+      final paymentRequired = result['payment_required'] == true;
+      if (paymentRequired) {
+        final amount = (result['amount'] as num?)?.toDouble() ?? 0.0;
+        final amountText =
+            amount > 0 ? ' N\$${amount.toStringAsFixed(2)}' : '';
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Errand marked as completed! The customer has been notified.'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              'Customer needs to pay$amountText before this errand can be marked as completed.',
+            ),
+            backgroundColor: theme.colorScheme.error,
           ),
         );
 
-        // Refresh list
-        _loadRunnerErrands();
+        // Still refresh to ensure we see any latest status from backend
+        await _loadRunnerErrands();
+        return;
       }
+
+      // No payment required - errand is now completed
+      // Delete the chat conversation completely since the errand is completed
+      final conversation =
+          await ChatService.getConversationByErrand(errand['id']);
+      if (conversation != null) {
+        await ChatService.deleteConversation(conversation['id']);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Errand marked as completed! The customer has been notified.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Refresh list
+      await _loadRunnerErrands();
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
@@ -2208,7 +2230,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.directions_bus,
                 size: 60,
                 color: LottoRunnersColors.primaryYellow,
@@ -2351,7 +2373,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.person,
+                    const Icon(Icons.person,
                         color: LottoRunnersColors.primaryYellow, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
@@ -2386,7 +2408,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               // Route information - use pickup/dropoff locations from booking
               Row(
                 children: [
-                  Icon(Icons.route,
+                  const Icon(Icons.route,
                       color: LottoRunnersColors.primaryYellow, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
@@ -2404,7 +2426,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               // Vehicle and schedule info
               Row(
                 children: [
-                  Icon(Icons.directions_car,
+                  const Icon(Icons.directions_car,
                       color: LottoRunnersColors.primaryYellow, size: 16),
                   const SizedBox(width: 4),
                   Text(
@@ -2415,7 +2437,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.schedule,
+                  const Icon(Icons.schedule,
                       color: LottoRunnersColors.primaryYellow, size: 16),
                   const SizedBox(width: 4),
                   Text(
@@ -2434,7 +2456,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.attach_money,
+                    const Icon(Icons.attach_money,
                         color: LottoRunnersColors.primaryYellow, size: 16),
                     const SizedBox(width: 4),
                     Text(
@@ -2500,7 +2522,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => _startTransportationBooking(booking),
-                          icon: Icon(Icons.play_arrow,
+                          icon: const Icon(Icons.play_arrow,
                               color: LottoRunnersColors.primaryBlue, size: 18),
                           label: Text(
                             'Start Trip',
@@ -3597,7 +3619,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.play_arrow,
+                            const Icon(Icons.play_arrow,
                                 color: LottoRunnersColors.primaryBlue,
                                 size: 24),
                             const SizedBox(width: 12),
@@ -4144,7 +4166,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.info_outline,
                     color: Colors.blue,
                     size: 20,

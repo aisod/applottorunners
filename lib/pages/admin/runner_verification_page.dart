@@ -42,7 +42,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load applications. Please check your internet connection and try again.'),
+            content: const Text('Unable to load applications. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -67,7 +67,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to update application. Please check your internet connection and try again.'),
+            content: const Text('Unable to update application. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -361,7 +361,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
               '($count)',
               style: TextStyle(
                 fontSize: 10,
-                color: theme.colorScheme.outline[600],
+                color: Colors.grey,
               ),
             ),
           if (isUploaded && documentUrl != null) ...[
@@ -646,6 +646,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
     final hasVehicle = application['has_vehicle'] ?? false;
     final documentsCount =
         (application['verification_documents'] as List?)?.length ?? 0;
+    final theme = Theme.of(context);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -658,11 +659,10 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
               children: [
                 CircleAvatar(
                   backgroundColor:
-                      theme.colorScheme.outline[200], // Placeholder for theme-aware color
+                      theme.colorScheme.outline.withOpacity(0.1),
                   child: Icon(
                     hasVehicle ? Icons.directions_car : Icons.directions_walk,
-                    color:
-                        theme.colorScheme.outline[600], // Placeholder for theme-aware color
+                    color: theme.colorScheme.outline,
                     size: 20,
                   ),
                 ),
@@ -681,7 +681,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
                       Text(
                         user['email'] ?? 'No email',
                         style: TextStyle(
-                          color: theme.colorScheme.outline[600],
+                          color: theme.colorScheme.outline,
                           fontSize: 14,
                         ),
                       ),
@@ -689,7 +689,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
                         Text(
                           user['phone'],
                           style: TextStyle(
-                            color: theme.colorScheme.outline[600],
+                            color: theme.colorScheme.outline,
                             fontSize: 14,
                           ),
                         ),
@@ -723,23 +723,23 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
                 Icon(
                   hasVehicle ? Icons.directions_car : Icons.directions_walk,
                   size: 16,
-                  color: theme.colorScheme.outline[600],
+                  color: theme.colorScheme.outline,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   hasVehicle ? 'With Vehicle' : 'On Foot',
                   style: TextStyle(
-                    color: theme.colorScheme.outline[600],
+                    color: theme.colorScheme.outline,
                     fontSize: 12,
                   ),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.description, size: 16, color: theme.colorScheme.outline[600]),
+                Icon(Icons.description, size: 16, color: theme.colorScheme.outline),
                 const SizedBox(width: 4),
                 Text(
                   '$documentsCount document${documentsCount != 1 ? 's' : ''}',
                   style: TextStyle(
-                    color: theme.colorScheme.outline[600],
+                    color: theme.colorScheme.outline,
                     fontSize: 12,
                   ),
                 ),
@@ -747,7 +747,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
                 Text(
                   'Applied ${_calculateWaitingTime(application['applied_at'])}',
                   style: TextStyle(
-                    color: theme.colorScheme.outline[500],
+                    color: theme.colorScheme.outline,
                     fontSize: 12,
                   ),
                 ),
@@ -812,6 +812,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
   Widget _buildResponsiveActionButtons(Map<String, dynamic> application) {
     final screenWidth = Responsive.screenWidth(context);
     final isMobile = screenWidth < 768;
+    final theme = Theme.of(context);
 
     // Debug: Print screen size info
     print('Screen width: $screenWidth');
