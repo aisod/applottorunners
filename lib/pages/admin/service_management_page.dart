@@ -142,31 +142,19 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                       : theme.textTheme.titleLarge))
               ?.copyWith(
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
+            color: theme.colorScheme.onSurface,
           ),
         ),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                LottoRunnersColors.primaryBlue,
-                LottoRunnersColors.primaryBlueDark,
-              ],
-            ),
-          ),
-        ),
-        iconTheme: const IconThemeData(color: LottoRunnersColors.primaryYellow),
+        iconTheme: IconThemeData(color: theme.colorScheme.primary),
         actionsIconTheme:
-            const IconThemeData(color: LottoRunnersColors.primaryYellow),
+            IconThemeData(color: theme.colorScheme.primary),
         actions: [
           Padding(
             padding: EdgeInsets.all(isSmallMobile ? 4 : 8),
-            child: ElevatedButton.icon(
+            child: FilledButton.icon(
               onPressed: _showAddServiceDialog,
               icon: Icon(
                 Icons.add,
@@ -181,10 +169,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                   fontSize: isSmallMobile ? 12 : 14,
                 ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                elevation: 2,
+              style: FilledButton.styleFrom(
                 padding: EdgeInsets.symmetric(
                   horizontal: isSmallMobile ? 8 : 16,
                   vertical: isSmallMobile ? 8 : 12,
@@ -259,34 +244,30 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: isSmallMobile ? 24 : (isMobile ? 28 : 32),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: isSmallMobile ? 24 : (isMobile ? 28 : 32),
+            ),
           ),
           SizedBox(height: isSmallMobile ? 8 : 12),
           Text(
             value,
-            style: (isSmallMobile
-                    ? theme.textTheme.titleMedium
-                    : (isMobile
-                        ? theme.textTheme.titleLarge
-                        : theme.textTheme.titleLarge))
-                ?.copyWith(
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontSize: isSmallMobile ? 20 : 24,
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
             ),
@@ -342,44 +323,20 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
       );
     }
 
-    // Responsive grid configuration
-    int crossAxisCount;
-    double childAspectRatio;
-    double spacing;
-
-    if (isDesktop) {
-      crossAxisCount = 3;
-      childAspectRatio = 1.8; // More height for desktop cards
-      spacing = 20.0;
-    } else {
-      crossAxisCount = 1;
-      childAspectRatio =
-          2.2; // More height for mobile cards to prevent overflow
-      spacing = 16.0;
-    }
-
-    // Calculate the height needed for the grid
-    final itemHeight = 200.0; // Approximate height of each service card
-    final rows = (filteredServices.length / crossAxisCount).ceil();
-    final gridHeight = rows * itemHeight + (rows - 1) * spacing;
-
-    return SizedBox(
-      height: gridHeight,
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: spacing,
-          mainAxisSpacing: spacing,
-          childAspectRatio: childAspectRatio,
-        ),
-        itemCount: filteredServices.length,
-        itemBuilder: (context, index) {
-          final service = filteredServices[index];
-          return _buildServiceCard(service, theme);
-        },
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 400,
+        mainAxisExtent: 210,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
+      itemCount: filteredServices.length,
+      itemBuilder: (context, index) {
+        final service = filteredServices[index];
+        return _buildServiceCard(service, theme);
+      },
     );
   }
 
@@ -392,17 +349,10 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isActive
-              ? theme.colorScheme.primary.withValues(alpha: 0.3)
-              : theme.colorScheme.outline.withValues(alpha: 0.2),
-          width: 1.5,
+              ? theme.colorScheme.outlineVariant.withOpacity(0.5)
+              : theme.colorScheme.outline.withOpacity(0.2),
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -419,12 +369,12 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    color: isActive ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     ServiceIcons.getIcon(service['icon_name']),
-                    color: LottoRunnersColors.primaryYellow,
+                    color: isActive ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                 ),
@@ -447,9 +397,9 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                 ),
                 PopupMenuButton<String>(
                   onSelected: (value) => _handleServiceAction(value, service),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.more_vert,
-                    color: LottoRunnersColors.primaryYellow,
+                    color: theme.colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                   itemBuilder: (context) => [
@@ -486,36 +436,40 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.attach_money,
-                  size: 14,
-                  color: LottoRunnersColors.primaryYellow,
+                  size: 16,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   'N\$${(service['base_price'] ?? 0).toStringAsFixed(2)}',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: LottoRunnersColors.primaryBlue,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
                 const Spacer(),
                 if (service['requires_vehicle'] == true) ...[
-                  const Icon(
+                  Icon(
                     Icons.directions_car,
-                    size: 14,
-                    color: LottoRunnersColors.primaryYellow,
+                    size: 16,
+                    color: theme.colorScheme.secondary,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 8),
                 ],
                 Container(
-                  width: 6,
-                  height: 6,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isActive
-                        ? theme.colorScheme.tertiary
-                        : theme.colorScheme.outline,
-                    shape: BoxShape.circle,
+                    color: isActive ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isActive ? 'Active' : 'Inactive',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: isActive ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

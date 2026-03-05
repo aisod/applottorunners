@@ -19,6 +19,7 @@ class PayTodayPaymentPage extends StatefulWidget {
   final String paymentType;
   final String customerId;
   final String? runnerId;
+  final String bookingType;
   final VoidCallback? onSuccess;
   final VoidCallback? onFailure;
   final VoidCallback? onCancel;
@@ -29,6 +30,7 @@ class PayTodayPaymentPage extends StatefulWidget {
     required this.amount,
     required this.paymentType,
     required this.customerId,
+    this.bookingType = 'errand',
     this.runnerId,
     this.onSuccess,
     this.onFailure,
@@ -86,10 +88,11 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
       // Create payment intent
       final intentData = await PayTodayBackendService.createPaymentIntent(
         errandId: widget.errandId,
-        amount: widget.amount,
+        totalAmount: widget.amount,
         paymentType: widget.paymentType,
         customerId: widget.customerId,
         runnerId: widget.runnerId,
+        bookingType: widget.bookingType,
       );
 
       // Get data URI from response

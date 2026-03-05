@@ -12,6 +12,7 @@ import 'special_orders_management_page.dart';
 import 'transportation_management_page.dart';
 import 'user_management_page.dart';
 import 'feedback_management_page.dart';
+import 'payment_tracking_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -106,30 +107,36 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   Widget _buildHeroSection(bool isSmallMobile, bool isMobile) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(isSmallMobile ? 16 : (isMobile ? 24 : 40)),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  LottoRunnersColors.primaryBlue,
-                  LottoRunnersColors.primaryBlueDark,
-            LottoRunnersColors.primaryYellow,
-                ],
-              ),
-            ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        border: Border(
+          bottom: BorderSide(
+            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+            width: 1,
+          ),
+        ),
+      ),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.admin_panel_settings,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  size: isSmallMobile ? 32 : 40,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.admin_panel_settings,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: isSmallMobile ? 24 : 32,
+                  ),
                 ),
                 SizedBox(width: isSmallMobile ? 12 : 16),
                 Expanded(
@@ -138,96 +145,94 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     children: [
                       Text(
                         'Admin Dashboard',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: isSmallMobile ? 24 : 28,
+                        style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       SizedBox(height: isSmallMobile ? 4 : 8),
                       Text(
                         'Manage your Lotto Runners platform',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
-                          fontSize: isSmallMobile ? 14 : 16,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
+                ),
+              ],
             ),
-          ],
-        ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildQuickStats(bool isSmallMobile, bool isMobile, ThemeData theme) {
-    final totalUsers = _analyticsData?['total_users'] ?? 0;
-    final totalErrands = _analyticsData?['total_errands'] ?? 0;
-    final totalRevenue = _analyticsData?['total_revenue'] ?? 0.0;
-    final activeRunners = _analyticsData?['active_runners'] ?? 0;
-
-    final gridConfig = Responsive.getMetricsGridConfig(context);
-
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-        Text(
-          'Quick Stats',
-          style: TextStyle(
-            fontSize: isSmallMobile ? 18 : 22,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        SizedBox(height: isSmallMobile ? 12 : 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: gridConfig['crossAxisCount'],
-          crossAxisSpacing: gridConfig['spacing'],
-          mainAxisSpacing: gridConfig['spacing'],
-          childAspectRatio: gridConfig['childAspectRatio'],
-          children: [
-            _buildStatCard(
-              'Total Users',
-              totalUsers.toString(),
-              Icons.people,
-              LottoRunnersColors.primaryBlue,
-              theme,
-              isSmallMobile,
-            ),
-            _buildStatCard(
-              'Total Errands',
-              totalErrands.toString(),
-              Icons.assignment,
-              Colors.green,
-              theme,
-              isSmallMobile,
-            ),
-            _buildStatCard(
-              'Revenue',
-              'N\$${totalRevenue.toStringAsFixed(2)}',
-              Icons.attach_money,
-              LottoRunnersColors.primaryYellow,
-              theme,
-              isSmallMobile,
-            ),
-            _buildStatCard(
-              'Active Runners',
-              activeRunners.toString(),
-              Icons.directions_run,
-              LottoRunnersColors.accent,
-              theme,
-              isSmallMobile,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  // Widget _buildQuickStats(bool isSmallMobile, bool isMobile, ThemeData theme) {
+  //   final totalUsers = _analyticsData?['total_users'] ?? 0;
+  //   final totalErrands = _analyticsData?['total_errands'] ?? 0;
+  //   final totalRevenue = _analyticsData?['total_revenue'] ?? 0.0;
+  //   final activeRunners = _analyticsData?['active_runners'] ?? 0;
+  //
+  //   final gridConfig = Responsive.getMetricsGridConfig(context);
+  //
+  //   return Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //       Text(
+  //         'Quick Stats',
+  //         style: TextStyle(
+  //           fontSize: isSmallMobile ? 18 : 22,
+  //           fontWeight: FontWeight.bold,
+  //           color: Theme.of(context).colorScheme.onSurface,
+  //         ),
+  //       ),
+  //       SizedBox(height: isSmallMobile ? 12 : 16),
+  //       GridView.count(
+  //         shrinkWrap: true,
+  //         physics: const NeverScrollableScrollPhysics(),
+  //         crossAxisCount: gridConfig['crossAxisCount'],
+  //         crossAxisSpacing: gridConfig['spacing'],
+  //         mainAxisSpacing: gridConfig['spacing'],
+  //         childAspectRatio: gridConfig['childAspectRatio'],
+  //         children: [
+  //           _buildStatCard(
+  //             'Total Users',
+  //             totalUsers.toString(),
+  //             Icons.people,
+  //             LottoRunnersColors.primaryBlue,
+  //             theme,
+  //             isSmallMobile,
+  //           ),
+  //           _buildStatCard(
+  //             'Total Errands',
+  //             totalErrands.toString(),
+  //             Icons.assignment,
+  //             Colors.green,
+  //             theme,
+  //             isSmallMobile,
+  //           ),
+  //           _buildStatCard(
+  //             'Revenue',
+  //             'N\$${totalRevenue.toStringAsFixed(2)}',
+  //             Icons.attach_money,
+  //             LottoRunnersColors.primaryYellow,
+  //             theme,
+  //             isSmallMobile,
+  //           ),
+  //           _buildStatCard(
+  //             'Active Runners',
+  //             activeRunners.toString(),
+  //             Icons.directions_run,
+  //             LottoRunnersColors.accent,
+  //             theme,
+  //             isSmallMobile,
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildStatCard(
     String title,
@@ -240,51 +245,44 @@ class _AdminHomePageState extends State<AdminHomePage> {
     return Container(
       padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
+        children: [
+          Container(
             padding: EdgeInsets.all(isSmallMobile ? 8 : 12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: color,
               size: isSmallMobile ? 20 : 24,
             ),
           ),
           SizedBox(height: isSmallMobile ? 12 : 16),
           Text(
             value,
-            style: TextStyle(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: isSmallMobile ? 20 : 24,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           SizedBox(height: isSmallMobile ? 4 : 8),
           Text(
             title,
-            style: TextStyle(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: isSmallMobile ? 12 : 14,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -412,6 +410,17 @@ class _AdminHomePageState extends State<AdminHomePage> {
               theme,
               isSmallMobile,
             ),
+            _buildManagementCard(
+              'Payments',
+              Icons.payments_outlined,
+              Colors.greenAccent,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PaymentTrackingPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
         ],
       ),
       ],
@@ -432,22 +441,22 @@ class _AdminHomePageState extends State<AdminHomePage> {
       child: Container(
         padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
             width: 1,
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
+          children: [
+            Container(
               padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
-            decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
               child: Icon(
                 icon,
                 color: color,
@@ -455,13 +464,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
               ),
             ),
             SizedBox(height: isSmallMobile ? 8 : 12),
-          Text(
+            Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontSize: isSmallMobile ? 13 : 15,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ],

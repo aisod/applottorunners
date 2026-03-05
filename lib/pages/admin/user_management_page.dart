@@ -468,24 +468,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Management'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                LottoRunnersColors.primaryBlue,
-                LottoRunnersColors.primaryBlueDark,
-              ],
-            ),
-          ),
-        ),
-        iconTheme: const IconThemeData(color: LottoRunnersColors.primaryYellow),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
         actionsIconTheme:
-            const IconThemeData(color: LottoRunnersColors.primaryYellow),
+            IconThemeData(color: Theme.of(context).colorScheme.primary),
       ),
       body: Column(
         children: [
@@ -632,10 +620,14 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
     return Card(
       margin: EdgeInsets.only(bottom: isMobile ? 8 : 12),
-      elevation: 2,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+        ),
       ),
+      color: theme.colorScheme.surface,
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 12 : 16),
         child: Column(
@@ -648,14 +640,14 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   width: isMobile ? 40 : 48,
                   height: isMobile ? 40 : 48,
                   decoration: BoxDecoration(
-                    color: _getUserTypeColor(userType),
+                    color: _getUserTypeColor(userType).withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
                       userName.isNotEmpty ? userName[0].toUpperCase() : '?',
                       style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
+                        color: _getUserTypeColor(userType),
                         fontWeight: FontWeight.bold,
                         fontSize: isMobile ? 16 : 18,
                       ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/utils/responsive.dart';
-import 'package:lotto_runners/theme.dart';
 import 'dart:async';
 
 class PaymentTrackingPage extends StatefulWidget {
@@ -62,8 +61,16 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load payments. Please check your internet connection and try again.'),
+            content: Text('Error: $e'),
             backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 10),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
           ),
         );
       }
@@ -123,19 +130,19 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
       _filteredPayments = _payments.where((payment) {
         // Search filter
         final matchesSearch = query.isEmpty ||
-            (payment['errand']?['title'] ?? '')
+            (payment['title'] ?? '')
                 .toString()
                 .toLowerCase()
                 .contains(query.toLowerCase()) ||
-            (payment['customer']?['full_name'] ?? '')
+            (payment['customer_name'] ?? '')
                 .toString()
                 .toLowerCase()
                 .contains(query.toLowerCase()) ||
-            (payment['runner']?['full_name'] ?? '')
+            (payment['runner_name'] ?? '')
                 .toString()
                 .toLowerCase()
                 .contains(query.toLowerCase()) ||
-            (payment['transaction_id'] ?? '')
+            (payment['external_id'] ?? '')
                 .toString()
                 .toLowerCase()
                 .contains(query.toLowerCase());
@@ -181,25 +188,19 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payment Tracking'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                LottoRunnersColors.primaryBlue,
-                LottoRunnersColors.primaryBlueDark,
-              ],
-            ),
+        title: Text(
+          'Payment Tracking',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        iconTheme: const IconThemeData(color: LottoRunnersColors.primaryYellow),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
         actionsIconTheme:
-            const IconThemeData(color: LottoRunnersColors.primaryYellow),
+            IconThemeData(color: Theme.of(context).colorScheme.primary),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -325,24 +326,18 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     final isMobile = Responsive.isMobile(context);
+    final theme = Theme.of(context);
 
     return Container(
       padding: EdgeInsets.all(
           isMobile ? 16 : 32), // Reduced mobile padding from 28 to 16
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,7 +349,7 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
                 padding: EdgeInsets.all(
                     isMobile ? 4 : 8), // Reduced mobile padding from 6 to 4
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon,
@@ -367,8 +362,8 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                         fontSize: isMobile
                             ? 10
                             : 12, // Reduced mobile font size from 11 to 10
@@ -382,22 +377,20 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
           SizedBox(
               height:
                   isMobile ? 10 : 18), // Reduced mobile spacing from 14 to 10
-          Flexible(
-            child: Text(
-              value,
-              style: (isMobile
-                      ? Theme.of(context).textTheme.titleMedium
-                      : Theme.of(context).textTheme.headlineSmall)
-                  ?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: isMobile
-                    ? 18
-                    : 22, // Reduced mobile font size from 20 to 18
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
+          Text(
+            value,
+            style: (isMobile
+                    ? theme.textTheme.titleMedium
+                    : theme.textTheme.headlineSmall)
+                ?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+              fontSize: isMobile
+                  ? 18
+                  : 22, // Reduced mobile font size from 20 to 18
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ],
       ),
@@ -428,9 +421,15 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
               children: [
                 Expanded(child: _buildSearchBar()),
                 const SizedBox(width: 16),
-                _buildStatusFilter(),
+                SizedBox(
+                  width: 180,
+                  child: _buildStatusFilter(),
+                ),
                 const SizedBox(width: 16),
-                _buildTimeFilter(),
+                SizedBox(
+                  width: 180,
+                  child: _buildTimeFilter(),
+                ),
               ],
             ),
     );
@@ -599,10 +598,16 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
           bottom: Responsive.isMobile(context)
               ? 12
               : 16), // Reduced mobile margin from 16 to 12
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+      ),
+      color: theme.colorScheme.surface,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         onTap: () => _showPaymentDetails(payment),
         child: Padding(
           padding: EdgeInsets.all(Responsive.isMobile(context)
@@ -633,7 +638,7 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      payment['errand']?['title'] ?? 'Unknown Errand',
+                      payment['title'] ?? 'Unknown Booking',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -643,7 +648,7 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
                             ? 2
                             : 4), // Reduced mobile spacing from 4 to 2
                     Text(
-                      'Customer: ${payment['customer']?['full_name'] ?? 'Unknown'}',
+                      'Customer: ${payment['customer_name'] ?? 'Unknown'}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -654,7 +659,7 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
                               ? 2
                               : 4), // Reduced mobile spacing from 4 to 2
                       Text(
-                        'Runner: ${payment['runner']?['full_name'] ?? 'Unknown'}',
+                        'Runner: ${payment['runner_name'] ?? 'Unknown'}',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -717,38 +722,27 @@ class _PaymentTrackingPageState extends State<PaymentTrackingPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow('Payment ID', payment['id'] ?? 'N/A'),
+              _buildDetailRow('Booking ID', payment['booking_id'] ?? 'N/A'),
+              _buildDetailRow('Booking Type', payment['booking_type']?.toString().toUpperCase() ?? 'N/A'),
+              _buildDetailRow('External ID', payment['external_id'] ?? 'N/A'),
               _buildDetailRow('Amount', 'N\$${payment['amount'] ?? '0.00'}'),
               _buildDetailRow(
                   'Status', _formatStatus(payment['status'] ?? 'N/A')),
               _buildDetailRow(
-                  'Payment Method', payment['payment_method'] ?? 'N/A'),
-              if (payment['transaction_id'] != null)
-                _buildDetailRow('Transaction ID', payment['transaction_id']),
-              if (payment['stripe_payment_intent_id'] != null)
-                _buildDetailRow(
-                    'Stripe Intent ID', payment['stripe_payment_intent_id']),
-              if (payment['errand'] != null) ...[
-                const Divider(),
-                _buildDetailRow(
-                    'Errand Title', payment['errand']['title'] ?? 'N/A'),
-                _buildDetailRow(
-                    'Errand Category', payment['errand']['category'] ?? 'N/A'),
-              ],
-              if (payment['customer'] != null) ...[
-                const Divider(),
-                _buildDetailRow(
-                    'Customer Name', payment['customer']['full_name'] ?? 'N/A'),
-                _buildDetailRow(
-                    'Customer Email', payment['customer']['email'] ?? 'N/A'),
-              ],
-              if (payment['runner'] != null) ...[
-                const Divider(),
-                _buildDetailRow(
-                    'Runner Name', payment['runner']['full_name'] ?? 'N/A'),
-                _buildDetailRow(
-                    'Runner Email', payment['runner']['email'] ?? 'N/A'),
-              ],
+                  'Payment Type', payment['payment_type'] ?? 'N/A'),
+              const Divider(),
+              _buildDetailRow(
+                  'Item Title', payment['title'] ?? 'N/A'),
+              const Divider(),
+              _buildDetailRow(
+                  'Customer Name', payment['customer_name'] ?? 'N/A'),
+              _buildDetailRow(
+                  'Customer Email', payment['customer_email'] ?? 'N/A'),
+              const Divider(),
+              _buildDetailRow(
+                  'Runner Name', payment['runner_name'] ?? 'N/A'),
+              _buildDetailRow(
+                  'Runner Email', payment['runner_email'] ?? 'N/A'),
               if (payment['created_at'] != null)
                 _buildDetailRow(
                     'Created At', _formatDate(payment['created_at'])),

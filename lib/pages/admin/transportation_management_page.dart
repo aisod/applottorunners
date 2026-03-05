@@ -180,26 +180,18 @@ class _TransportationManagementPageState
       appBar: AppBar(
         title: Text(
           'Transportation Management',
-          style: TextStyle(fontSize: isSmallMobile ? 18 : (isMobile ? 20 : 22)),
-        ),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                LottoRunnersColors.primaryBlue,
-                LottoRunnersColors.primaryBlueDark,
-              ],
-            ),
+          style: TextStyle(
+            fontSize: isSmallMobile ? 18 : (isMobile ? 20 : 22),
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        iconTheme: IconThemeData(color: LottoRunnersColors.primaryYellow),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
         actionsIconTheme:
-            IconThemeData(color: LottoRunnersColors.primaryYellow),
+            IconThemeData(color: Theme.of(context).colorScheme.primary),
         bottom: TabBar(
           controller: _tabController,
           // Make tabs evenly spaced and centered across the width
@@ -237,9 +229,9 @@ class _TransportationManagementPageState
             fontSize: isSmallMobile ? 10 : (isMobile ? 11 : 12),
             fontWeight: FontWeight.w600,
           ),
-          indicatorColor: Theme.of(context).colorScheme.onPrimary,
-          labelColor: LottoRunnersColors.primaryYellow,
-          unselectedLabelColor: Theme.of(context).colorScheme.onPrimary,
+          indicatorColor: Theme.of(context).colorScheme.primary,
+          labelColor: Theme.of(context).colorScheme.primary,
+          unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         actions: [
           IconButton(
@@ -298,15 +290,11 @@ class _TransportationManagementPageState
         SliverPadding(
           padding: padding,
           sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: Responsive.isSmallMobile(context)
-                  ? 1
-                  : (Responsive.isMobile(context) ? 2 : 3),
-              childAspectRatio: Responsive.isSmallMobile(context)
-                  ? 0.7
-                  : (Responsive.isMobile(context) ? 0.8 : 0.6),
-              crossAxisSpacing: Responsive.getResponsiveSpacing(context),
-              mainAxisSpacing: Responsive.getResponsiveSpacing(context),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 400,
+              mainAxisExtent: 220, // Increased height to prevent overflow
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -377,7 +365,13 @@ class _TransportationManagementPageState
         ),
         SliverPadding(
           padding: padding,
-          sliver: SliverList(
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 400,
+              mainAxisExtent: 240,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final provider = _providers[index];
@@ -391,50 +385,50 @@ class _TransportationManagementPageState
     );
   }
 
-  Widget _buildTransportationServicesTab() {
-    final EdgeInsets padding = Responsive.getResponsivePadding(context);
-    if (_transportationServices.isEmpty) {
-      return CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildSectionHeader(
-              'Transportation Services',
-              'Manage available transportation services',
-              onAdd: () => _addTransportationService(),
-            ),
-          ),
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: Text('No services found')),
-          ),
-        ],
-      );
-    }
-
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: _buildSectionHeader(
-            'Transportation Services',
-            'Manage available transportation services',
-            onAdd: () => _addTransportationService(),
-          ),
-        ),
-        SliverPadding(
-          padding: padding,
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final service = _transportationServices[index];
-                return _buildServiceCard(service);
-              },
-              childCount: _transportationServices.length,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildTransportationServicesTab() {
+  //   final EdgeInsets padding = Responsive.getResponsivePadding(context);
+  //   if (_transportationServices.isEmpty) {
+  //     return CustomScrollView(
+  //       slivers: [
+  //         SliverToBoxAdapter(
+  //           child: _buildSectionHeader(
+  //             'Transportation Services',
+  //             'Manage available transportation services',
+  //             onAdd: () => _addTransportationService(),
+  //           ),
+  //         ),
+  //         const SliverFillRemaining(
+  //           hasScrollBody: false,
+  //           child: Center(child: Text('No services found')),
+  //         ),
+  //       ],
+  //     );
+  //   }
+  //
+  //   return CustomScrollView(
+  //     slivers: [
+  //       SliverToBoxAdapter(
+  //         child: _buildSectionHeader(
+  //           'Transportation Services',
+  //           'Manage available transportation services',
+  //           onAdd: () => _addTransportationService(),
+  //         ),
+  //       ),
+  //       SliverPadding(
+  //         padding: padding,
+  //         sliver: SliverList(
+  //           delegate: SliverChildBuilderDelegate(
+  //             (context, index) {
+  //               final service = _transportationServices[index];
+  //               return _buildServiceCard(service);
+  //             },
+  //             childCount: _transportationServices.length,
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildBookingsTab() {
     final EdgeInsets padding = const EdgeInsets.all(16);
@@ -465,7 +459,13 @@ class _TransportationManagementPageState
         ),
         SliverPadding(
           padding: padding,
-          sliver: SliverList(
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 400,
+              mainAxisExtent: 260,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final booking = _bookings[index];
@@ -486,14 +486,13 @@ class _TransportationManagementPageState
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            LottoRunnersColors.primaryBlue,
-            LottoRunnersColors.primaryBlueDark,
-          ],
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+            width: 1,
+          ),
         ),
       ),
       child: Row(
@@ -504,28 +503,31 @@ class _TransportationManagementPageState
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onPrimary,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.85),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
           if (onAdd != null)
-            ElevatedButton.icon(
+            FilledButton.icon(
               onPressed: onAdd,
-              icon: Icon(Icons.add),
+              icon: const Icon(Icons.add, size: 18),
               label: const Text('Add'),
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
         ],
       ),
@@ -534,6 +536,14 @@ class _TransportationManagementPageState
 
   Widget _buildVehicleTypeCard(Map<String, dynamic> vehicleType) {
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+      ),
+      color: Theme.of(context).colorScheme.surface,
       child: Padding(
         padding: EdgeInsets.all(Responsive.getResponsiveSpacing(context) * 0.5),
         child: Column(
@@ -546,9 +556,14 @@ class _TransportationManagementPageState
                   width: Responsive.isSmallMobile(context) ? 28 : 36,
                   height: Responsive.isSmallMobile(context) ? 28 : 36,
                   alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Icon(
                     _getVehicleIcon(vehicleType['icon']),
                     size: Responsive.isSmallMobile(context) ? 20 : 24,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
                 SizedBox(width: Responsive.isSmallMobile(context) ? 6 : 8),
@@ -793,12 +808,20 @@ class _TransportationManagementPageState
   Widget _buildProviderCard(Map<String, dynamic> provider) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+      ),
+      color: Theme.of(context).colorScheme.surface,
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: LottoRunnersColors.primaryYellow.withOpacity(0.15),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           child: Icon(
             Icons.storefront,
-            color: LottoRunnersColors.primaryYellow,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
           ),
         ),
         title: Text(provider['name'] ?? 'Unknown'),
@@ -1081,10 +1104,14 @@ class _TransportationManagementPageState
 
     return Card(
       margin: EdgeInsets.only(bottom: isMobile ? 8 : 12),
-      elevation: 2,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+        ),
       ),
+      color: Theme.of(context).colorScheme.surface,
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 12 : 16),
         child: Column(
@@ -1098,7 +1125,7 @@ class _TransportationManagementPageState
                   height: isMobile ? 40 : 48,
                   decoration: BoxDecoration(
                     color: _getBookingStatusColor(booking['status'])
-                        .withValues(alpha: 0.1),
+                        .withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -4159,62 +4186,62 @@ class _TransportationManagementPageState
   }
 
   // Remove service provider
-  Future<void> _removeServiceProvider(
-      String serviceId, String providerId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove Provider'),
-        content: const Text(
-          'Are you sure you want to remove this provider from the service? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await SupabaseConfig.removeProviderFromService(serviceId, providerId);
-        _showSuccessSnackBar('Provider removed successfully');
-        _loadTransportationServices();
-      } catch (e) {
-        // Handle specific error types with better user messages
-        String errorMessage;
-        if (e.toString().contains('foreign key constraint') &&
-            e.toString().contains('bus_service_bookings')) {
-          errorMessage =
-              'Cannot remove this provider because it has existing bookings. '
-              'Please cancel or complete all bookings for this provider before removing.';
-        } else if (e.toString().contains('foreign key constraint')) {
-          errorMessage =
-              'Cannot remove this provider because it is referenced by other data. '
-              'Please resolve all related bookings before removing.';
-        } else {
-          errorMessage = 'Error removing provider: ${e.toString()}';
-        }
-
-        // Show a detailed error dialog instead of just a snackbar
-        _showDetailedErrorDialog(
-          title: 'Cannot Remove Provider',
-          message: errorMessage,
-          details: e.toString(),
-        );
-      }
-    }
-  }
+  // Future<void> _removeServiceProvider(
+  //     String serviceId, String providerId) async {
+  //   final confirmed = await showDialog<bool>(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('Remove Provider'),
+  //       content: const Text(
+  //         'Are you sure you want to remove this provider from the service? This action cannot be undone.',
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context, false),
+  //           child: const Text('Cancel'),
+  //         ),
+  //         ElevatedButton(
+  //           onPressed: () => Navigator.pop(context, true),
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: Colors.red,
+  //             foregroundColor: Colors.white,
+  //           ),
+  //           child: const Text('Remove'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  //
+  //   if (confirmed == true) {
+  //     try {
+  //       await SupabaseConfig.removeProviderFromService(serviceId, providerId);
+  //       _showSuccessSnackBar('Provider removed successfully');
+  //       _loadTransportationServices();
+  //     } catch (e) {
+  //       // Handle specific error types with better user messages
+  //       String errorMessage;
+  //       if (e.toString().contains('foreign key constraint') &&
+  //           e.toString().contains('bus_service_bookings')) {
+  //         errorMessage =
+  //             'Cannot remove this provider because it has existing bookings. '
+  //             'Please cancel or complete all bookings for this provider before removing.';
+  //       } else if (e.toString().contains('foreign key constraint')) {
+  //         errorMessage =
+  //             'Cannot remove this provider because it is referenced by other data. '
+  //             'Please resolve all related bookings before removing.';
+  //       } else {
+  //         errorMessage = 'Error removing provider: ${e.toString()}';
+  //       }
+  //
+  //       // Show a detailed error dialog instead of just a snackbar
+  //       _showDetailedErrorDialog(
+  //         title: 'Cannot Remove Provider',
+  //         message: errorMessage,
+  //         details: e.toString(),
+  //       );
+  //     }
+  //   }
+  // }
 
   Future<void> _editTransportationService(Map<String, dynamic> service) async {
     final nameController = TextEditingController(text: service['name'] ?? '');
@@ -4448,109 +4475,109 @@ class _TransportationManagementPageState
     }
   }
 
-  // Show delete error with deactivate option
-  void _showDeleteErrorWithDeactivateOption({
-    required Map<String, dynamic> service,
-    required String errorMessage,
-    required String technicalDetails,
-  }) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(
-              Icons.warning_amber_outlined,
-              color: Colors.orange,
-              size: 28,
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Cannot Delete Service',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              errorMessage,
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.lightbulb_outline,
-                          color: Colors.blue.shade700, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Recommendation:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Instead of deleting, you can deactivate this service. This will:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '• Hide the service from users\n• Preserve existing bookings\n• Allow reactivation later',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.blue.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deactivateTransportationService(service);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Deactivate Instead'),
-          ),
-        ],
-      ),
-    );
-  }
+  // // Show delete error with deactivate option
+  // void _showDeleteErrorWithDeactivateOption({
+  //   required Map<String, dynamic> service,
+  //   required String errorMessage,
+  //   required String technicalDetails,
+  // }) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Row(
+  //         children: [
+  //           Icon(
+  //             Icons.warning_amber_outlined,
+  //             color: Colors.orange,
+  //             size: 28,
+  //           ),
+  //           SizedBox(width: 8),
+  //           Expanded(
+  //             child: Text(
+  //               'Cannot Delete Service',
+  //               style: TextStyle(
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       content: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             errorMessage,
+  //             style: TextStyle(fontSize: 16),
+  //           ),
+  //           const SizedBox(height: 16),
+  //           Container(
+  //             padding: const EdgeInsets.all(12),
+  //             decoration: BoxDecoration(
+  //               color: Colors.blue.shade50,
+  //               borderRadius: BorderRadius.circular(8),
+  //               border: Border.all(color: Colors.blue.shade200),
+  //             ),
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Row(
+  //                   children: [
+  //                     Icon(Icons.lightbulb_outline,
+  //                         color: Colors.blue.shade700, size: 20),
+  //                     const SizedBox(width: 8),
+  //                     Text(
+  //                       'Recommendation:',
+  //                       style: TextStyle(
+  //                         fontWeight: FontWeight.bold,
+  //                         color: Colors.blue.shade700,
+  //                         fontSize: 14,
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //                 const SizedBox(height: 8),
+  //                 Text(
+  //                   'Instead of deleting, you can deactivate this service. This will:',
+  //                   style: TextStyle(
+  //                     fontSize: 14,
+  //                     color: Colors.blue.shade700,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 4),
+  //                 Text(
+  //                   '• Hide the service from users\n• Preserve existing bookings\n• Allow reactivation later',
+  //                   style: TextStyle(
+  //                     fontSize: 13,
+  //                     color: Colors.blue.shade600,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: const Text('Cancel'),
+  //         ),
+  //         ElevatedButton(
+  //           onPressed: () async {
+  //             Navigator.pop(context);
+  //             await _deactivateTransportationService(service);
+  //           },
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: Colors.orange,
+  //             foregroundColor: Colors.white,
+  //           ),
+  //           child: const Text('Deactivate Instead'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   // Deactivate transportation service instead of deleting
   Future<void> _deactivateTransportationService(
@@ -4791,188 +4818,188 @@ class _TransportationManagementPageState
   }
   */
 
-  void _showAddPricingTierDialog(String vehicleTypeId) {}
-
-  /* void _showEditPricingTierDialog(Map<String, dynamic> tier) {
-    final minDistanceController = TextEditingController(
-      text: tier['min_distance_km']?.toString() ?? '',
-    );
-    final maxDistanceController = TextEditingController(
-      text: tier['max_distance_km']?.toString() ?? '',
-    );
-    final basePriceController = TextEditingController(
-      text: tier['base_price']?.toString() ?? '',
-    );
-    final businessPriceController = TextEditingController(
-      text: tier['business_price']?.toString() ?? '',
-    );
-    final pricePerKmController = TextEditingController(
-      text: tier['price_per_km']?.toString() ?? '',
-    );
-    final tierNameController = TextEditingController(
-      text: tier['tier_name'] ?? '',
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Pricing Tier'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: minDistanceController,
-                decoration: const InputDecoration(
-                  labelText: 'Min Distance (km) *',
-                  hintText: '0',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: maxDistanceController,
-                decoration: const InputDecoration(
-                  labelText: 'Max Distance (km)',
-                  hintText: 'Leave empty for unlimited',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: basePriceController,
-                decoration: const InputDecoration(
-                  labelText: 'Base Price (NAD) *',
-                  hintText: '0.00',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-              ),
-              TextField(
-                controller: businessPriceController,
-                decoration: const InputDecoration(
-                  labelText: 'Business Price (NAD) *',
-                  hintText: '0.00',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-              ),
-              TextField(
-                controller: pricePerKmController,
-                decoration: const InputDecoration(
-                  labelText: 'Price per KM (NAD)',
-                  hintText: '0.00',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-              ),
-              TextField(
-                controller: tierNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Tier Name',
-                  hintText: 'e.g., Local, Regional, Long Distance',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (minDistanceController.text.isNotEmpty &&
-                  basePriceController.text.isNotEmpty &&
-                  businessPriceController.text.isNotEmpty) {
-                final updates = {
-                  'min_distance_km':
-                      double.tryParse(minDistanceController.text) ?? 0,
-                  'max_distance_km': maxDistanceController.text.isNotEmpty
-                      ? double.tryParse(maxDistanceController.text)
-                      : null,
-                  'base_price': double.tryParse(basePriceController.text) ?? 0,
-                  'business_price':
-                      double.tryParse(businessPriceController.text) ?? 0,
-                  'price_per_km': pricePerKmController.text.isNotEmpty
-                      ? double.tryParse(pricePerKmController.text) ?? 0
-                      : 0,
-                  'tier_name': tierNameController.text.isNotEmpty
-                      ? tierNameController.text
-                      : null,
-                };
-
-                try {
-                  await SupabaseConfig.updateVehiclePricingTier(
-                    tier['id'],
-                    updates,
-                  );
-                  Navigator.pop(context); // Close edit tier dialog
-                  // Pricing dialog removed
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Unable to update pricing tier. Please check your internet connection and try again.'),
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-  */
-
-  Future<void> _deletePricingTier(String tierId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Pricing Tier'),
-        content: const Text(
-          'Are you sure you want to delete this pricing tier?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await SupabaseConfig.deleteVehiclePricingTier(tierId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pricing tier deleted successfully')),
-        );
-        // Refresh the pricing dialog
-        setState(() {});
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unable to delete pricing tier. Please check your internet connection and try again.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
-
-  void _manageServiceSchedules(Map<String, dynamic> service) {}
-
-  void _manageServicePricing(Map<String, dynamic> service) {}
+  // void _showAddPricingTierDialog(String vehicleTypeId) {}
+  //
+  //   /* void _showEditPricingTierDialog(Map<String, dynamic> tier) {
+  //     final minDistanceController = TextEditingController(
+  //       text: tier['min_distance_km']?.toString() ?? '',
+  //     );
+  //     final maxDistanceController = TextEditingController(
+  //       text: tier['max_distance_km']?.toString() ?? '',
+  //     );
+  //     final basePriceController = TextEditingController(
+  //       text: tier['base_price']?.toString() ?? '',
+  //     );
+  //     final businessPriceController = TextEditingController(
+  //       text: tier['business_price']?.toString() ?? '',
+  //     );
+  //     final pricePerKmController = TextEditingController(
+  //       text: tier['price_per_km']?.toString() ?? '',
+  //     );
+  //     final tierNameController = TextEditingController(
+  //       text: tier['tier_name'] ?? '',
+  //     );
+  //
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: const Text('Edit Pricing Tier'),
+  //         content: SingleChildScrollView(
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               TextField(
+  //                 controller: minDistanceController,
+  //                 decoration: const InputDecoration(
+  //                   labelText: 'Min Distance (km) *',
+  //                   hintText: '0',
+  //                 ),
+  //                 keyboardType: TextInputType.number,
+  //               ),
+  //               TextField(
+  //                 controller: maxDistanceController,
+  //                 decoration: const InputDecoration(
+  //                   labelText: 'Max Distance (km)',
+  //                   hintText: 'Leave empty for unlimited',
+  //                 ),
+  //                 keyboardType: TextInputType.number,
+  //               ),
+  //               TextField(
+  //                 controller: basePriceController,
+  //                 decoration: const InputDecoration(
+  //                   labelText: 'Base Price (NAD) *',
+  //                   hintText: '0.00',
+  //                 ),
+  //                 keyboardType: const TextInputType.numberWithOptions(
+  //                   decimal: true,
+  //                 ),
+  //               ),
+  //               TextField(
+  //                 controller: businessPriceController,
+  //                 decoration: const InputDecoration(
+  //                   labelText: 'Business Price (NAD) *',
+  //                   hintText: '0.00',
+  //                 ),
+  //                 keyboardType: const TextInputType.numberWithOptions(
+  //                   decimal: true,
+  //                 ),
+  //               ),
+  //               TextField(
+  //                 controller: pricePerKmController,
+  //                 decoration: const InputDecoration(
+  //                   labelText: 'Price per KM (NAD)',
+  //                   hintText: '0.00',
+  //                 ),
+  //                 keyboardType: const TextInputType.numberWithOptions(
+  //                   decimal: true,
+  //                 ),
+  //               ),
+  //               TextField(
+  //                 controller: tierNameController,
+  //                 decoration: const InputDecoration(
+  //                   labelText: 'Tier Name',
+  //                   hintText: 'e.g., Local, Regional, Long Distance',
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.pop(context),
+  //             child: const Text('Cancel'),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () async {
+  //               if (minDistanceController.text.isNotEmpty &&
+  //                   basePriceController.text.isNotEmpty &&
+  //                   businessPriceController.text.isNotEmpty) {
+  //                 final updates = {
+  //                   'min_distance_km':
+  //                       double.tryParse(minDistanceController.text) ?? 0,
+  //                   'max_distance_km': maxDistanceController.text.isNotEmpty
+  //                       ? double.tryParse(maxDistanceController.text)
+  //                       : null,
+  //                   'base_price': double.tryParse(basePriceController.text) ?? 0,
+  //                   'business_price':
+  //                       double.tryParse(businessPriceController.text) ?? 0,
+  //                   'price_per_km': pricePerKmController.text.isNotEmpty
+  //                       ? double.tryParse(pricePerKmController.text) ?? 0
+  //                       : 0,
+  //                   'tier_name': tierNameController.text.isNotEmpty
+  //                       ? tierNameController.text
+  //                       : null,
+  //                 };
+  //
+  //                 try {
+  //                   await SupabaseConfig.updateVehiclePricingTier(
+  //                     tier['id'],
+  //                     updates,
+  //                   );
+  //                   Navigator.pop(context); // Close edit tier dialog
+  //                   // Pricing dialog removed
+  //                 } catch (e) {
+  //                   ScaffoldMessenger.of(context).showSnackBar(
+  //                     SnackBar(
+  //                       content: Text('Unable to update pricing tier. Please check your internet connection and try again.'),
+  //                       backgroundColor: Theme.of(context).colorScheme.error,
+  //                     ),
+  //                   );
+  //                 }
+  //               }
+  //             },
+  //             child: const Text('Save'),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  //   */
+  //
+  //   // Future<void> _deletePricingTier(String tierId) async {
+  //   //   final confirmed = await showDialog<bool>(
+  //   //     context: context,
+  //   //     builder: (context) => AlertDialog(
+  //   //       title: const Text('Delete Pricing Tier'),
+  //   //       content: const Text(
+  //   //         'Are you sure you want to delete this pricing tier?',
+  //   //       ),
+  //   //       actions: [
+  //   //         TextButton(
+  //   //           onPressed: () => Navigator.pop(context, false),
+  //   //           child: const Text('Cancel'),
+  //   //         ),
+  //   //         ElevatedButton(
+  //   //           onPressed: () => Navigator.pop(context, true),
+  //   //           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+  //   //           child: const Text('Delete'),
+  //   //         ),
+  //   //       ],
+  //   //     ),
+  //   //   );
+  //   //
+  //   //   if (confirmed == true) {
+  //   //     try {
+  //   //       await SupabaseConfig.deleteVehiclePricingTier(tierId);
+  //   //       ScaffoldMessenger.of(context).showSnackBar(
+  //   //         const SnackBar(content: Text('Pricing tier deleted successfully')),
+  //   //       );
+  //   //       // Refresh the pricing dialog
+  //   //       setState(() {});
+  //   //     } catch (e) {
+  //   //       ScaffoldMessenger.of(context).showSnackBar(
+  //   //         SnackBar(
+  //   //           content: Text('Unable to delete pricing tier. Please check your internet connection and try again.'),
+  //   //           backgroundColor: Theme.of(context).colorScheme.error,
+  //   //         ),
+  //   //       );
+  //   //     }
+  //   //   }
+  //   // }
+  //
+  //   // void _manageServiceSchedules(Map<String, dynamic> service) {}
+  //   //
+  //   // void _manageServicePricing(Map<String, dynamic> service) {}
 
   /// Manage schedules for a specific route
 

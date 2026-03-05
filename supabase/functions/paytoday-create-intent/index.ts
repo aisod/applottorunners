@@ -131,13 +131,14 @@ Deno.serve(async (req: Request) => {
         user_first_name: url.searchParams.get('user_first_name') || 'Customer',
         user_last_name: url.searchParams.get('user_last_name') || 'Name',
         return_url: url.searchParams.get('return_url') || '',
+        booking_type: url.searchParams.get('booking_type') || 'errand',
       };
     }
 
     /*
       Mapping fields from our app to the PayToday SDK expectation:
       - errand_id -> used for invoice_number
-      - payment_type -> used for invoice_number suffix
+      - payment_type -> used for invoice_number suffix (first_half, second_half, full_payment)
       - amount -> amount
       - user_email -> user_email
     */
@@ -151,6 +152,7 @@ Deno.serve(async (req: Request) => {
       user_first_name, // Optional, can be passed from app
       user_last_name, // Optional, can be passed from app
       return_url,
+      booking_type = 'errand',
     } = requestData;
 
     // Validate required fields
@@ -170,7 +172,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // Construct invoice number (unique ref)
-    const invoice_number = `${errand_id}_${payment_type}_${Date.now()}`;
+    // Format: bookingId_paymentType_bookingType_timestamp
+    const invoice_number = `${errand_id}_${payment_type}_${booking_type}_${Date.now()}`;
 
     // Validate amount is reasonable (not accidentally in cents)
     if (amount > 1000000) {

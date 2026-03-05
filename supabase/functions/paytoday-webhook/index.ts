@@ -25,26 +25,49 @@ serve(async (req) => {
 
     const { ref, status, transaction_id } = body
 
-    // ref usually looks like errandId_paymentType_timestamp
+    // ref format: bookingId_paymentType_bookingType_timestamp
     if (ref) {
       const parts = ref.split('_')
-      const errandId = parts[0]
+      const bookingId = parts[0]
       const paymentType = parts[1]
+      const bookingType = parts[2] || 'errand' // Default to errand for backward compatibility
 
       if (status === 'OK' || status === 'SUCCESS') {
-        // Update database
-        const { error } = await supabaseClient
+        const now = new Date().toISOString()
+
+        // Update transaction database
+        const { error: txError } = await supabaseClient
           .from('paytoday_transactions')
           .update({
-             status: 'completed',
-             transaction_id: transaction_id,
-             updated_at: new Date().toISOString(),
-             completed_at: new Date().toISOString()
+            status: 'completed',
+            transaction_id: transaction_id,
+            updated_at: now,
+            completed_at: now
           })
-          .eq('errand_id', errandId)
+          .eq('errand_id', bookingId) // Using errand_id field for all booking types in paytoday_transactions
           .eq('payment_type', paymentType)
 
-        if (error) throw error
+        if (txError) throw txError
+
+        // Determine which table to update based on bookingType
+        let tableName = 'errands'
+        if (bookingType === 'transportation') tableName = 'transportation_bookings'
+        else if (bookingType === 'contract') tableName = 'contract_bookings'
+        else if (bookingType === 'bus') tableName = 'bus_service_bookings'
+
+        // If it's a full payment, update the booking's escrow status
+        if (paymentType === 'full_payment') {
+          const { error: bookingError } = await supabaseClient
+            .from(tableName)
+            .update({
+              payment_status: 'in_escrow',
+              updated_at: now
+            })
+            .eq('id', bookingId)
+
+          if (bookingError) throw bookingError
+        }
+
         console.log(`Transaction ${ref} verified and updated via webhook.`)
       }
     }

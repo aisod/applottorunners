@@ -442,9 +442,9 @@ class SupabaseConfig {
           .eq('id', errandId)
           .single();
 
-      final customerId = errandResponse['customer_id'];
-      final errandTitle = errandResponse['title'];
-      final category = errandResponse['category'];
+      // final customerId = errandResponse['customer_id'];
+      // final errandTitle = errandResponse['title'];
+      // final category = errandResponse['category'];
 
       final response = await client.from('errands').update({
         'status': status,
@@ -792,19 +792,19 @@ class SupabaseConfig {
         throw Exception('Errand must be in progress or accepted to be completed');
       }
 
-      // Check if second payment has been made
-      final secondPaymentExists = await client
+      // Check if full payment has been made
+      final paymentExists = await client
           .from('paytoday_transactions')
           .select('id, status')
           .eq('errand_id', errandId)
-          .eq('payment_type', 'second_half')
+          .eq('payment_type', 'full_payment')
           .maybeSingle();
 
-      if (secondPaymentExists == null || secondPaymentExists['status'] != 'completed') {
+      if (paymentExists == null || paymentExists['status'] != 'completed') {
         // Payment required
         return {
           'payment_required': true,
-          'amount': totalPrice / 2,
+          'amount': totalPrice,
           'customer_id': customerId,
           'runner_id': runnerId,
           'errand_title': errandTitle,
@@ -1576,15 +1576,87 @@ class SupabaseConfig {
 
   static Future<List<Map<String, dynamic>>> getAllPayments() async {
     try {
-      final response = await client.from('payments').select('''
-          *,
-          errand:errand_id(title, category),
-          customer:customer_id(full_name, email),
-          runner:runner_id(full_name, email)
-        ''').order('created_at', ascending: false);
+      final response = await client.from('admin_all_transactions').select().order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       throw Exception('Failed to fetch payments: $e');
+    }
+  }
+
+  // Payment Approval and Escrow logic
+  static Future<void> approvePayment(String bookingId, String bookingType) async {
+    try {
+      String tableName = 'errands';
+      if (bookingType == 'transportation') tableName = 'transportation_bookings';
+      else if (bookingType == 'contract') tableName = 'contract_bookings';
+      else if (bookingType == 'bus') tableName = 'bus_service_bookings';
+
+      await client.from(tableName).update({
+        'payment_status': 'released_to_runner',
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', bookingId);
+      
+      print('✅ Payment approved and released to runner for $bookingType: $bookingId');
+    } catch (e) {
+      throw Exception('Failed to approve payment: $e');
+    }
+  }
+
+  // Wallet and Withdrawal helpers
+  static Future<double> getRunnerWithdrawableBalance(String runnerId) async {
+    try {
+      final response = await client.rpc(
+        'get_runner_withdrawable_balance',
+        params: {'p_runner_id': runnerId},
+      );
+      return (response as num?)?.toDouble() ?? 0.0;
+    } catch (e) {
+      print('❌ Error fetching wallet balance: $e');
+      return 0.0;
+    }
+  }
+
+  static Future<void> submitWithdrawalRequest(String runnerId, double amount, String notes) async {
+    try {
+      await client.from('withdrawal_requests').insert({
+        'runner_id': runnerId,
+        'amount': amount,
+        'notes': notes,
+        'status': 'pending',
+      });
+    } catch (e) {
+      throw Exception('Failed to submit withdrawal request: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? runnerId}) async {
+    try {
+      var query = client.from('withdrawal_requests').select('''
+        *,
+        runner:users!withdrawal_requests_runner_id_fkey(full_name, email)
+      ''');
+      
+      if (runnerId != null) {
+        query = query.eq('runner_id', runnerId);
+      }
+      
+      final response = await query.order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      throw Exception('Failed to fetch withdrawal requests: $e');
+    }
+  }
+
+  static Future<void> updateWithdrawalRequestStatus(String requestId, String status) async {
+    try {
+      await client.from('withdrawal_requests').update({
+        'status': status,
+        'updated_at': DateTime.now().toIso8601String(),
+        'processed_at': status == 'completed' ? DateTime.now().toIso8601String() : null,
+        'processed_by': currentUser?.id,
+      }).eq('id', requestId);
+    } catch (e) {
+      throw Exception('Failed to update withdrawal request status: $e');
     }
   }
 
@@ -6538,8 +6610,8 @@ class SupabaseConfig {
 
       final response = await client
           .from('runner_earnings_summary')
-          .select('*')
-          .order('total_revenue', ascending: false);
+          .select('*');
+          // .order('total_revenue', ascending: false); // Removed to prevent crash if column missing
 
       final data = List<Map<String, dynamic>>.from(response);
 

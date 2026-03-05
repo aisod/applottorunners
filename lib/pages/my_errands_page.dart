@@ -136,7 +136,6 @@ class _MyErrandsPageState extends State<MyErrandsPage>
     }
   }
 
-
   Map<String, dynamic> _calculatePaymentStatus(Map<String, dynamic> errand) {
     final transactions = (errand['paytoday_transactions'] as List?) ?? [];
     double totalPaid = 0.0;
@@ -153,7 +152,6 @@ class _MyErrandsPageState extends State<MyErrandsPage>
     
     return {
       'totalPaid': totalPaid,
-      'hasFirstPayment': price > 0 && totalPaid >= (price / 2) - 1.0, // Small tolerance
       'hasFullPayment': price > 0 && totalPaid >= price - 1.0,
     };
   }
@@ -167,6 +165,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           amount: amount,
           paymentType: paymentType,
           customerId: SupabaseConfig.currentUser?.id ?? '',
+          bookingType: 'errand',
           runnerId: errand['runner_id'],
           onSuccess: () async {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -200,6 +199,55 @@ class _MyErrandsPageState extends State<MyErrandsPage>
   /// Public method to refresh errands from parent widget
   Future<void> refresh() async {
     await _loadMyErrands(forceRefresh: true);
+  }
+
+  Future<void> _handleApprovePayment(Map<String, dynamic> errand) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Approve Runner\'s Work?'),
+        content: const Text(
+          'By approving, you confirm the work is completed and the funds will be released to the runner. This action cannot be reversed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No, Not Yet'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
+            child: const Text('Yes, Approve'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await SupabaseConfig.approvePayment(errand['id'], 'errand');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Payment released to runner! Thank you.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _loadMyErrands(forceRefresh: true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error approving payment: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _showErrandDetails(Map<String, dynamic> errand) {
@@ -454,33 +502,12 @@ class _MyErrandsPageState extends State<MyErrandsPage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Column(
       children: [
-        // Header with refresh button
-        // Container(
-        //   padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
-        //   child: Row(
-        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //     children: [
-        //       Text(
-        //         'Errands',
-        //         style: TextStyle(
-        //           color: theme.colorScheme.onSurface,
-        //           fontWeight: FontWeight.bold,
-        //           fontSize: isSmallMobile ? 16 : 18,
-        //         ),
-        //       ),
-        //       IconButton(
-        //         onPressed: _loadMyErrands,
-        //         icon: Icon(
-        //           Icons.refresh,
-        //           color: theme.colorScheme.primary,
-        //           size: isSmallMobile ? 20 : 24,
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
         // Tab bar
         Container(
           color: theme.colorScheme.surface,
@@ -492,7 +519,6 @@ class _MyErrandsPageState extends State<MyErrandsPage>
             indicatorColor: theme.colorScheme.primary,
             labelStyle: const TextStyle(
               fontWeight: FontWeight.w600,
-              // fontSize: isSmallMobile ? 11 : 12,
             ),
             isScrollable: true,
             tabs: const [
@@ -506,19 +532,17 @@ class _MyErrandsPageState extends State<MyErrandsPage>
         ),
         // Tab content
         Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildErrandsList(['posted', 'pending', 'pending_price', 'price_quoted'], 'active', theme),
-                    _buildErrandsList(['accepted'], 'accepted', theme),
-                    _buildErrandsList(['in_progress'], 'in_progress', theme),
-                    _buildErrandsList(['completed'], 'completed', theme),
-                    _buildErrandsList(
-                        ['posted', 'pending', 'pending_price', 'price_quoted', 'accepted', 'in_progress', 'completed'], 'all', theme),
-                  ],
-                ),
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildErrandsList(['posted', 'pending', 'pending_price', 'price_quoted'], 'active', theme),
+              _buildErrandsList(['accepted'], 'accepted', theme),
+              _buildErrandsList(['in_progress'], 'in_progress', theme),
+              _buildErrandsList(['completed'], 'completed', theme),
+              _buildErrandsList(
+                  ['posted', 'pending', 'pending_price', 'price_quoted', 'accepted', 'in_progress', 'completed'], 'all', theme),
+            ],
+          ),
         ),
       ],
     );
@@ -558,21 +582,21 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           bool showPayButton = false;
           String? payButtonText;
           VoidCallback? onPay;
+          bool showApproveButton = false;
+          VoidCallback? onApprove;
 
           if (isCustomer) {
             final paymentStatus = _calculatePaymentStatus(errand);
             final price = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+            final paymentStatusFromDb = errand['payment_status']?.toString();
             
-            if (errand['status'] == 'accepted' && !(paymentStatus['hasFirstPayment'] as bool)) {
+            if (errand['status'] == 'accepted' && !(paymentStatus['hasFullPayment'] as bool)) {
               showPayButton = true;
-              payButtonText = 'Pay Deposit (50%)';
-              onPay = () => _handlePayment(errand, price / 2, PayTodayConfig.paymentTypeFirstHalf);
-            } else if (errand['status'] == 'completed' && !(paymentStatus['hasFullPayment'] as bool)) {
-              showPayButton = true;
-              payButtonText = 'Pay Balance (50%)';
-              // Calculate remaining amount precisely: price - totalPaid
-              final remaining = price - (paymentStatus['totalPaid'] as double);
-              onPay = () => _handlePayment(errand, remaining > 0 ? remaining : price / 2, PayTodayConfig.paymentTypeSecondHalf);
+              payButtonText = 'Pay Upfront (N\$${price.toStringAsFixed(2)})';
+              onPay = () => _handlePayment(errand, price, PayTodayConfig.paymentTypeFull);
+            } else if (errand['status'] == 'completed' && paymentStatusFromDb == 'in_escrow') {
+              showApproveButton = true;
+              onApprove = () => _handleApprovePayment(errand);
             }
           }
 
@@ -597,6 +621,8 @@ class _MyErrandsPageState extends State<MyErrandsPage>
               showPayButton: showPayButton,
               onPay: onPay,
               payButtonText: payButtonText,
+              showApproveButton: showApproveButton,
+              onApprove: onApprove,
             ),
           );
         },

@@ -267,7 +267,10 @@ class _ProfilePageState extends State<ProfilePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onPrimary
+                  .withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -317,8 +320,8 @@ class _ProfilePageState extends State<ProfilePage> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+              borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary, width: 2),
             ),
           ),
         ),
@@ -333,8 +336,8 @@ class _ProfilePageState extends State<ProfilePage> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+              borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary, width: 2),
             ),
           ),
         ),
@@ -446,7 +449,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     ? 'Your application was not approved. Contact support for details.'
                     : 'Your runner application is being reviewed. This usually takes 1-2 business days.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -563,7 +569,10 @@ class _ProfilePageState extends State<ProfilePage> {
           Text(
             'Get verified to start accepting errands and earn money as a trusted runner.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -571,7 +580,10 @@ class _ProfilePageState extends State<ProfilePage> {
           Text(
             'You can apply with or without a vehicle.',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -584,7 +596,10 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -606,7 +621,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       Text(
                         'Having a vehicle allows you to accept transportation bookings',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
                               .withValues(alpha: 0.6),
                         ),
                       ),
@@ -630,7 +647,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     if (states.contains(WidgetState.selected)) {
                       return Theme.of(context).colorScheme.secondary;
                     }
-                    return Theme.of(context).colorScheme.onSurface.withOpacity(0.54);
+                    return Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.54);
                   }),
                 ),
               ],
@@ -708,8 +728,8 @@ class _ProfilePageState extends State<ProfilePage> {
               controller: _licenseController,
               decoration: InputDecoration(
                 labelText: 'License Number *',
-                prefixIcon: Icon(Icons.badge,
-                    color: LottoRunnersColors.primaryYellow),
+                prefixIcon:
+                    Icon(Icons.badge, color: LottoRunnersColors.primaryYellow),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(
@@ -778,7 +798,10 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -804,7 +827,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 Text(
                   'Upload the required documents to complete your runner application.',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -940,8 +966,8 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(height: 16),
         ListTile(
-          leading: Icon(Icons.help_outline,
-              color: LottoRunnersColors.primaryYellow),
+          leading:
+              Icon(Icons.help_outline, color: LottoRunnersColors.primaryYellow),
           title: const Text('Help & Support'),
           trailing: Icon(Icons.chevron_right,
               color: LottoRunnersColors.primaryYellow),
@@ -980,7 +1006,8 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const Divider(height: 32),
         ListTile(
-          leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
+          leading:
+              Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
           title: Text(
             'Sign Out',
             style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -1194,7 +1221,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 Text(
                   'Update your vehicle information and documents to accept transportation bookings.',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -1206,8 +1236,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color:
-                            Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -1229,7 +1261,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             Text(
                               'Having a vehicle allows you to accept transportation bookings',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
                                     .withValues(alpha: 0.6),
                               ),
                             ),
@@ -1251,11 +1285,15 @@ class _ProfilePageState extends State<ProfilePage> {
                             }
                           });
                         },
-                        thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+                        thumbColor:
+                            WidgetStateProperty.resolveWith<Color>((states) {
                           if (states.contains(WidgetState.selected)) {
                             return Theme.of(context).colorScheme.secondary;
                           }
-                          return Theme.of(context).colorScheme.onSurface.withOpacity(0.54);
+                          return Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.54);
                         }),
                       ),
                     ],
@@ -1545,8 +1583,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -1646,8 +1686,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -1963,7 +2005,10 @@ class _ProfilePageState extends State<ProfilePage> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                color: Theme.of(context)
+                    .colorScheme
+                    .outline
+                    .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -2039,7 +2084,8 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+              color:
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -2301,7 +2347,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _showTermsPage() {
     final userType = _userProfile?['user_type'] as String?;
-    
+
     // Navigate to appropriate terms page based on user type
     if (userType == 'runner') {
       Navigator.push(

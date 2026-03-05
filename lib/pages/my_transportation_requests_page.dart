@@ -7,6 +7,8 @@ import 'package:lotto_runners/services/chat_service.dart';
 import 'package:lotto_runners/pages/chat_page.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:lotto_runners/pages/paytoday_payment_page.dart';
+import 'package:lotto_runners/services/paytoday_config.dart';
 
 class MyTransportationRequestsPage extends StatefulWidget {
   const MyTransportationRequestsPage({super.key});
@@ -50,33 +52,38 @@ class _MyTransportationRequestsPageState
 
   Future<void> _loadMyBookings({bool forceRefresh = false}) async {
     print('🚀 DEBUG: [MY TRANSPORTATION REQUESTS] _loadMyBookings called');
-    print('🔄 DEBUG: [MY TRANSPORTATION REQUESTS] Force refresh: $forceRefresh');
-    
+    print(
+        '🔄 DEBUG: [MY TRANSPORTATION REQUESTS] Force refresh: $forceRefresh');
+
     // Aggressive cache: don't reload if data is less than 2 minutes old
     if (!forceRefresh &&
         _lastLoadTime != null &&
         DateTime.now().difference(_lastLoadTime!).inMinutes < 2) {
-      print('⏭️ DEBUG: [MY TRANSPORTATION REQUESTS] Skipping reload - data is fresh (${DateTime.now().difference(_lastLoadTime!).inMinutes} minutes old)');
+      print(
+          '⏭️ DEBUG: [MY TRANSPORTATION REQUESTS] Skipping reload - data is fresh (${DateTime.now().difference(_lastLoadTime!).inMinutes} minutes old)');
       return;
     }
 
     try {
       // Only show loading if we don't have cached data
       if (_bookings.isEmpty) {
-        print('⏳ DEBUG: [MY TRANSPORTATION REQUESTS] Showing loading indicator');
+        print(
+            '⏳ DEBUG: [MY TRANSPORTATION REQUESTS] Showing loading indicator');
         setState(() => _isLoading = true);
       }
-      
+
       final userId = SupabaseConfig.currentUser?.id;
       print('👤 DEBUG: [MY TRANSPORTATION REQUESTS] Current user ID: $userId');
-      
+
       if (userId != null) {
-        print('📡 DEBUG: [MY TRANSPORTATION REQUESTS] Calling getUserBookings...');
+        print(
+            '📡 DEBUG: [MY TRANSPORTATION REQUESTS] Calling getUserBookings...');
         // Driver profiles are now fetched in the getUserBookings method
         final bookings = await SupabaseConfig.getUserBookings(userId);
 
-        print('✅ DEBUG: [MY TRANSPORTATION REQUESTS] Received ${bookings.length} bookings from getUserBookings');
-        
+        print(
+            '✅ DEBUG: [MY TRANSPORTATION REQUESTS] Received ${bookings.length} bookings from getUserBookings');
+
         // Log detailed information about each booking
         for (var i = 0; i < bookings.length; i++) {
           final booking = bookings[i];
@@ -87,29 +94,36 @@ class _MyTransportationRequestsPageState
           print('   - Title: ${booking['title']}');
           print('   - Pickup: ${booking['pickup_location']}');
           print('   - Dropoff: ${booking['dropoff_location']}');
-          print('   - Vehicle type: ${booking['vehicle_type']?['name'] ?? booking['vehicle_name'] ?? 'N/A'}');
+          print(
+              '   - Vehicle type: ${booking['vehicle_type']?['name'] ?? booking['vehicle_name'] ?? 'N/A'}');
           print('   - Service: ${booking['service']?['name'] ?? 'N/A'}');
-          print('   - Driver: ${booking['driver']?['full_name'] ?? 'No driver'}');
+          print(
+              '   - Driver: ${booking['driver']?['full_name'] ?? 'No driver'}');
           print('   - Created: ${booking['created_at']}');
         }
 
         if (mounted) {
-          print('✅ DEBUG: [MY TRANSPORTATION REQUESTS] Updating state with ${bookings.length} bookings');
+          print(
+              '✅ DEBUG: [MY TRANSPORTATION REQUESTS] Updating state with ${bookings.length} bookings');
           setState(() {
             _bookings = bookings;
             _isLoading = false;
             _lastLoadTime = DateTime.now();
           });
-          print('✅ DEBUG: [MY TRANSPORTATION REQUESTS] State updated successfully');
+          print(
+              '✅ DEBUG: [MY TRANSPORTATION REQUESTS] State updated successfully');
         } else {
-          print('⚠️ DEBUG: [MY TRANSPORTATION REQUESTS] Widget not mounted - skipping state update');
+          print(
+              '⚠️ DEBUG: [MY TRANSPORTATION REQUESTS] Widget not mounted - skipping state update');
         }
       } else {
-        print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] No user ID - cannot load bookings');
+        print(
+            '❌ DEBUG: [MY TRANSPORTATION REQUESTS] No user ID - cannot load bookings');
       }
     } catch (e, stackTrace) {
       print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error loading bookings');
-      print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error type: ${e.runtimeType}');
+      print(
+          '❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error type: ${e.runtimeType}');
       print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error message: $e');
       print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Stack trace: $stackTrace');
       if (mounted) {
@@ -185,72 +199,23 @@ class _MyTransportationRequestsPageState
         Expanded(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : AnimatedBuilder(
-                  animation: _tabController.animation!,
-                  builder: (context, child) {
-                    return TabBarView(
-                      controller: _tabController,
-                      children: [
-                        FadeTransition(
-                          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-                            CurvedAnimation(
-                              parent: _tabController.animation!,
-                              curve: Curves.easeInOut,
-                            ),
-                          ),
-                          child: _buildBookingsList(
-                              ['pending', 'accepted', 'confirmed'],
-                              'active',
-                              theme),
-                        ),
-                        FadeTransition(
-                          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-                            CurvedAnimation(
-                              parent: _tabController.animation!,
-                              curve: Curves.easeInOut,
-                            ),
-                          ),
-                          child: _buildBookingsList(
-                              ['accepted', 'confirmed'], 'accepted', theme),
-                        ),
-                        FadeTransition(
-                          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-                            CurvedAnimation(
-                              parent: _tabController.animation!,
-                              curve: Curves.easeInOut,
-                            ),
-                          ),
-                          child: _buildBookingsList(
-                              ['in_progress'], 'in_progress', theme),
-                        ),
-                        FadeTransition(
-                          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-                            CurvedAnimation(
-                              parent: _tabController.animation!,
-                              curve: Curves.easeInOut,
-                            ),
-                          ),
-                          child:
-                              _buildBookingsList(['completed'], 'completed', theme),
-                        ),
-                        FadeTransition(
-                          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-                            CurvedAnimation(
-                              parent: _tabController.animation!,
-                              curve: Curves.easeInOut,
-                            ),
-                          ),
-                          child: _buildBookingsList([
-                            'pending',
-                            'accepted',
-                            'confirmed',
-                            'in_progress',
-                            'completed'
-                          ], 'all', theme),
-                        ),
-                      ],
-                    );
-                  },
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildBookingsList(
+                        ['pending', 'accepted', 'confirmed'], 'active', theme),
+                    _buildBookingsList(
+                        ['accepted', 'confirmed'], 'accepted', theme),
+                    _buildBookingsList(['in_progress'], 'in_progress', theme),
+                    _buildBookingsList(['completed'], 'completed', theme),
+                    _buildBookingsList([
+                      'pending',
+                      'accepted',
+                      'confirmed',
+                      'in_progress',
+                      'completed'
+                    ], 'all', theme),
+                  ],
                 ),
         ),
       ],
@@ -360,8 +325,6 @@ class _MyTransportationRequestsPageState
     final estimatedPrice = booking['estimated_price'] ?? 0.0;
     final finalPrice = booking['final_price'] ?? estimatedPrice;
     final specialRequests = booking['special_requests'] ?? '';
-    final createdAt =
-        DateTime.tryParse(booking['created_at'] ?? '') ?? DateTime.now();
 
     return Padding(
       padding: EdgeInsets.only(
@@ -616,19 +579,46 @@ class _MyTransportationRequestsPageState
                 const SizedBox(height: 12),
 
                 // Payment status and actions
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildPaymentStatusChip(paymentStatus, theme),
-                    Text(
-                      'Requested ${_formatDateTime(createdAt)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
-                ),
+
+                // Payment and Approval Actions
+                if (status == 'accepted' ||
+                    status == 'confirmed' ||
+                    status == 'completed') ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      if ((status == 'accepted' || status == 'confirmed') &&
+                          paymentStatus == 'unpaid')
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () =>
+                                _handlePayment(booking, finalPrice),
+                            icon: const Icon(Icons.payment, size: 18),
+                            label: Text(
+                                'Pay Upfront (N\$${finalPrice.toStringAsFixed(2)})'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      if (status == 'completed' && paymentStatus == 'in_escrow')
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _handleApprovePayment(booking),
+                            icon: const Icon(Icons.verified, size: 18),
+                            label: const Text('Approve & Release'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: LottoRunnersColors.primaryBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
 
                 if (status == 'pending') ...[
                   const SizedBox(height: 12),
@@ -828,69 +818,6 @@ class _MyTransportationRequestsPageState
     );
   }
 
-  Widget _buildPaymentStatusChip(String paymentStatus, ThemeData theme) {
-    Color backgroundColor;
-    Color textColor;
-    String displayStatus;
-
-    switch (paymentStatus.toLowerCase()) {
-      case 'pending':
-        backgroundColor = Colors.amber.withValues(alpha: 0.1);
-        textColor = Colors.amber.shade700;
-        displayStatus = 'Payment Pending';
-        break;
-      case 'paid':
-        backgroundColor = Colors.green.withValues(alpha: 0.1);
-        textColor = Colors.green.shade700;
-        displayStatus = 'Paid';
-        break;
-      case 'refunded':
-        backgroundColor = LottoRunnersColors.primaryBlue.withValues(alpha: 0.1);
-        textColor = LottoRunnersColors.primaryBlueDark;
-        displayStatus = 'Refunded';
-        break;
-      default:
-        backgroundColor = theme.colorScheme.surfaceContainerHighest;
-        textColor = theme.colorScheme.onSurfaceVariant;
-        displayStatus = paymentStatus;
-        break;
-    }
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: Responsive.isSmallMobile(context) ? 8 : 12,
-        vertical: Responsive.isSmallMobile(context) ? 4 : 6,
-      ),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        displayStatus,
-        style: TextStyle(
-          fontSize: Responsive.isSmallMobile(context) ? 10 : 11,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
-    } else {
-      return 'Just now';
-    }
-  }
-
   /// Open chat with driver/admin for accepted transportation/bus requests
   Future<void> _openChatWithDriver(Map<String, dynamic> booking) async {
     try {
@@ -992,6 +919,98 @@ class _MyTransportationRequestsPageState
     }
   }
 
+  Future<void> _handlePayment(
+      Map<String, dynamic> booking, double amount) async {
+    final success = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PayTodayPaymentPage(
+          errandId: booking['id'],
+          amount: amount,
+          paymentType: PayTodayConfig.paymentTypeFull,
+          bookingType: booking['booking_type'] ?? 'transportation',
+          customerId: SupabaseConfig.currentUser?.id ?? '',
+          runnerId: booking['driver_id'],
+          onSuccess: () async {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Payment successful! Updating status...'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Wait for DB trigger/edge function to process
+            await Future.delayed(const Duration(seconds: 2));
+            _loadMyBookings(forceRefresh: true);
+          },
+          onFailure: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Payment failed. Please try again.'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    if (success == true) {
+      _loadMyBookings(forceRefresh: true);
+    }
+  }
+
+  Future<void> _handleApprovePayment(Map<String, dynamic> booking) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Approve Completion?'),
+        content: const Text(
+          'By approving, you confirm the trip/service is completed and the funds will be released to the driver. This action cannot be reversed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No, Not Yet'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
+            child: const Text('Yes, Approve'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await SupabaseConfig.approvePayment(
+            booking['id'], booking['booking_type'] ?? 'transportation');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Payment released! Thank you.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _loadMyBookings(forceRefresh: true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error approving payment: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _cancelBooking(String bookingId) async {
     try {
       final confirmed = await showDialog<bool>(
@@ -1056,7 +1075,8 @@ class _MyTransportationRequestsPageState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to cancel request. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to cancel request. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

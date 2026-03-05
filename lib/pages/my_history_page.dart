@@ -785,7 +785,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
 
       // Generate invoice PDF
       final pdfBytes = await _generateInvoicePdf(item);
-      
+
       // Download the PDF
       final fileName = 'invoice_${item['id']}.pdf';
       await _savePdf(pdfBytes, fileName);
@@ -808,7 +808,8 @@ class _MyHistoryPageState extends State<MyHistoryPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to download invoice. Please check your internet connection and try again.'),
+            content: Text(
+                'Unable to download invoice. Please check your internet connection and try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -831,14 +832,20 @@ class _MyHistoryPageState extends State<MyHistoryPage>
 
     // Get user profile for invoice
     final user = SupabaseConfig.currentUser;
-    final userProfile = user != null ? await SupabaseConfig.getUserProfile(user.id) : null;
+    final userProfile =
+        user != null ? await SupabaseConfig.getUserProfile(user.id) : null;
 
     final itemType = item['item_type'] ?? 'service';
     final title = item['title'] ?? 'Service';
-    final amount = item['price_amount'] ?? item['final_price'] ?? item['estimated_price'] ?? 0;
-    final date = item['completed_at'] ?? item['updated_at'] ?? item['created_at'];
+    final amount = item['price_amount'] ??
+        item['final_price'] ??
+        item['estimated_price'] ??
+        0;
+    final date =
+        item['completed_at'] ?? item['updated_at'] ?? item['created_at'];
     final description = item['description'] ?? '';
-    final category = item['category']?.toString().toUpperCase() ?? itemType.toUpperCase();
+    final category =
+        item['category']?.toString().toUpperCase() ?? itemType.toUpperCase();
 
     pdf.addPage(
       pw.Page(
@@ -894,7 +901,8 @@ class _MyHistoryPageState extends State<MyHistoryPage>
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('Invoice To:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Invoice To:',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                     pw.Text(userProfile?['full_name'] ?? 'Customer'),
                     pw.Text(userProfile?['email'] ?? ''),
                   ],
@@ -902,7 +910,8 @@ class _MyHistoryPageState extends State<MyHistoryPage>
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
-                    pw.Text('Invoice #: ${item['id']?.toString().substring(0, 8) ?? 'N/A'}'),
+                    pw.Text(
+                        'Invoice #: ${item['id']?.toString().substring(0, 8) ?? 'N/A'}'),
                     pw.Text('Date: ${_formatExactDate(date)}'),
                   ],
                 ),
@@ -919,15 +928,18 @@ class _MyHistoryPageState extends State<MyHistoryPage>
                   children: [
                     pw.Padding(
                       padding: const pw.EdgeInsets.all(8),
-                      child: pw.Text('Service', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      child: pw.Text('Service',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                     ),
                     pw.Padding(
                       padding: const pw.EdgeInsets.all(8),
-                      child: pw.Text('Category', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      child: pw.Text('Category',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                     ),
                     pw.Padding(
                       padding: const pw.EdgeInsets.all(8),
-                      child: pw.Text('Amount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      child: pw.Text('Amount',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -953,7 +965,8 @@ class _MyHistoryPageState extends State<MyHistoryPage>
 
             // Description
             if (description.isNotEmpty) ...[
-              pw.Text('Description:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text('Description:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 8),
               pw.Text(description),
               pw.SizedBox(height: 20),
@@ -964,8 +977,14 @@ class _MyHistoryPageState extends State<MyHistoryPage>
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.end,
               children: [
-                pw.Text('Total Amount: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16)),
-                pw.Text('N\$${amount.toString()}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16, color: PdfColors.blue)),
+                pw.Text('Total Amount: ',
+                    style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold, fontSize: 16)),
+                pw.Text('N\$${amount.toString()}',
+                    style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 16,
+                        color: PdfColors.blue)),
               ],
             ),
             pw.SizedBox(height: 30),
@@ -990,7 +1009,8 @@ class _MyHistoryPageState extends State<MyHistoryPage>
     // Use downloadPDFBytes for proper mobile download with permissions
     final success = await PdfUtils.downloadPDFBytes(pdfBytes, fileName);
     if (!success) {
-      throw Exception('Unable to download PDF to device storage. Please check your device permissions and try again.');
+      throw Exception(
+          'Unable to download PDF to device storage. Please check your device permissions and try again.');
     }
   }
 
@@ -1057,7 +1077,20 @@ class _MyHistoryPageState extends State<MyHistoryPage>
 
     try {
       final date = DateTime.parse(dateString);
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
       return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (e) {
       return 'Invalid date';

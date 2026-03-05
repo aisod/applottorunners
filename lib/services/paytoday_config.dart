@@ -21,6 +21,7 @@ class PayTodayConfig {
   /// Payment types
   static const String paymentTypeFirstHalf = 'first_half';
   static const String paymentTypeSecondHalf = 'second_half';
+  static const String paymentTypeFull = 'full_payment';
   static const String paymentTypeAdminPayout = 'admin_payout';
   
   /// Return URLs for payment flow

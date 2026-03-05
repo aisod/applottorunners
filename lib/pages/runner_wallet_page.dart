@@ -17,6 +17,8 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
   bool _isLoading = true;
   Map<String, dynamic>? _earningsSummary;
   List<Map<String, dynamic>> _detailedBookings = [];
+  double _withdrawableBalance = 0.0;
+  List<Map<String, dynamic>> _withdrawalRequests = [];
   String _selectedFilter = 'all'; // all, completed, in_progress
 
   @override
@@ -43,6 +45,12 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
       final detailedResponse = await SupabaseConfig.client
           .rpc('get_runner_detailed_bookings', params: {'p_runner_id': userId});
 
+      // Get withdrawable balance
+      final withdrawableBalance = await SupabaseConfig.getRunnerWithdrawableBalance(userId);
+
+      // Get withdrawal requests
+      final withdrawalRequests = await SupabaseConfig.getWithdrawalRequests(runnerId: userId);
+
       if (mounted) {
         setState(() {
           _earningsSummary = response ?? {
@@ -64,6 +72,8 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
           _detailedBookings = (detailedResponse as List?)
               ?.map((e) => e as Map<String, dynamic>)
               .toList() ?? [];
+          _withdrawableBalance = withdrawableBalance;
+          _withdrawalRequests = withdrawalRequests;
           _isLoading = false;
         });
       }
@@ -123,6 +133,10 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _buildEarningsSummaryCard(theme, isMobile),
+                        SizedBox(height: isMobile ? 20 : 24),
+                        _buildWithdrawableBalanceCard(theme, isMobile),
+                        SizedBox(height: isMobile ? 20 : 24),
+                        _buildWithdrawalRequestsSection(theme, isMobile),
                         SizedBox(height: isMobile ? 20 : 24),
                         _buildBreakdownCard(theme, isMobile),
                         SizedBox(height: isMobile ? 20 : 24),
@@ -222,7 +236,6 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
       ),
     );
   }
-
   Widget _buildStatColumn(String label, String value, IconData icon, bool isMobile) {
     return Column(
       children: [
@@ -245,6 +258,217 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildWithdrawableBalanceCard(ThemeData theme, bool isMobile) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Withdrawable Balance',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: isMobile ? 16 : 18,
+              ),
+            ),
+            SizedBox(height: isMobile ? 4 : 8),
+            Text(
+              'Funds cleared and ready for withdrawal',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            SizedBox(height: isMobile ? 16 : 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'N\$${_withdrawableBalance.toStringAsFixed(2)}',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _withdrawableBalance > 0 ? _showWithdrawDialog : null,
+                  icon: const Icon(Icons.outbox),
+                  label: const Text('Withdraw'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: LottoRunnersColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showWithdrawDialog() {
+    final amountController = TextEditingController();
+    final notesController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request Withdrawal'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Available: N\$${_withdrawableBalance.toStringAsFixed(2)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: amountController,
+                decoration: const InputDecoration(
+                  labelText: 'Amount (N\$)',
+                  border: OutlineInputBorder(),
+                  prefixText: 'N\$ ',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Required';
+                  final amount = double.tryParse(value);
+                  if (amount == null) return 'Invalid number';
+                  if (amount <= 0) return 'Must be greater than 0';
+                  if (amount > _withdrawableBalance) return 'Insufficient balance';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Notes (Optional)',
+                  hintText: 'Bank details or specific notes',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final amount = double.parse(amountController.text);
+                final notes = notesController.text;
+                
+                Navigator.pop(context); // Close dialog
+                
+                try {
+                  final userId = SupabaseConfig.currentUser?.id;
+                  if (userId == null) return;
+                  
+                  await SupabaseConfig.submitWithdrawalRequest(userId, amount, notes);
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✅ Withdrawal request submitted successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    _loadEarningsData();
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: LottoRunnersColors.primaryBlue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Submit Request'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWithdrawalRequestsSection(ThemeData theme, bool isMobile) {
+    if (_withdrawalRequests.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Withdrawal History',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: isMobile ? 18 : 20,
+          ),
+        ),
+        SizedBox(height: isMobile ? 12 : 16),
+        ..._withdrawalRequests.map((req) => _buildWithdrawalRequestCard(req, theme, isMobile)),
+      ],
+    );
+  }
+
+  Widget _buildWithdrawalRequestCard(Map<String, dynamic> req, ThemeData theme, bool isMobile) {
+    final status = req['status'] ?? 'pending';
+    final amount = (req['amount'] ?? 0.0).toDouble();
+    final date = DateTime.parse(req['created_at']);
+    
+    Color statusColor;
+    switch (status) {
+      case 'approved': statusColor = Colors.green; break;
+      case 'rejected': statusColor = Colors.red; break;
+      default: statusColor = Colors.orange;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        title: Text('Withdrawal Request: N\$${amount.toStringAsFixed(2)}'),
+        subtitle: Text(DateFormat('MMM dd, yyyy • HH:mm').format(date)),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: statusColor),
+          ),
+          child: Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              color: statusColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
+          ),
+        ),
+      ),
     );
   }
 

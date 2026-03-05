@@ -57,13 +57,14 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     } else {
       price = (service['base_price'] ?? 0.0).toDouble();
     }
-    
+
     // Apply discount if available
-    final discountPercentage = (service['discount_percentage'] ?? 0.0).toDouble();
+    final discountPercentage =
+        (service['discount_percentage'] ?? 0.0).toDouble();
     if (discountPercentage > 0) {
       return SupabaseConfig.calculateDiscountedPrice(price, discountPercentage);
     }
-    
+
     return price;
   }
 
@@ -83,25 +84,26 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
 
       if (mounted) {
         // Check if user is a business user
-        final isBusinessUser = _userProfile != null && 
-                               _userProfile!['user_type'] == 'business';
+        final isBusinessUser =
+            _userProfile != null && _userProfile!['user_type'] == 'business';
 
         // Filter out registration services and elderly services for business users
         final filteredServices = services.where((service) {
           final category = service['category']?.toString().toLowerCase() ?? '';
           final name = service['name']?.toString().toLowerCase() ?? '';
-          
+
           // Exclude registration services
-          if (category.contains('registration') || name.contains('registration')) {
+          if (category.contains('registration') ||
+              name.contains('registration')) {
             return false;
           }
-          
+
           // Exclude elderly services for business users only
-          if (isBusinessUser && 
+          if (isBusinessUser &&
               (category.contains('elderly') || name.contains('elderly'))) {
             return false;
           }
-          
+
           return true;
         }).toList();
 
@@ -196,7 +198,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                    ? 20
+                    : 22,
           ),
         ),
         centerTitle: true,
@@ -246,7 +252,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                 'No services available',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   color: theme.colorScheme.outline,
-                  fontSize: isMobile ? 20 : isTablet ? 22 : 24,
+                  fontSize: isMobile
+                      ? 20
+                      : isTablet
+                          ? 22
+                          : 24,
                 ),
               ),
               SizedBox(height: isMobile ? 6 : 8),
@@ -274,7 +284,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     }
 
     // Determine padding based on device size
-    final double padding = isMobile ? 16.0: isTablet ? 24.0 : 32.0;
+    final double padding = isMobile
+        ? 16.0
+        : isTablet
+            ? 24.0
+            : 32.0;
 
     return Padding(
       padding: EdgeInsets.all(padding),
@@ -285,7 +299,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
             'Choose the type of service you need',
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.7),
-              fontSize: isMobile ? 15 : isTablet ? 16 : 17,
+              fontSize: isMobile
+                  ? 15
+                  : isTablet
+                      ? 16
+                      : 17,
             ),
           ),
           SizedBox(height: isMobile ? 12 : 16),
@@ -306,8 +324,9 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
 
   // Get the appropriate icon image URL for a service category
   String? _getServiceIconUrl(String? category) {
-    const baseUrl = 'https://irfbqpruvkkbylwwikwx.supabase.co/storage/v1/object/public/icons';
-    
+    const baseUrl =
+        'https://irfbqpruvkkbylwwikwx.supabase.co/storage/v1/object/public/icons';
+
     switch (category) {
       case 'delivery':
         return '$baseUrl/truck.png';
@@ -331,7 +350,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
   // Get background color for service category
   Color _getServiceColor(String? category) {
     final theme = Theme.of(context);
-    
+
     switch (category) {
       case 'delivery':
         return LottoRunnersColors.accent; // Green
@@ -357,8 +376,16 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     final price = _getServicePrice(service);
     final iconUrl = _getServiceIconUrl(service['category']);
     final serviceColor = _getServiceColor(service['category']);
-    final iconSize = isMobile ? 50.0 : isTablet ? 56.0 : 60.0;
-    final fallbackIconSize = isMobile ? 24.0 : isTablet ? 28.0 : 30.0;
+    final iconSize = isMobile
+        ? 50.0
+        : isTablet
+            ? 56.0
+            : 60.0;
+    final fallbackIconSize = isMobile
+        ? 24.0
+        : isTablet
+            ? 28.0
+            : 30.0;
 
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 10 : 12),
@@ -371,7 +398,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
           onTap: () => _selectService(service),
           borderRadius: BorderRadius.circular(isMobile ? 12 : 16),
           child: Padding(
-            padding: EdgeInsets.all(isMobile ? 12 : isTablet ? 14 : 16),
+            padding: EdgeInsets.all(isMobile
+                ? 12
+                : isTablet
+                    ? 14
+                    : 16),
             child: Row(
               children: [
                 // Icon container with colored background
@@ -383,7 +414,8 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                     borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
                   ),
                   child: iconUrl != null
-                      ? _buildServiceIcon(iconUrl, isMobile, isTablet, service, iconSize)
+                      ? _buildServiceIcon(
+                          iconUrl, isMobile, isTablet, service, iconSize)
                       : Icon(
                           ServiceIcons.getIcon(service['icon_name']),
                           color: serviceColor,
@@ -401,7 +433,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface,
-                          fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                          fontSize: isMobile
+                              ? 14
+                              : isTablet
+                                  ? 15
+                                  : 16,
                         ),
                       ),
                       SizedBox(height: isMobile ? 3 : 4),
@@ -409,7 +445,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                         service['description'] ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.6),
-                          fontSize: isMobile ? 11 : isTablet ? 12 : 13,
+                          fontSize: isMobile
+                              ? 11
+                              : isTablet
+                                  ? 12
+                                  : 13,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -432,19 +472,29 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.outline,
                           fontWeight: FontWeight.w400,
-                          fontSize: isMobile ? 11 : isTablet ? 12 : 13,
+                          fontSize: isMobile
+                              ? 11
+                              : isTablet
+                                  ? 12
+                                  : 13,
                           decoration: TextDecoration.lineThrough,
                         ),
                       ),
                       // Show discounted price
                       Text(
-                        (service['category'] == 'delivery' || service['category'] == 'special_orders' || service['category'] == 'license_discs')
+                        (service['category'] == 'delivery' ||
+                                service['category'] == 'special_orders' ||
+                                service['category'] == 'license_discs')
                             ? 'Varies'
                             : 'N\$${price.toStringAsFixed(2)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.orange,
                           fontWeight: FontWeight.bold,
-                          fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                          fontSize: isMobile
+                              ? 13
+                              : isTablet
+                                  ? 14
+                                  : 15,
                         ),
                       ),
                       // Show discount badge
@@ -469,13 +519,19 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                       ),
                     ] else
                       Text(
-                        (service['category'] == 'delivery' || service['category'] == 'special_orders' || service['category'] == 'license_discs')
+                        (service['category'] == 'delivery' ||
+                                service['category'] == 'special_orders' ||
+                                service['category'] == 'license_discs')
                             ? 'Varies'
                             : 'N\$${price.toStringAsFixed(2)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: LottoRunnersColors.primaryBlue,
                           fontWeight: FontWeight.bold,
-                          fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                          fontSize: isMobile
+                              ? 13
+                              : isTablet
+                                  ? 14
+                                  : 15,
                         ),
                       ),
                     if (service['requires_vehicle']) ...[
@@ -526,11 +582,16 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     );
   }
 
-  Widget _buildServiceIcon(String iconUrl, bool isMobile, bool isTablet, Map<String, dynamic> service, double iconSize) {
+  Widget _buildServiceIcon(String iconUrl, bool isMobile, bool isTablet,
+      Map<String, dynamic> service, double iconSize) {
     final serviceColor = _getServiceColor(service['category']);
-    final fallbackIconSize = isMobile ? 24.0 : isTablet ? 28.0 : 30.0;
+    final fallbackIconSize = isMobile
+        ? 24.0
+        : isTablet
+            ? 28.0
+            : 30.0;
     final loadingSize = isMobile ? 16.0 : 20.0;
-    
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
       child: Image.network(

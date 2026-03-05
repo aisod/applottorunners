@@ -9,14 +9,25 @@ class PayTodayBackendService {
   /// Returns a data URI containing HTML/JS to load in WebView
   static Future<Map<String, dynamic>> createPaymentIntent({
     required String errandId,
-    required double amount,
+    required double totalAmount, // Changed from 'amount' to 'totalAmount'
     required String paymentType,
     required String customerId,
     String? runnerId,
+    String bookingType = 'errand',
   }) async {
     try {
+      // Log attempt
+      PayTodayConfig.log('Creating payment intent for $bookingType $errandId ($paymentType)');
+
+      // Calculate amount based on payment type (100% for full_payment)
+      double amount = totalAmount;
+      if (paymentType == PayTodayConfig.paymentTypeFirstHalf ||
+          paymentType == PayTodayConfig.paymentTypeSecondHalf) {
+        amount = totalAmount / 2;
+      }
+
       PayTodayConfig.log(
-          'Creating payment intent: errand=$errandId, amount=$amount, type=$paymentType');
+          'Creating payment intent: bookingType=$bookingType, errand=$errandId, amount=$amount, type=$paymentType');
 
       // Validate amount
       if (amount <= 0) {
@@ -41,6 +52,7 @@ class PayTodayBackendService {
         'payment_type': paymentType,
         'customer_id': customerId,
         'runner_id': runnerId,
+        'booking_type': bookingType,
         'return_url': PayTodayConfig.getReturnUrl(errandId, paymentType),
         // New fields for the refactored Edge Function
         'user_email': userEmail,
