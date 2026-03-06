@@ -54,14 +54,20 @@ serve(async (req) => {
       ...(isSuccess && { completed_at: new Date().toISOString() }),
     };
 
-    const { data, error } = await supabase
+    // On success: update by errand_id + payment_type only, so we can correct a row that was
+    // previously marked "failed" (e.g. user closed window then paid in another tab).
+    // On failure: only update rows that are still "pending" so we don't overwrite completed.
+    let query = supabase
       .from("paytoday_transactions")
       .update(updatePayload)
       .eq("errand_id", errand_id)
-      .eq("payment_type", payment_type)
-      .eq("status", "pending")
-      .select("id, status")
-      .maybeSingle();
+      .eq("payment_type", payment_type);
+
+    if (!isSuccess) {
+      query = query.eq("status", "pending");
+    }
+
+    const { data, error } = await query.select("id, status").maybeSingle();
 
     if (error) {
       console.error("paytoday-complete-return: update error", error);
@@ -73,14 +79,17 @@ serve(async (req) => {
 
     if (!data) {
       console.warn(
-        "paytoday-complete-return: no pending row found",
+        "paytoday-complete-return: no row found to update",
         errand_id,
-        payment_type
+        payment_type,
+        isSuccess ? "(success: any status)" : "(failure: pending only)"
       );
       return new Response(
         JSON.stringify({
           updated: false,
-          message: "No pending transaction found for this errand and payment type",
+          message: isSuccess
+            ? "No transaction found for this errand and payment type"
+            : "No pending transaction found for this errand and payment type",
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
