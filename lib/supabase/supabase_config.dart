@@ -20,7 +20,7 @@ class SupabaseConfig {
         autoRefreshToken: true, // Automatically refresh tokens
       ),
     );
-    
+
     print('✅ Supabase initialized successfully');
     print('🔗 Deep link scheme: io.supabase.lottorunners');
   }
@@ -80,12 +80,12 @@ class SupabaseConfig {
       String email, String password, Map<String, dynamic> userData) async {
     try {
       print('📧 Signing up user: $email');
-      
+
       // Use different redirect URLs based on platform
       final redirectUrl = kIsWeb
           ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
-      
+
       print('🔗 Email confirmation redirect URL: $redirectUrl');
 
       final response = await client.auth.signUp(
@@ -102,16 +102,24 @@ class SupabaseConfig {
       print('❌ Error code: ${e.code}');
       print('❌ Error message: ${e.message}');
       print('❌ Status code: ${e.statusCode}');
-      
+
       // Handle specific error cases
-      if (e.message.toLowerCase().contains('error sending confirmation email') ||
+      if (e.message
+              .toLowerCase()
+              .contains('error sending confirmation email') ||
           e.message.toLowerCase().contains('unexpected_failure')) {
-        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. This could be due to:\n1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n2. Email rate limits exceeded\n3. Email template configuration issue\n4. SMTP provider authentication failed\n\nPlease check your Supabase SMTP settings or try again later.');
-      } else if (e.code == 'email_address_invalid' || 
-                 e.message.toLowerCase().contains('invalid email')) {
+        throw Exception('EMAIL_SEND_FAILED');
+      } else if (e.code == 'email_address_invalid' ||
+          e.message.toLowerCase().contains('invalid email')) {
         throw Exception('INVALID_EMAIL');
-      } else if (e.statusCode == 429 || e.message.toLowerCase().contains('rate limit')) {
+      } else if (e.statusCode == 429 ||
+          e.message.toLowerCase().contains('rate limit')) {
         throw Exception('RATE_LIMIT');
+      } else if (e.statusCode == 422 ||
+          e.message.toLowerCase().contains('weak') ||
+          e.message.toLowerCase().contains('pwned') ||
+          (e.message.isNotEmpty && e.message.toLowerCase().contains('easy to guess'))) {
+        throw Exception('WEAK_PASSWORD');
       } else {
         throw Exception('AUTH_ERROR: ${e.message}');
       }
@@ -119,25 +127,32 @@ class SupabaseConfig {
       print('❌ Sign up AuthRetryableFetchException: $e');
       print('❌ Error message: ${e.message}');
       print('❌ Status code: ${e.statusCode}');
-      
+
       // Parse the error message
       if (e.message.contains('Error sending confirmation email') ||
           e.message.contains('unexpected_failure')) {
-        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. This is usually due to:\n1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n2. SMTP authentication failed (wrong credentials)\n3. Email rate limits exceeded\n4. Invalid email template configuration\n\nPlease check your Supabase SMTP settings or try again later.');
+        throw Exception('EMAIL_SEND_FAILED');
       } else {
         throw Exception('NETWORK_ERROR: ${e.message}');
       }
     } catch (e) {
       print('❌ Sign up error: $e');
       print('❌ Error type: ${e.runtimeType}');
-      
+
       // Check for email sending errors in the error string
-      final errorString = e.toString();
+      final errorString = e.toString().toLowerCase();
       if (errorString.contains('Error sending confirmation email') ||
           errorString.contains('unexpected_failure')) {
-        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. Please check your Supabase SMTP configuration.');
+        throw Exception('EMAIL_SEND_FAILED');
       }
-      
+      // Weak or compromised password (e.g. AuthWeakPasswordException, pwned)
+      if (errorString.contains('weak') ||
+          errorString.contains('pwned') ||
+          errorString.contains('easy to guess') ||
+          errorString.contains('authweakpassword')) {
+        throw Exception('WEAK_PASSWORD');
+      }
+
       throw Exception('Sign up failed: $e');
     }
   }
@@ -159,7 +174,7 @@ class SupabaseConfig {
       final redirectUrl = kIsWeb
           ? 'https://app.lottoerunners.com/password-reset'
           : 'io.supabase.lottorunners://reset-password';
-      
+
       print('🔗 Redirect URL: $redirectUrl');
 
       await client.auth.resetPasswordForEmail(
@@ -182,14 +197,7 @@ class SupabaseConfig {
               .toLowerCase()
               .contains('error sending confirmation email') ||
           e.message.toLowerCase().contains('unexpected_failure')) {
-        // Mirror the detailed messaging we use elsewhere
-        throw Exception(
-            'EMAIL_SEND_FAILED: Unable to send password reset email. This is usually due to:\n'
-            '1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n'
-            '2. SMTP authentication failed (wrong credentials)\n'
-            '3. Email rate limits exceeded\n'
-            '4. Invalid email template configuration\n\n'
-            'Please check your Supabase SMTP settings or try again later.');
+        throw Exception('EMAIL_SEND_FAILED');
       } else {
         throw Exception('AUTH_ERROR: ${e.message}');
       }
@@ -202,30 +210,22 @@ class SupabaseConfig {
 
       // Check for email sending failures (500 status with "Error sending recovery email" or "unexpected_failure")
       // The error message is often JSON: {"code":"unexpected_failure","message":"Error sending recovery email"}
-      final isEmailSendFailure = e.statusCode == 500 && 
+      final isEmailSendFailure = e.statusCode == 500 &&
           (lowerMessage.contains('error sending recovery email') ||
-           lowerMessage.contains('error sending') ||
-           lowerMessage.contains('unexpected_failure'));
-      
+              lowerMessage.contains('error sending') ||
+              lowerMessage.contains('unexpected_failure'));
+
       if (isEmailSendFailure) {
-        print('📧 Detected email sending failure - providing user guidance');
-        throw Exception(
-            'EMAIL_SEND_FAILED: Unable to send password reset email. This is usually due to:\n'
-            '1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n'
-            '2. SMTP authentication failed (wrong credentials)\n'
-            '3. Email rate limits exceeded\n'
-            '4. Invalid email template configuration\n\n'
-            'Please check your Supabase SMTP settings or try again later.');
+        print('📧 Detected email sending failure');
+        throw Exception('EMAIL_SEND_FAILED');
       }
-      
+
       // Check for network timeouts (504)
       if (lowerMessage.contains('upstream request timeout') ||
           lowerMessage.contains('504') ||
           e.statusCode == 504) {
         throw Exception(
-            'NETWORK_ERROR: The password reset service timed out while contacting the authentication server.\n'
-            'This is usually temporary and caused by network issues or email provider timeouts.\n'
-            'Please wait a minute and try again. If this keeps happening, contact support so we can check Supabase/SMTP status.');
+            'NETWORK_ERROR: The password reset service timed out. Please wait a minute and try again.');
       }
 
       // Generic network error for other cases
@@ -245,7 +245,7 @@ class SupabaseConfig {
       final redirectUrl = kIsWeb
           ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
-      
+
       print('🔗 Email confirmation redirect URL: $redirectUrl');
 
       await client.auth.resend(
@@ -260,15 +260,18 @@ class SupabaseConfig {
       print('❌ Error code: ${e.code}');
       print('❌ Error message: ${e.message}');
       print('❌ Status code: ${e.statusCode}');
-      
+
       // Handle specific error cases
-      if (e.message.toLowerCase().contains('error sending confirmation email') ||
+      if (e.message
+              .toLowerCase()
+              .contains('error sending confirmation email') ||
           e.message.toLowerCase().contains('unexpected_failure')) {
-        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. This could be due to:\n1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n2. Email rate limits exceeded\n3. Email template configuration issue\n4. SMTP provider authentication failed\n\nPlease check your Supabase SMTP settings or try again later.');
-      } else if (e.code == 'email_address_invalid' || 
-                 e.message.toLowerCase().contains('invalid email')) {
+        throw Exception('EMAIL_SEND_FAILED');
+      } else if (e.code == 'email_address_invalid' ||
+          e.message.toLowerCase().contains('invalid email')) {
         throw Exception('INVALID_EMAIL');
-      } else if (e.statusCode == 429 || e.message.toLowerCase().contains('rate limit')) {
+      } else if (e.statusCode == 429 ||
+          e.message.toLowerCase().contains('rate limit')) {
         throw Exception('RATE_LIMIT');
       } else {
         throw Exception('AUTH_ERROR: ${e.message}');
@@ -277,26 +280,46 @@ class SupabaseConfig {
       print('❌ Resend confirmation AuthRetryableFetchException: $e');
       print('❌ Error message: ${e.message}');
       print('❌ Status code: ${e.statusCode}');
-      
+
       // Parse the error message
       if (e.message.contains('Error sending confirmation email') ||
           e.message.contains('unexpected_failure')) {
-        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. This is usually due to:\n1. SMTP configuration issue (check Settings → Authentication → SMTP Settings)\n2. SMTP authentication failed (wrong credentials)\n3. Email rate limits exceeded\n4. Invalid email template configuration\n\nPlease check your Supabase SMTP settings or try again later.');
+        throw Exception('EMAIL_SEND_FAILED');
       } else {
         throw Exception('NETWORK_ERROR: ${e.message}');
       }
     } catch (e) {
       print('❌ Resend confirmation error: $e');
       print('❌ Error type: ${e.runtimeType}');
-      
+
       // Check for email sending errors in the error string
       final errorString = e.toString();
       if (errorString.contains('Error sending confirmation email') ||
           errorString.contains('unexpected_failure')) {
-        throw Exception('EMAIL_SEND_FAILED: Unable to send confirmation email. Check SMTP configuration in Supabase dashboard (Settings → Authentication → SMTP Settings).');
+        throw Exception('EMAIL_SEND_FAILED');
       }
-      
+
       throw Exception('Failed to resend email confirmation: $e');
+    }
+  }
+
+  /// Verify the 6-digit email OTP sent after signup (use after signUp when email confirmation is required).
+  static Future<AuthResponse> verifyEmailOtp(String email, String token) async {
+    try {
+      print('📧 Verifying email OTP for: $email');
+      final response = await client.auth.verifyOTP(
+        email: email,
+        token: token.trim(),
+        type: OtpType.signup,
+      );
+      print('✅ Email OTP verified successfully');
+      return response;
+    } on AuthApiException catch (e) {
+      print('❌ Verify OTP AuthApiException: $e');
+      throw Exception('OTP_INVALID: ${e.message}');
+    } catch (e) {
+      print('❌ Verify OTP error: $e');
+      rethrow;
     }
   }
 
@@ -376,25 +399,30 @@ class SupabaseConfig {
         throw Exception('User must be authenticated to create errands');
       }
       print('✅ [DEBUG] createErrand - User authenticated: ${user.id}');
-      
+
       // Remove customer_id if present - trigger will set it
       final cleanData = Map<String, dynamic>.from(errandData);
       if (cleanData.containsKey('customer_id')) {
-        print('⚠️ [DEBUG] createErrand - Removing customer_id from payload (trigger will set it)');
+        print(
+            '⚠️ [DEBUG] createErrand - Removing customer_id from payload (trigger will set it)');
         cleanData.remove('customer_id');
       }
-      
-      print('📤 [DEBUG] createErrand - Inserting errand with category: ${cleanData['category']}');
+
+      print(
+          '📤 [DEBUG] createErrand - Inserting errand with category: ${cleanData['category']}');
       final response =
           await client.from('errands').insert(cleanData).select().single();
-      print('✅ [DEBUG] createErrand - Errand created successfully: ${response['id']}');
+      print(
+          '✅ [DEBUG] createErrand - Errand created successfully: ${response['id']}');
       return response;
     } catch (e) {
       print('❌ [DEBUG] createErrand - Error: $e');
-      if (e.toString().contains('RLS') || e.toString().contains('row-level security')) {
+      if (e.toString().contains('RLS') ||
+          e.toString().contains('row-level security')) {
         print('❌ [DEBUG] createErrand - RLS policy violation detected');
         print('❌ [DEBUG] createErrand - Current user: ${currentUser?.id}');
-        print('❌ [DEBUG] createErrand - Run fix_errand_insert_rls_for_trigger.sql to fix RLS policy');
+        print(
+            '❌ [DEBUG] createErrand - Run fix_errand_insert_rls_for_trigger.sql to fix RLS policy');
       }
       throw Exception('Failed to create errand: $e');
     }
@@ -561,30 +589,19 @@ class SupabaseConfig {
 
       print('🔄 Updating errand status to accepted...');
 
-      // Update errand status. Use select() to confirm update success (and RLS permission).
-      // If RLS blocks the update (e.g. no policy for runner accept), 0 rows are updated
-      // and PostgREST returns 406 PGRST116 when we request a single object.
-      dynamic updateResult;
-      try {
-        updateResult = await client
-            .from('errands')
-            .update({
-              'runner_id': runnerId,
-              'status': 'accepted',
-              'accepted_at': DateTime.now().toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', errandId)
-            .select()
-            .maybeSingle();
-      } on PostgrestException catch (e) {
-        if (e.code == '406' || e.code == 'PGRST116' || (e.message ?? '').contains('PGRST116')) {
-          throw Exception(
-              'Failed to accept errand: the errand could not be updated (no permission or no longer available). '
-              'If you are a runner, ensure the database has an RLS policy allowing runners to accept errands.');
-        }
-        rethrow;
-      }
+      // Update errand status
+      // Use select() to ensure the row is returned, confirming update success (and RLS permission)
+      final updateResult = await client
+          .from('errands')
+          .update({
+            'runner_id': runnerId,
+            'status': 'accepted',
+            'accepted_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', errandId)
+          .select()
+          .maybeSingle();
 
       if (updateResult == null) {
         throw Exception(
@@ -637,7 +654,8 @@ class SupabaseConfig {
       // Handle unique constraint violation (duplicate key)
       // This happens if the chat was already created (e.g. from a previous attempt)
       if (e is PostgrestException && e.code == '23505') {
-        print('⚠️ Chat conversation already exists (duplicate key error handled).');
+        print(
+            '⚠️ Chat conversation already exists (duplicate key error handled).');
         return;
       }
 
@@ -656,7 +674,10 @@ class SupabaseConfig {
       var query = client.from('errands').select('''
         *,
         customer:customer_id(full_name, phone)
-      ''').inFilter('status', ['posted', 'pending']).filter('runner_id', 'is', null);
+      ''').inFilter('status', [
+        'posted',
+        'pending'
+      ]).filter('runner_id', 'is', null);
 
       // Exclude immediate errands from available errands list (they are handled by popup service)
       query = query.neq('is_immediate', true);
@@ -795,12 +816,14 @@ class SupabaseConfig {
       final customerId = errandResponse['customer_id'];
       final runnerId = errandResponse['runner_id'];
       final errandTitle = errandResponse['title'];
-      final totalPrice = (errandResponse['price_amount'] as num?)?.toDouble() ?? 0.0;
+      final totalPrice =
+          (errandResponse['price_amount'] as num?)?.toDouble() ?? 0.0;
       final currentStatus = errandResponse['status'];
 
       // Check if errand is in a valid state for completion
       if (currentStatus != 'in_progress' && currentStatus != 'accepted') {
-        throw Exception('Errand must be in progress or accepted to be completed');
+        throw Exception(
+            'Errand must be in progress or accepted to be completed');
       }
 
       // Check if full payment has been made
@@ -1587,7 +1610,10 @@ class SupabaseConfig {
 
   static Future<List<Map<String, dynamic>>> getAllPayments() async {
     try {
-      final response = await client.from('admin_all_transactions').select().order('created_at', ascending: false);
+      final response = await client
+          .from('admin_all_transactions')
+          .select()
+          .order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       throw Exception('Failed to fetch payments: $e');
@@ -1595,19 +1621,23 @@ class SupabaseConfig {
   }
 
   // Payment Approval and Escrow logic
-  static Future<void> approvePayment(String bookingId, String bookingType) async {
+  static Future<void> approvePayment(
+      String bookingId, String bookingType) async {
     try {
       String tableName = 'errands';
-      if (bookingType == 'transportation') tableName = 'transportation_bookings';
-      else if (bookingType == 'contract') tableName = 'contract_bookings';
+      if (bookingType == 'transportation') {
+        tableName = 'transportation_bookings';
+      } else if (bookingType == 'contract')
+        tableName = 'contract_bookings';
       else if (bookingType == 'bus') tableName = 'bus_service_bookings';
 
       await client.from(tableName).update({
         'payment_status': 'released_to_runner',
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', bookingId);
-      
-      print('✅ Payment approved and released to runner for $bookingType: $bookingId');
+
+      print(
+          '✅ Payment approved and released to runner for $bookingType: $bookingId');
     } catch (e) {
       throw Exception('Failed to approve payment: $e');
     }
@@ -1627,7 +1657,8 @@ class SupabaseConfig {
     }
   }
 
-  static Future<void> submitWithdrawalRequest(String runnerId, double amount, String notes) async {
+  static Future<void> submitWithdrawalRequest(
+      String runnerId, double amount, String notes) async {
     try {
       await client.from('withdrawal_requests').insert({
         'runner_id': runnerId,
@@ -1640,17 +1671,18 @@ class SupabaseConfig {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getWithdrawalRequests({String? runnerId}) async {
+  static Future<List<Map<String, dynamic>>> getWithdrawalRequests(
+      {String? runnerId}) async {
     try {
       var query = client.from('withdrawal_requests').select('''
         *,
         runner:users!withdrawal_requests_runner_id_fkey(full_name, email)
       ''');
-      
+
       if (runnerId != null) {
         query = query.eq('runner_id', runnerId);
       }
-      
+
       final response = await query.order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
@@ -1658,12 +1690,14 @@ class SupabaseConfig {
     }
   }
 
-  static Future<void> updateWithdrawalRequestStatus(String requestId, String status) async {
+  static Future<void> updateWithdrawalRequestStatus(
+      String requestId, String status) async {
     try {
       await client.from('withdrawal_requests').update({
         'status': status,
         'updated_at': DateTime.now().toIso8601String(),
-        'processed_at': status == 'completed' ? DateTime.now().toIso8601String() : null,
+        'processed_at':
+            status == 'completed' ? DateTime.now().toIso8601String() : null,
         'processed_by': currentUser?.id,
       }).eq('id', requestId);
     } catch (e) {
@@ -1861,7 +1895,7 @@ class SupabaseConfig {
       final redirectUrl = kIsWeb
           ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
-      
+
       print('📧 Creating admin user: ${adminData['email']}');
       print('🔗 Email confirmation redirect URL: $redirectUrl');
 
@@ -1940,7 +1974,7 @@ class SupabaseConfig {
       final redirectUrl = kIsWeb
           ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
-      
+
       print('📧 Creating user: ${userData['email']}');
       print('🔗 Email confirmation redirect URL: $redirectUrl');
 
@@ -2146,10 +2180,8 @@ class SupabaseConfig {
       if (discountPercentage < 0 || discountPercentage > 100) {
         throw Exception('Discount percentage must be between 0 and 100');
       }
-      await client
-          .from('services')
-          .update({'discount_percentage': discountPercentage})
-          .eq('id', serviceId);
+      await client.from('services').update(
+          {'discount_percentage': discountPercentage}).eq('id', serviceId);
       return true;
     } catch (e) {
       print('Error updating service discount: $e');
@@ -2164,10 +2196,8 @@ class SupabaseConfig {
       if (discountPercentage < 0 || discountPercentage > 100) {
         throw Exception('Discount percentage must be between 0 and 100');
       }
-      await client
-          .from('vehicle_types')
-          .update({'discount_percentage': discountPercentage})
-          .eq('id', vehicleTypeId);
+      await client.from('vehicle_types').update(
+          {'discount_percentage': discountPercentage}).eq('id', vehicleTypeId);
       return true;
     } catch (e) {
       print('Error updating vehicle type discount: $e');
@@ -2745,7 +2775,6 @@ class SupabaseConfig {
       return false;
     }
   }
-
 
   // Route Pricing Management
   static Future<List<Map<String, dynamic>>> getRoutePricing(
@@ -4080,7 +4109,6 @@ class SupabaseConfig {
     }
   }
 
-
   // Service Pricing Management
   static Future<List<Map<String, dynamic>>> getServicePricing(
       String serviceId) async {
@@ -4108,7 +4136,7 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getUserBookings(
       [String? userId]) async {
     print('🚀 DEBUG: [GET USER BOOKINGS] Starting getUserBookings...');
-    
+
     final user = client.auth.currentUser;
     final targetUserId = userId ?? user?.id;
 
@@ -4116,13 +4144,14 @@ class SupabaseConfig {
     print('👤 DEBUG: [GET USER BOOKINGS] Target user ID: $targetUserId');
 
     if (targetUserId == null) {
-      print('❌ DEBUG: [GET USER BOOKINGS] No user ID found - returning empty list');
+      print(
+          '❌ DEBUG: [GET USER BOOKINGS] No user ID found - returning empty list');
       return [];
     }
 
     try {
       print('📡 DEBUG: [GET USER BOOKINGS] Executing parallel queries...');
-      
+
       // Execute all queries in parallel for better performance
       final futures = await Future.wait([
         // Get transportation bookings with driver info and vehicle type
@@ -4167,7 +4196,7 @@ class SupabaseConfig {
       ]);
 
       print('✅ DEBUG: [GET USER BOOKINGS] All queries completed');
-      
+
       final transportationBookings = futures[0] as List;
       final contractBookings = futures[1] as List;
       final busBookings = futures[2] as List;
@@ -4180,7 +4209,8 @@ class SupabaseConfig {
       // Log each transportation booking for debugging
       for (var i = 0; i < transportationBookings.length; i++) {
         final booking = transportationBookings[i];
-        print('📋 DEBUG: [GET USER BOOKINGS] Transportation booking #${i + 1}:');
+        print(
+            '📋 DEBUG: [GET USER BOOKINGS] Transportation booking #${i + 1}:');
         print('   - ID: ${booking['id']}');
         print('   - Status: ${booking['status']}');
         print('   - Pickup: ${booking['pickup_location']}');
@@ -4204,7 +4234,8 @@ class SupabaseConfig {
           'booking_type': 'transportation',
           'title': 'Shuttle Services',
         });
-        print('✅ DEBUG: [GET USER BOOKINGS] Added transportation booking: ${booking['id']}');
+        print(
+            '✅ DEBUG: [GET USER BOOKINGS] Added transportation booking: ${booking['id']}');
       }
 
       // Add contract bookings with type identifier
@@ -4216,7 +4247,8 @@ class SupabaseConfig {
           'pickup_location': booking['pickup_location'],
           'dropoff_location': booking['dropoff_location'],
         });
-        print('✅ DEBUG: [GET USER BOOKINGS] Added contract booking: ${booking['id']}');
+        print(
+            '✅ DEBUG: [GET USER BOOKINGS] Added contract booking: ${booking['id']}');
       }
 
       // Add bus service bookings with type identifier
@@ -4228,15 +4260,18 @@ class SupabaseConfig {
           'pickup_location': booking['pickup_location'],
           'dropoff_location': booking['dropoff_location'],
         });
-        print('✅ DEBUG: [GET USER BOOKINGS] Added bus booking: ${booking['id']}');
+        print(
+            '✅ DEBUG: [GET USER BOOKINGS] Added bus booking: ${booking['id']}');
       }
 
       // Sort combined bookings by created_at
       allBookings.sort((a, b) => DateTime.parse(b['created_at'])
           .compareTo(DateTime.parse(a['created_at'])));
 
-      print('✅ DEBUG: [GET USER BOOKINGS] Total bookings after combining: ${allBookings.length}');
-      print('✅ DEBUG: [GET USER BOOKINGS] Returning ${allBookings.length} bookings');
+      print(
+          '✅ DEBUG: [GET USER BOOKINGS] Total bookings after combining: ${allBookings.length}');
+      print(
+          '✅ DEBUG: [GET USER BOOKINGS] Returning ${allBookings.length} bookings');
 
       return allBookings;
     } catch (e, stackTrace) {
@@ -4244,20 +4279,24 @@ class SupabaseConfig {
       print('❌ DEBUG: [GET USER BOOKINGS] Error type: ${e.runtimeType}');
       print('❌ DEBUG: [GET USER BOOKINGS] Error message: $e');
       print('❌ DEBUG: [GET USER BOOKINGS] Stack trace: $stackTrace');
-      
+
       // Check for specific error types
-      if (e.toString().contains('foreign key') || e.toString().contains('relation')) {
+      if (e.toString().contains('foreign key') ||
+          e.toString().contains('relation')) {
         print('🚨 DEBUG: [GET USER BOOKINGS] FOREIGN KEY OR RELATION ERROR!');
-        print('🚨 DEBUG: [GET USER BOOKINGS] This might be a database relationship issue');
+        print(
+            '🚨 DEBUG: [GET USER BOOKINGS] This might be a database relationship issue');
       }
       if (e.toString().contains('null')) {
         print('🚨 DEBUG: [GET USER BOOKINGS] NULL VALUE ERROR!');
       }
-      if (e.toString().contains('permission') || e.toString().contains('policy')) {
+      if (e.toString().contains('permission') ||
+          e.toString().contains('policy')) {
         print('🚨 DEBUG: [GET USER BOOKINGS] PERMISSION/RLS POLICY ERROR!');
-        print('🚨 DEBUG: [GET USER BOOKINGS] Check Row Level Security policies');
+        print(
+            '🚨 DEBUG: [GET USER BOOKINGS] Check Row Level Security policies');
       }
-      
+
       return [];
     }
   }
@@ -4410,22 +4449,28 @@ class SupabaseConfig {
   static Future<Map<String, dynamic>?> createTransportationBooking(
       Map<String, dynamic> bookingData) async {
     try {
-      print('🚀 DEBUG: [CREATE TRANSPORTATION BOOKING] Starting booking creation...');
-      print('📋 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking data received: $bookingData');
-      
+      print(
+          '🚀 DEBUG: [CREATE TRANSPORTATION BOOKING] Starting booking creation...');
+      print(
+          '📋 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking data received: $bookingData');
+
       final user = client.auth.currentUser;
-      print('👤 DEBUG: [CREATE TRANSPORTATION BOOKING] Current user: ${user?.id}');
-      print('👤 DEBUG: [CREATE TRANSPORTATION BOOKING] User email: ${user?.email}');
-      
+      print(
+          '👤 DEBUG: [CREATE TRANSPORTATION BOOKING] Current user: ${user?.id}');
+      print(
+          '👤 DEBUG: [CREATE TRANSPORTATION BOOKING] User email: ${user?.email}');
+
       if (user == null) {
-        print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] User not authenticated');
+        print(
+            '❌ DEBUG: [CREATE TRANSPORTATION BOOKING] User not authenticated');
         throw Exception('User not authenticated');
       }
 
       // Ensure user_id is set
       bookingData['user_id'] = user.id;
-      print('✅ DEBUG: [CREATE TRANSPORTATION BOOKING] User ID set: ${bookingData['user_id']}');
-      
+      print(
+          '✅ DEBUG: [CREATE TRANSPORTATION BOOKING] User ID set: ${bookingData['user_id']}');
+
       // Log all booking data fields
       print('📝 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking details:');
       print('   - user_id: ${bookingData['user_id']}');
@@ -4446,52 +4491,69 @@ class SupabaseConfig {
       print('   - final_price: ${bookingData['final_price']}');
       print('   - special_requests: ${bookingData['special_requests']}');
 
-      print('💾 DEBUG: [CREATE TRANSPORTATION BOOKING] Inserting into database...');
+      print(
+          '💾 DEBUG: [CREATE TRANSPORTATION BOOKING] Inserting into database...');
       final response = await client
           .from('transportation_bookings')
           .insert(bookingData)
           .select()
           .single();
 
-      print('✅ DEBUG: [CREATE TRANSPORTATION BOOKING] Booking created successfully!');
-      print('🆔 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking ID: ${response['id']}');
-      print('📊 DEBUG: [CREATE TRANSPORTATION BOOKING] Full response: $response');
+      print(
+          '✅ DEBUG: [CREATE TRANSPORTATION BOOKING] Booking created successfully!');
+      print(
+          '🆔 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking ID: ${response['id']}');
+      print(
+          '📊 DEBUG: [CREATE TRANSPORTATION BOOKING] Full response: $response');
 
       // If this is an immediate booking, notify runners with matching vehicle types
       if (bookingData['is_immediate'] == true) {
-        print('🔔 DEBUG: [CREATE TRANSPORTATION BOOKING] This is an immediate booking - notifying runners...');
+        print(
+            '🔔 DEBUG: [CREATE TRANSPORTATION BOOKING] This is an immediate booking - notifying runners...');
         try {
           await _notifyRunnersOfNewTransportationBooking(response);
-          print('✅ DEBUG: [CREATE TRANSPORTATION BOOKING] Runners notified successfully');
+          print(
+              '✅ DEBUG: [CREATE TRANSPORTATION BOOKING] Runners notified successfully');
         } catch (notifyError) {
-          print('⚠️ DEBUG: [CREATE TRANSPORTATION BOOKING] Error notifying runners: $notifyError');
+          print(
+              '⚠️ DEBUG: [CREATE TRANSPORTATION BOOKING] Error notifying runners: $notifyError');
           // Don't fail the booking if notification fails
         }
       } else {
-        print('📅 DEBUG: [CREATE TRANSPORTATION BOOKING] This is a scheduled booking - no immediate notification needed');
+        print(
+            '📅 DEBUG: [CREATE TRANSPORTATION BOOKING] This is a scheduled booking - no immediate notification needed');
       }
 
       return response;
     } catch (e, stackTrace) {
-      print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error creating transportation booking');
-      print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error type: ${e.runtimeType}');
+      print(
+          '❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error creating transportation booking');
+      print(
+          '❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error type: ${e.runtimeType}');
       print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error message: $e');
-      print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Stack trace: $stackTrace');
-      
+      print(
+          '❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Stack trace: $stackTrace');
+
       // Check for specific error types
       if (e.toString().contains('constraint')) {
-        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] CONSTRAINT VIOLATION DETECTED!');
-        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] This might be a database constraint issue');
+        print(
+            '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] CONSTRAINT VIOLATION DETECTED!');
+        print(
+            '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] This might be a database constraint issue');
       }
       if (e.toString().contains('null')) {
-        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] NULL VALUE ERROR DETECTED!');
-        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] A required field might be null');
+        print(
+            '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] NULL VALUE ERROR DETECTED!');
+        print(
+            '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] A required field might be null');
       }
       if (e.toString().contains('foreign key')) {
-        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] FOREIGN KEY ERROR DETECTED!');
-        print('🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] A referenced ID might not exist');
+        print(
+            '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] FOREIGN KEY ERROR DETECTED!');
+        print(
+            '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] A referenced ID might not exist');
       }
-      
+
       return null;
     }
   }
@@ -6619,10 +6681,8 @@ class SupabaseConfig {
     try {
       print('💰 Getting runner earnings summary');
 
-      final response = await client
-          .from('runner_earnings_summary')
-          .select('*');
-          // .order('total_revenue', ascending: false); // Removed to prevent crash if column missing
+      final response = await client.from('runner_earnings_summary').select('*');
+      // .order('total_revenue', ascending: false); // Removed to prevent crash if column missing
 
       final data = List<Map<String, dynamic>>.from(response);
 
@@ -6758,7 +6818,8 @@ class SupabaseConfig {
     try {
       print('📨 Sending message to runner: $runnerId');
 
-      final response = await client.rpc('send_admin_message_to_runner', params: {
+      final response =
+          await client.rpc('send_admin_message_to_runner', params: {
         'p_recipient_id': runnerId,
         'p_subject': subject,
         'p_message': message,
@@ -6809,19 +6870,16 @@ class SupabaseConfig {
     try {
       print('📨 Fetching admin messages...');
       print('📨 Current user: ${currentUser?.id}');
-      
-      final response = await client
-          .from('admin_messages')
-          .select('''
+
+      final response = await client.from('admin_messages').select('''
             *,
             sender:users!admin_messages_sender_id_fkey(full_name, email),
             recipient:users!admin_messages_recipient_id_fkey(full_name, email)
-          ''')
-          .order('created_at', ascending: false);
+          ''').order('created_at', ascending: false);
 
       final data = List<Map<String, dynamic>>.from(response);
       print('✅ Got ${data.length} admin messages');
-      
+
       return data;
     } catch (e) {
       print('❌ Error getting admin messages: $e');
@@ -6854,7 +6912,8 @@ class SupabaseConfig {
       final messages = List<Map<String, dynamic>>.from(response);
       final filtered = messages.where((msg) {
         // If parent_message_id exists and is not null, it's a reply - filter it out
-        if (msg.containsKey('parent_message_id') && msg['parent_message_id'] != null) {
+        if (msg.containsKey('parent_message_id') &&
+            msg['parent_message_id'] != null) {
           return false;
         }
         return true;
@@ -6889,10 +6948,11 @@ class SupabaseConfig {
   }
 
   /// Get message thread (conversation)
-  static Future<List<Map<String, dynamic>>> getMessageThread(String messageId) async {
+  static Future<List<Map<String, dynamic>>> getMessageThread(
+      String messageId) async {
     try {
       print('📨 Getting message thread for: $messageId');
-      
+
       final response = await client.rpc('get_message_thread', params: {
         'p_message_id': messageId,
       });
@@ -6957,7 +7017,8 @@ class SupabaseConfig {
 
       // Filter out replies if parent_message_id column exists
       final filtered = messages.where((msg) {
-        if (msg.containsKey('parent_message_id') && msg['parent_message_id'] != null) {
+        if (msg.containsKey('parent_message_id') &&
+            msg['parent_message_id'] != null) {
           return false;
         }
         return true;
@@ -7008,7 +7069,7 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getSpecialOrdersForAdmin() async {
     try {
       print('📦 Getting special orders for admin...');
-      
+
       final response = await client
           .from('errands')
           .select('''
@@ -7018,7 +7079,7 @@ class SupabaseConfig {
           .eq('category', 'special_orders')
           .inFilter('status', ['pending_price', 'price_quoted'])
           .order('created_at', ascending: false);
-      
+
       final orders = List<Map<String, dynamic>>.from(response);
       print('✅ Got ${orders.length} special orders');
       return orders;
@@ -7036,18 +7097,17 @@ class SupabaseConfig {
   ) async {
     try {
       print('💰 Setting price for special order: $errandId = N\$$price');
-      
+
       await client.from('errands').update({
         'price_amount': price,
         'calculated_price': price,
         'status': 'price_quoted',
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', errandId);
-      
+
       print('✅ Price set successfully');
-      
+
       // TODO: Send notification to customer about price quote
-      
     } catch (e) {
       print('❌ Error setting special order price: $e');
       rethrow;
@@ -7059,12 +7119,12 @@ class SupabaseConfig {
   static Future<void> approveSpecialOrderPrice(String errandId) async {
     try {
       print('✅ Customer approving special order: $errandId');
-      
+
       await client.from('errands').update({
         'status': 'pending', // Now available to runners
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', errandId);
-      
+
       print('✅ Special order approved with status: pending');
     } catch (e) {
       print('❌ Error approving special order: $e');
@@ -7077,12 +7137,12 @@ class SupabaseConfig {
   static Future<void> rejectSpecialOrderPrice(String errandId) async {
     try {
       print('❌ Customer rejecting special order: $errandId');
-      
+
       await client.from('errands').update({
         'status': 'cancelled',
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', errandId);
-      
+
       print('✅ Special order rejected and cancelled');
     } catch (e) {
       print('❌ Error rejecting special order: $e');

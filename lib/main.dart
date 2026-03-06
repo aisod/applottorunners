@@ -33,15 +33,18 @@ void main() async {
   runApp(const LottoRunnersApp());
 }
 
-/// Handle deep link that opened the app
+/// Handle deep link that opened the app (e.g. password reset link). Email verification uses codes, not links.
 Future<void> _handleInitialDeepLink() async {
   try {
-    // Supabase Flutter automatically handles deep links for mobile apps
-    // This ensures the auth state is properly recovered on app start
     print('🔗 Checking for initial deep link...');
-    
-    // The Supabase SDK will automatically handle password reset links
-    // when the app is opened from an email link
+    if (kIsWeb) {
+      final url = Uri.base.toString();
+      if (url.contains('reset-password') &&
+          url.contains('#') &&
+          url.contains('access_token=')) {
+        await DeepLinkService.handleDeepLink(url);
+      }
+    }
   } catch (e) {
     print('❌ Error handling initial deep link: $e');
   }

@@ -4,7 +4,6 @@ import '../theme.dart';
 
 import '../supabase/supabase_config.dart';
 
-import '../widgets/theme_toggle_button.dart';
 
 import '../widgets/simple_location_picker.dart';
 
@@ -139,7 +138,7 @@ class _ContractBookingPageState extends State<ContractBookingPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load vehicles. Please check your internet connection and try again.'),
+            content: const Text('Unable to load vehicles. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -561,7 +560,7 @@ class _ContractBookingPageState extends State<ContractBookingPage> {
           SizedBox(height: isSmallMobile ? 16 : 20),
           // Horizontal scrollable vehicle cards
           SizedBox(
-            height: isSmallMobile ? 180 : 200,
+            height: isSmallMobile ? 188 : 208,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: _vehicles.length,
@@ -616,7 +615,7 @@ class _ContractBookingPageState extends State<ContractBookingPage> {
                               if (isSelected)
                                 Container(
                                   padding: EdgeInsets.all(isSmallMobile ? 4 : 6),
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                 color: LottoRunnersColors.primaryYellow,
                                     shape: BoxShape.circle,
                                   ),
@@ -661,7 +660,7 @@ class _ContractBookingPageState extends State<ContractBookingPage> {
                                     child: SizedBox(
                                       width: isSmallMobile ? 20 : 25,
                                       height: isSmallMobile ? 20 : 25,
-                                      child: CircularProgressIndicator(
+                                      child: const CircularProgressIndicator(
                                         strokeWidth: 2,
                                         color: LottoRunnersColors.primaryYellow,
                                       ),
@@ -975,7 +974,7 @@ class _ContractBookingPageState extends State<ContractBookingPage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _contractDurationType,
+                    initialValue: _contractDurationType,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: isSmallMobile ? 13 : 14,
                     ),

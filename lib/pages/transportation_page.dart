@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../supabase/supabase_config.dart';
 // import '../services/location_service.dart'; // Removed - no longer using distance calculations
-import '../widgets/theme_toggle_button.dart';
 import '../widgets/simple_location_picker.dart';
 import '../widgets/looking_for_driver_popup.dart';
 import '../utils/responsive.dart';
@@ -152,7 +151,7 @@ class _TransportationPageState extends State<TransportationPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load vehicles. Please check your internet connection and try again.'),
+            content: const Text('Unable to load vehicles. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -192,7 +191,7 @@ class _TransportationPageState extends State<TransportationPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load vehicles. Please check your internet connection and try again.'),
+            content: const Text('Unable to load vehicles. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -524,7 +523,7 @@ class _TransportationPageState extends State<TransportationPage> {
       );
     }
 
-    return SizedBox.shrink();
+    return const SizedBox.shrink();
   }
 
   /// Build vehicles section
@@ -1195,7 +1194,7 @@ class _TransportationPageState extends State<TransportationPage> {
     }
 
     return SizedBox(
-      height: isSmallMobile ? 180 : 200,
+      height: isSmallMobile ? 188 : 208,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _vehicles.length,
@@ -1253,7 +1252,7 @@ class _TransportationPageState extends State<TransportationPage> {
                         if (isSelected)
                           Container(
                             padding: EdgeInsets.all(isSmallMobile ? 4 : 6),
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: LottoRunnersColors.primaryYellow,
                               shape: BoxShape.circle,
                             ),
@@ -1298,7 +1297,7 @@ class _TransportationPageState extends State<TransportationPage> {
                               child: SizedBox(
                                 width: isSmallMobile ? 20 : 25,
                                 height: isSmallMobile ? 20 : 25,
-                                child: CircularProgressIndicator(
+                                child: const CircularProgressIndicator(
                                   strokeWidth: 2,
                                   color: LottoRunnersColors.primaryYellow,
                                 ),

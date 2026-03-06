@@ -9,12 +9,16 @@ class AuthPage extends StatefulWidget {
   State<AuthPage> createState() => _AuthPageState();
 }
 
+/// User-facing password requirements for sign-up (shown in UI and weak-password errors).
+const String _passwordRequirements = 'Use at least 8 characters, with a mix of letters, numbers and symbols. Avoid common or previously breached passwords.';
+
 class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _verificationCodeController = TextEditingController();
 
   bool _isLogin = true;
   bool _isLoading = false;
@@ -90,6 +94,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
     _passwordController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
+    _verificationCodeController.dispose();
     super.dispose();
   }
 
@@ -157,7 +162,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                     style: TextStyle(color: Theme.of(context).colorScheme.onError),
                   ),
                   backgroundColor: Colors.green,
-                  duration: Duration(seconds: 3),
+                  duration: const Duration(seconds: 3),
                 ),
               );
             }
@@ -177,21 +182,14 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
           // Provide user-friendly error messages
           if (cleanError.contains('EMAIL_SEND_FAILED')) {
             _errorMessage =
-                'Unable to send confirmation email.\n\n'
-                'This could be due to:\n'
-                '• SMTP configuration issue\n'
-                '• SMTP authentication failed\n'
-                '• Email rate limits exceeded\n'
-                '• Email template misconfiguration\n\n'
-                'Please check your Supabase SMTP settings:\n'
-                'Settings → Authentication → SMTP Settings';
+                'We couldn\'t send the confirmation email right now. Please try again in a few minutes. If it keeps happening, contact support.';
           } else if (cleanError.contains('Invalid login credentials')) {
             _errorMessage =
                 'Invalid email or password. Please check your credentials and try again.';
           } else if (cleanError.contains('Email not confirmed') ||
               cleanError.contains('email_not_confirmed')) {
             _errorMessage =
-                'Please check your email and click the confirmation link before signing in.';
+                'Please enter the verification code we sent to your email before signing in.';
             setState(() {
               _showEmailVerification = true;
             });
@@ -199,8 +197,15 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
               cleanError.contains('already_registered')) {
             _errorMessage =
                 'An account with this email already exists. Please sign in instead.';
+          } else if (cleanError.contains('WEAK_PASSWORD') ||
+              cleanError.contains('AuthWeakPasswordException') ||
+              cleanError.contains('weak') && cleanError.contains('password') ||
+              cleanError.contains('pwned') ||
+              cleanError.contains('easy to guess')) {
+            _errorMessage =
+                'This password is too weak or has been found in a security breach. Please choose a different one.\n\n$_passwordRequirements';
           } else if (cleanError.contains('Password should be at least')) {
-            _errorMessage = 'Password must be at least 6 characters long.';
+            _errorMessage = 'Password must be at least 8 characters long.\n\n$_passwordRequirements';
           } else if (cleanError.contains('Unable to validate email address')) {
             _errorMessage = 'Please enter a valid email address.';
           } else if (cleanError.contains('Network') || cleanError.contains('NETWORK_ERROR')) {
@@ -234,8 +239,69 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
       _selectedUserType = null;
       _showPasswordReset = false;
       _showEmailVerification = false;
+      _verificationCodeController.clear();
     });
     _formKey.currentState?.reset();
+  }
+
+  /// Verify the 6-digit code sent to the user's email after signup.
+  Future<void> _handleVerifyEmailOtp() async {
+    final code = _verificationCodeController.text.trim();
+    if (code.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter the 6-digit verification code.';
+      });
+      return;
+    }
+    if (code.length != 6) {
+      setState(() {
+        _errorMessage = 'Please enter the full 6-digit code from your email.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await SupabaseConfig.verifyEmailOtp(
+        _emailController.text.trim(),
+        code,
+      );
+      if (mounted) {
+        setState(() {
+          _showEmailVerification = false;
+          _verificationCodeController.clear();
+          _isLogin = true;
+          _errorMessage = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Email verified! You can now sign in.',
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final msg = e.toString().toLowerCase();
+        setState(() {
+          _errorMessage = msg.contains('expired') || msg.contains('invalid')
+              ? 'Invalid or expired code. Please request a new one.'
+              : 'Verification failed. Please check the code and try again.';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _handlePasswordReset() async {
@@ -280,10 +346,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         } else if (e.toString().contains('RATE_LIMIT')) {
           errorMessage = 'Too many attempts. Please wait a few minutes and try again.';
         } else if (e.toString().contains('EMAIL_SEND_FAILED')) {
-          // Extract the detailed error message
-          final match = RegExp(r'EMAIL_SEND_FAILED: (.+)').firstMatch(e.toString());
-          errorMessage = match?.group(1) ?? 
-              'Unable to send password reset email. Please check your Supabase SMTP settings or try again later.';
+          errorMessage =
+              'We couldn\'t send the password reset email right now. Please try again in a few minutes. If it keeps happening, contact support.';
         } else if (e.toString().contains('NETWORK_ERROR')) {
           // Extract the network error message
           final match = RegExp(r'NETWORK_ERROR: (.+)').firstMatch(e.toString());
@@ -359,14 +423,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         final errorString = e.toString();
         if (errorString.contains('EMAIL_SEND_FAILED')) {
           errorMessage =
-              'Unable to send confirmation email.\n\n'
-              'This could be due to:\n'
-              '• SMTP configuration issue\n'
-              '• SMTP authentication failed\n'
-              '• Email rate limits exceeded\n'
-              '• Email template misconfiguration\n\n'
-              'Please check your Supabase SMTP settings:\n'
-              'Settings → Authentication → SMTP Settings';
+              'We couldn\'t send the confirmation email right now. Please try again in a few minutes. If it keeps happening, contact support.';
         } else if (errorString.contains('INVALID_EMAIL')) {
           errorMessage = 'The email address is invalid. Please enter a valid email address.';
         } else if (errorString.contains('RATE_LIMIT')) {
@@ -661,6 +718,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
             label: 'Password',
             icon: Icons.lock_outline,
             obscureText: _obscurePassword,
+            helperText: _isLogin ? null : _passwordRequirements,
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility : Icons.visibility_off,
@@ -676,8 +734,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
               if (value == null || value.isEmpty) {
                 return 'Please enter your password';
               }
-              if (!_isLogin && value.length < 6) {
-                return 'Password must be at least 6 characters';
+              if (!_isLogin && value.length < 8) {
+                return 'Password must be at least 8 characters';
               }
               return null;
             },
@@ -695,6 +753,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
     bool obscureText = false,
     Widget? suffixIcon,
     String? Function(String?)? validator,
+    String? helperText,
   }) {
     return TextFormField(
       controller: controller,
@@ -703,6 +762,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
+        helperText: helperText,
+        helperMaxLines: 3,
         prefixIcon: Icon(icon, color: LottoRunnersColors.primaryYellow),
         suffixIcon: suffixIcon,
         filled: true,
@@ -1085,13 +1146,13 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
           Row(
             children: [
               const Icon(
-                Icons.email_outlined,
+                Icons.pin_outlined,
                 color: LottoRunnersColors.primaryYellow,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
-                'Email Verification Required',
+                'Enter verification code',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: LottoRunnersColors.primaryYellow,
@@ -1101,17 +1162,39 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 8),
           Text(
-            'We\'ve sent a verification email to ${_emailController.text.trim()}. Please check your inbox and click the verification link to activate your account.',
+            'We sent a 6-digit code to ${_emailController.text.trim()}. Enter it below to verify your email.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: LottoRunnersColors.gray600,
                 ),
           ),
           const SizedBox(height: 16),
+          TextFormField(
+            controller: _verificationCodeController,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            decoration: InputDecoration(
+              labelText: 'Verification code',
+              hintText: '000000',
+              counterText: '',
+              filled: true,
+              fillColor: LottoRunnersColors.gray50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              prefixIcon: const Icon(
+                Icons.pin,
+                color: LottoRunnersColors.primaryYellow,
+              ),
+            ),
+            onFieldSubmitted: (_) => _handleVerifyEmailOtp(),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleResendEmailConfirmation,
+                  onPressed: _isLoading ? null : _handleVerifyEmailOtp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: LottoRunnersColors.primaryYellow,
                     foregroundColor: Colors.white,
@@ -1129,19 +1212,13 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text('Resend Email'),
+                      : const Text('Verify'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      _showEmailVerification = false;
-                      _isLogin = true;
-                      _errorMessage = null;
-                    });
-                  },
+                  onPressed: _isLoading ? null : _handleResendEmailConfirmation,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: LottoRunnersColors.primaryBlue,
                     side:
@@ -1150,10 +1227,29 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Sign In'),
+                  child: const Text('Resend code'),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: () {
+              setState(() {
+                _showEmailVerification = false;
+                _isLogin = true;
+                _errorMessage = null;
+                _verificationCodeController.clear();
+              });
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: LottoRunnersColors.gray600,
+              side: const BorderSide(color: LottoRunnersColors.gray400),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Back to Sign In'),
           ),
         ],
       ),
