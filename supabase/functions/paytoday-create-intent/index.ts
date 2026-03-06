@@ -189,6 +189,10 @@ Deno.serve(async (req: Request) => {
     console.log(`💰 Amount: N$${amount}`);
     console.log(`📝 Invoice: ${invoice_number}`);
 
+    // Build return URL with invoice_number so payment-return page can identify the transaction (server-side to avoid injection)
+    const baseReturn = (return_url || '').replace(/\/$/, '');
+    const returnWithInvoice = baseReturn + (baseReturn.includes('?') ? '&' : '?') + 'invoice_number=' + encodeURIComponent(invoice_number);
+
     // Generate HTML content with PayToday SDK (Reference Style)
     // Using the spinner and simple layout from the working reference
     const htmlContent = `<!DOCTYPE html>
@@ -243,18 +247,15 @@ Deno.serve(async (req: Request) => {
                 if (success) {
                     console.log('PayToday: Initialized. Creating intent...');
                     
-                    const phoneNumber = "${user_phone_number || '0000000000'}".trim() || '0000000000';
-                    
-                    const baseReturn = "${return_url || ''}".replace(/\/$/, '');
-                    const returnWithInvoice = baseReturn + (baseReturn.includes('?') ? '&' : '?') + 'invoice_number=' + encodeURIComponent("${invoice_number}");
+                    const phoneNumber = (${JSON.stringify(String(user_phone_number || '0000000000'))}).trim() || '0000000000';
                     paytoday.createPaymentIntent({
                         amount: ${amount}, // Keep as dollars/NAD per previous instructions
-                        invoice_number: "${invoice_number}",
-                        user_first_name: "${ptFirstName}",
-                        user_last_name: "${ptLastName}",
-                        user_email: "${ptEmail}",
+                        invoice_number: ${JSON.stringify(invoice_number)},
+                        user_first_name: ${JSON.stringify(ptFirstName)},
+                        user_last_name: ${JSON.stringify(ptLastName)},
+                        user_email: ${JSON.stringify(ptEmail)},
                         user_phone_number: phoneNumber,
-                        return_url: returnWithInvoice,
+                        return_url: ${JSON.stringify(returnWithInvoice)},
                     }).then(intent => {
                         console.log('PayToday: Intent created', intent);
                         const url = intent?.data?.payment_url || intent?.data?.checkout_url || intent?.payment_url;
