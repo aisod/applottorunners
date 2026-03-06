@@ -8,7 +8,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:lotto_runners/utils/web_payment_helper.dart';
 import 'package:lotto_runners/services/paytoday_config.dart';
 import 'package:lotto_runners/services/paytoday_backend_service.dart';
-import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/theme.dart';
 
 /// PayToday Payment Page
@@ -95,12 +94,6 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
         bookingType: widget.bookingType,
       );
 
-      // Get data URI from response
-      final dataUri = intentData['data_uri'] as String?;
-      if (dataUri == null) {
-        throw Exception('No data URI received from payment intent');
-      }
-
       if (kIsWeb) {
         // For Web, if "Verify JWT" is ON, we must use the HTML content returned from the POST request
         // because standard URL navigation/launching cannot send the required Authorization headers.
@@ -116,12 +109,29 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
         } else {
           throw Exception('No HTML content received for Web payment');
         }
-      } else if (_isWindows) {
-
-        await _initializeWindowsWebView(dataUri);
       } else {
-        // Use Mobile WebView controller
-        await _initializeMobileWebView(dataUri);
+        // Non-web platforms expect a data URI; if it's not provided but we have HTML,
+        // construct a data URI locally so we don't fail hard.
+        String? dataUri = intentData['data_uri'] as String?;
+        final htmlContent = intentData['html_content'] as String?;
+        if (dataUri == null && htmlContent != null) {
+          final uri = Uri.dataFromString(
+            htmlContent,
+            mimeType: 'text/html',
+            encoding: utf8,
+          );
+          dataUri = uri.toString();
+        }
+        if (dataUri == null) {
+          throw Exception('No data URI received from payment intent');
+        }
+
+        if (_isWindows) {
+          await _initializeWindowsWebView(dataUri);
+        } else {
+          // Use Mobile WebView controller
+          await _initializeMobileWebView(dataUri);
+        }
       }
 
       setState(() {
@@ -429,11 +439,11 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.check_circle, color: LottoRunnersColors.accent, size: 32),
-            const SizedBox(width: 12),
-            const Text('Payment Successful'),
+            SizedBox(width: 12),
+            Text('Payment Successful'),
           ],
         ),
         content: Text(
@@ -467,11 +477,11 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.error_outline, color: Colors.red, size: 32),
-            const SizedBox(width: 12),
-            const Text('Payment Failed'),
+            SizedBox(width: 12),
+            Text('Payment Failed'),
           ],
         ),
         content: Text(message),
@@ -563,7 +573,7 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
                 ),
-              Icon(Icons.payment, size: 64, color: LottoRunnersColors.primaryBlue),
+              const Icon(Icons.payment, size: 64, color: LottoRunnersColors.primaryBlue),
               const SizedBox(height: 24),
               const Text('Payment Window Opened', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                const SizedBox(height: 16),
@@ -673,9 +683,9 @@ class _PayTodayPaymentPageState extends State<PayTodayPaymentPage> {
               valueColor: const AlwaysStoppedAnimation(LottoRunnersColors.primaryBlue),
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Loading payment page...',
-              style: const TextStyle(
+              style: TextStyle(
                 color: LottoRunnersColors.gray700,
                 fontWeight: FontWeight.w500,
               ),
