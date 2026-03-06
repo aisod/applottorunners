@@ -189,7 +189,7 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
             crossAxisCount: isMobile ? 2 : 4,
             crossAxisSpacing: isMobile ? 8 : 12,
             mainAxisSpacing: isMobile ? 8 : 12,
-            childAspectRatio: isMobile ? 1.8 : 2.5,
+            childAspectRatio: isMobile ? 1.5 : 2.0,
             children: [
               _buildTotalCard(
                   'Total Revenue',

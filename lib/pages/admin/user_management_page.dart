@@ -766,131 +766,140 @@ class _UserManagementPageState extends State<UserManagementPage> {
             SizedBox(height: isMobile ? 8 : 12),
             // Additional Info Row
             if (!isMobile) ...[
-              Row(
-                children: [
-                  Icon(
-                    isVerified ? Icons.verified : Icons.pending,
-                    size: 18,
-                    color:
-                        isVerified ? Colors.green : theme.colorScheme.outline,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isVerified ? 'Verified' : 'Unverified',
-                    style: theme.textTheme.bodySmall?.copyWith(
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Icon(
+                      isVerified ? Icons.verified : Icons.pending,
+                      size: 18,
                       color:
                           isVerified ? Colors.green : theme.colorScheme.outline,
-                      fontSize: 12,
                     ),
-                  ),
-                  const Spacer(),
-                  // Action Buttons for Desktop
-                  TextButton.icon(
-                    onPressed: () => _showUserDetails(user),
-                    icon: const Icon(Icons.info_outline, size: 18),
-                    label: const Text(
-                      'Details',
-                      style: TextStyle(fontSize: 12),
+                    const SizedBox(width: 6),
+                    Text(
+                      isVerified ? 'Verified' : 'Unverified',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: isVerified
+                            ? Colors.green
+                            : theme.colorScheme.outline,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () =>
-                        _verifyUser(user['id'], userName, isVerified),
-                    icon: Icon(
-                      isVerified
-                          ? Icons.verified_user
-                          : Icons.verified_user_outlined,
-                      size: 18,
+                    const SizedBox(width: 8),
+                    // Action Buttons for Desktop
+                    TextButton.icon(
+                      onPressed: () => _showUserDetails(user),
+                      icon: const Icon(Icons.info_outline, size: 18),
+                      label: const Text(
+                        'Details',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
-                    label: Text(
-                      isVerified ? 'Unverify' : 'Verify',
-                      style: const TextStyle(fontSize: 12),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () =>
+                          _verifyUser(user['id'], userName, isVerified),
+                      icon: Icon(
+                        isVerified
+                            ? Icons.verified_user
+                            : Icons.verified_user_outlined,
+                        size: 18,
+                      ),
+                      label: Text(
+                        isVerified ? 'Unverify' : 'Verify',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor:
+                            isVerified ? Colors.orange : Colors.green,
+                      ),
                     ),
-                    style: TextButton.styleFrom(
-                      foregroundColor:
-                          isVerified ? Colors.orange : Colors.green,
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () => _deactivateUser(user['id'], userName),
+                      icon: const Icon(Icons.block, size: 18),
+                      label: const Text(
+                        'Deactivate',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      style:
+                          TextButton.styleFrom(foregroundColor: Colors.orange),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () => _deactivateUser(user['id'], userName),
-                    icon: const Icon(Icons.block, size: 18),
-                    label: const Text(
-                      'Deactivate',
-                      style: TextStyle(fontSize: 12),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () => _deleteUser(user['id'], userName),
+                      icon: const Icon(Icons.delete_forever, size: 18),
+                      label: const Text(
+                        'Delete',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
                     ),
-                    style: TextButton.styleFrom(foregroundColor: Colors.orange),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () => _deleteUser(user['id'], userName),
-                    icon: const Icon(Icons.delete_forever, size: 18),
-                    label: const Text(
-                      'Delete',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colorScheme.error,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
             // Mobile Action Buttons
             if (isMobile) ...[
-              Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: () => _showUserDetails(user),
-                    icon: const Icon(Icons.info_outline, size: 16),
-                    label: const Text(
-                      'Details',
-                      style: TextStyle(fontSize: 11),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _showUserDetails(user),
+                      icon: const Icon(Icons.info_outline, size: 16),
+                      label: const Text(
+                        'Details',
+                        style: TextStyle(fontSize: 11),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () =>
-                        _verifyUser(user['id'], userName, isVerified),
-                    icon: Icon(
-                      isVerified
-                          ? Icons.verified_user
-                          : Icons.verified_user_outlined,
-                      size: 16,
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () =>
+                          _verifyUser(user['id'], userName, isVerified),
+                      icon: Icon(
+                        isVerified
+                            ? Icons.verified_user
+                            : Icons.verified_user_outlined,
+                        size: 16,
+                      ),
+                      label: Text(
+                        isVerified ? 'Unverify' : 'Verify',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor:
+                            isVerified ? Colors.orange : Colors.green,
+                      ),
                     ),
-                    label: Text(
-                      isVerified ? 'Unverify' : 'Verify',
-                      style: const TextStyle(fontSize: 11),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () => _deactivateUser(user['id'], userName),
+                      icon: const Icon(Icons.block, size: 16),
+                      label: const Text(
+                        'Deactivate',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                      style:
+                          TextButton.styleFrom(foregroundColor: Colors.orange),
                     ),
-                    style: TextButton.styleFrom(
-                      foregroundColor:
-                          isVerified ? Colors.orange : Colors.green,
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () => _deleteUser(user['id'], userName),
+                      icon: const Icon(Icons.delete_forever, size: 16),
+                      label: const Text(
+                        'Delete',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () => _deactivateUser(user['id'], userName),
-                    icon: const Icon(Icons.block, size: 16),
-                    label: const Text(
-                      'Deactivate',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    style: TextButton.styleFrom(foregroundColor: Colors.orange),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () => _deleteUser(user['id'], userName),
-                    icon: const Icon(Icons.delete_forever, size: 16),
-                    label: const Text(
-                      'Delete',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colorScheme.error,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               // User Role for Mobile

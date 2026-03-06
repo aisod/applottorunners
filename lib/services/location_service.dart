@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:lotto_runners/supabase/supabase_config.dart';
 
 class LocationService {
   // Prefer passing your key at build/run time: --dart-define=GOOGLE_MAPS_API_KEY=YOUR_KEY
@@ -340,9 +341,28 @@ class LocationService {
     return null;
   }
 
-  // Search for places using Google Places Autocomplete API with caching
+  /// Name of the Edge Function that proxies Google Places Autocomplete (avoids CORS, keeps API key server-side).
+  static const String _placesAutocompleteFunction = 'places-autocomplete';
+
+  /// Parses a Google Places Autocomplete–style response (status + predictions) into [PlaceModel] list.
+  static List<PlaceModel> _parsePlacesResponse(Map<String, dynamic>? data) {
+    if (data == null || data['status'] != 'OK') return [];
+    final predictions = data['predictions'] as List? ?? [];
+    final results = <PlaceModel>[];
+    for (final p in predictions) {
+      try {
+        if (p is Map<String, dynamic>) {
+          results.add(PlaceModel.fromJson(p));
+        }
+      } catch (_) {
+        // Skip malformed prediction
+      }
+    }
+    return results;
+  }
+
+  // Search for places: tries backend proxy (Edge Function) first, then fallback search.
   static Future<List<PlaceModel>> searchPlaces(String query) async {
-    // Normalize query for caching
     final normalizedQuery = query.trim().toLowerCase();
 
     // Check cache first
@@ -353,73 +373,46 @@ class LocationService {
         print('🚀 Using cached results for: $query');
         return _searchCache[normalizedQuery]!;
       } else {
-        // Remove expired cache entry
         _searchCache.remove(normalizedQuery);
         _cacheTimestamps.remove(normalizedQuery);
       }
     }
 
-    final apiKey = _resolvedApiKey;
-
-    if (apiKey.isEmpty) {
-      print(
-          '⚠️ No valid API key found, using fallback search');
-      // Fallback to basic search without API key
-      final results = await _basicPlaceSearch(query);
-      _cacheResults(normalizedQuery, results);
-      return results;
-    }
-
+    // 1) Prefer Supabase Edge Function proxy (no CORS, API key stays on server)
     try {
-      final url = Uri.parse(
-        '$_baseUrl/place/autocomplete/json?input=$query&key=$apiKey&components=country:na&types=geocode', // Namibia country code, geocode only for faster results
-      );
-
-      print('🌐 Making optimized request to Google Places API');
-
-      final response = await http.get(url).timeout(
-        const Duration(seconds: 3), // Add timeout for faster failure
-        onTimeout: () {
-          throw Exception('Request timeout');
+      final response = await SupabaseConfig.client.functions.invoke(
+        _placesAutocompleteFunction,
+        body: {
+          'query': query.trim(),
+          'country': 'na',
+          'types': 'geocode',
         },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => throw Exception('Places proxy timeout'),
       );
 
-      print('📡 Response status: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['status'] == 'OK') {
-          final predictions = data['predictions'] as List;
-          print('✅ Found ${predictions.length} places');
-          final results = predictions
-              .map((prediction) => PlaceModel.fromJson(prediction))
-              .toList();
-
-          // Cache successful results
-          _cacheResults(normalizedQuery, results);
-          return results;
-        } else {
-          print(
-              '❌ API Error: ${data['status']} - ${data['error_message'] ?? 'Unknown error'}');
-          // Fallback to basic search on API error
-          final results = await _basicPlaceSearch(query);
-          _cacheResults(normalizedQuery, results);
-          return results;
-        }
-      } else {
-        print('❌ HTTP Error: ${response.statusCode}');
-        final results = await _basicPlaceSearch(query);
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['status'] == 'OK') {
+        final results = _parsePlacesResponse(data);
+        print('✅ Places (proxy): ${results.length} results');
         _cacheResults(normalizedQuery, results);
         return results;
       }
+      if (response.status != 200) {
+        print('❌ Places proxy HTTP ${response.status}');
+      }
     } catch (e) {
-      print('❌ Exception in searchPlaces: $e');
-      // Fallback to basic search on exception
-      final results = await _basicPlaceSearch(query);
-      _cacheResults(normalizedQuery, results);
-      return results;
+      print('❌ Places proxy failed, using fallback: $e');
     }
+
+    // 2) Fallback: basic search (geocoding + Namibia suggestions, no client-side API key)
+    final results = await _basicPlaceSearch(query);
+    _cacheResults(normalizedQuery, results);
+    return results;
   }
 
   // Cache search results
@@ -488,15 +481,13 @@ class LocationService {
 
     try {
       print('🌐 Attempting geocoding for: $query');
-      List<Location> locations = await locationFromAddress(query);
+      final locations = await locationFromAddress(query);
 
       if (locations.isNotEmpty) {
         final location = locations[0];
-        // Ensure latitude and longitude are valid
         final lat = location.latitude;
         final lng = location.longitude;
-        
-        // Validate coordinates are valid numbers (not null, not NaN, not infinite)
+
         if (lat.isFinite && lng.isFinite) {
           print('✅ Found location: $lat, $lng');
           return [
@@ -515,7 +506,7 @@ class LocationService {
       } else {
         print('❌ No locations found for: $query');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       // Handle specific error types
       String errorMessage = 'Unknown error';
       try {

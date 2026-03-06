@@ -251,7 +251,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final customerStats = <String, Map<String, dynamic>>{};
 
     for (final errand in errands) {
-      if (errand['customer_id'] != null) {
+      // Only count errands that are actually completed so we don't
+      // treat pending/unpaid jobs as revenue.
+      if (errand['customer_id'] != null &&
+          errand['status'] == 'completed') {
         final customerId = errand['customer_id'];
         final customerName = errand['customer']?['full_name'] ?? 'Unknown';
         final amount = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
@@ -967,7 +970,29 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ),
           ),
           SizedBox(height: isMobile ? 12 : 16),
-          _buildTopRunnerItem('luis', 2, 75.00, theme),
+          if (_topRunners.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'No completed errands by runners yet.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
+          else
+            ...List.generate(
+              _topRunners.length,
+              (i) => Padding(
+                padding: EdgeInsets.only(bottom: i < _topRunners.length - 1 ? (isMobile ? 8 : 12) : 0),
+                child: _buildTopRunnerItem(
+                  _topRunners[i]['name']?.toString() ?? 'Unknown',
+                  (_topRunners[i]['completed_errands'] as num?)?.toInt() ?? 0,
+                  (_topRunners[i]['total_earnings'] as num?)?.toDouble() ?? 0.0,
+                  theme,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1008,7 +1033,29 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ),
           ),
           SizedBox(height: isMobile ? 12 : 16),
-          _buildTopCustomerItem('Edna', 12, 26.42, theme),
+          if (_topCustomers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'No customer data yet.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
+          else
+            ...List.generate(
+              _topCustomers.length,
+              (i) => Padding(
+                padding: EdgeInsets.only(bottom: i < _topCustomers.length - 1 ? (isMobile ? 8 : 12) : 0),
+                child: _buildTopCustomerItem(
+                  _topCustomers[i]['name']?.toString() ?? 'Unknown',
+                  (_topCustomers[i]['total_errands'] as num?)?.toInt() ?? 0,
+                  (_topCustomers[i]['total_spent'] as num?)?.toDouble() ?? 0.0,
+                  theme,
+                ),
+              ),
+            ),
         ],
       ),
     );

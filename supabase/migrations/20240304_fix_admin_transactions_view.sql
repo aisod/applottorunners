@@ -11,7 +11,7 @@ SELECT
     p.status,
     'paytoday' as payment_type,
     p.created_at,
-    p.completed_at as completed_at, -- Changed from updated_at to completed_at
+    p.updated_at as completed_at, -- Changed from updated_at to completed_at
     c.full_name as customer_name,
     c.email as customer_email,
     r.full_name as runner_name,
