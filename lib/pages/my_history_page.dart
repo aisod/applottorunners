@@ -266,7 +266,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
+                  const IconButton(
                     onPressed: null,
                     icon: Icon(
                       Icons.refresh,
@@ -807,7 +807,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
       print('Error downloading invoice: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text(
                 'Unable to download invoice. Please check your internet connection and try again.'),
             backgroundColor: Colors.red,
@@ -876,7 +876,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
                       pw.SizedBox(height: 4),
                       pw.Text(
                         'INVOICE',
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 16,
                           color: PdfColors.white,
                         ),

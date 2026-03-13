@@ -26,15 +26,12 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
   Future<void> _loadApplications() async {
     try {
       setState(() => _isLoading = true);
-      // Use the enhanced view with document information
+      // RLS: use RPC so only admins can read runner verification data
       final response = await SupabaseConfig.client
-          .from('runner_verification_view')
-          .select('*')
-          .eq('verification_status', 'pending')
-          .order('applied_at', ascending: false);
+          .rpc('get_runner_verification_view', params: {'p_verification_status': 'pending'});
 
       setState(() {
-        _applications = List<Map<String, dynamic>>.from(response);
+        _applications = List<Map<String, dynamic>>.from(response ?? []);
         _isLoading = false;
       });
     } catch (e) {
@@ -42,7 +39,8 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Unable to load applications. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to load applications. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -67,7 +65,8 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Unable to update application. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to update application. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -359,7 +358,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
           if (isMultiple && count > 0)
             Text(
               '($count)',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10,
                 color: Colors.grey,
               ),
@@ -658,8 +657,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor:
-                      theme.colorScheme.outline.withOpacity(0.1),
+                  backgroundColor: theme.colorScheme.outline.withOpacity(0.1),
                   child: Icon(
                     hasVehicle ? Icons.directions_car : Icons.directions_walk,
                     color: theme.colorScheme.outline,
@@ -734,7 +732,8 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.description, size: 16, color: theme.colorScheme.outline),
+                Icon(Icons.description,
+                    size: 16, color: theme.colorScheme.outline),
                 const SizedBox(width: 4),
                 Text(
                   '$documentsCount document${documentsCount != 1 ? 's' : ''}',

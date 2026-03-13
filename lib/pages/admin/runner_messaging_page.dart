@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 /// Admin page for sending messages and notifications to runners
 class RunnerMessagingPage extends StatefulWidget {
-  const RunnerMessagingPage({Key? key}) : super(key: key);
+  const RunnerMessagingPage({super.key});
 
   @override
   State<RunnerMessagingPage> createState() => _RunnerMessagingPageState();
@@ -273,7 +273,7 @@ class _RunnerMessagingPageState extends State<RunnerMessagingPage> {
           // Runner selection (if not broadcast)
           if (!_isBroadcast) ...[
             DropdownButtonFormField<String>(
-              value: _selectedRunnerId,
+              initialValue: _selectedRunnerId,
               decoration: InputDecoration(
                 labelText: 'Select Runner *',
                 border: OutlineInputBorder(
@@ -305,7 +305,7 @@ class _RunnerMessagingPageState extends State<RunnerMessagingPage> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _messageType,
+                  initialValue: _messageType,
                   decoration: InputDecoration(
                     labelText: 'Message Type',
                     border: OutlineInputBorder(
@@ -329,7 +329,7 @@ class _RunnerMessagingPageState extends State<RunnerMessagingPage> {
               const SizedBox(width: 16),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _priority,
+                  initialValue: _priority,
                   decoration: InputDecoration(
                     labelText: 'Priority',
                     border: OutlineInputBorder(

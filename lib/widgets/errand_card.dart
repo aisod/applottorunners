@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lotto_runners/pages/route_map_page.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/utils/map_utils.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 
 class ErrandCard extends StatelessWidget {
@@ -19,6 +21,8 @@ class ErrandCard extends StatelessWidget {
   final String? payButtonText;
   final bool showApproveButton;
   final VoidCallback? onApprove;
+  /// When true, shows a "Follow route" button so the runner can open maps to the errand location.
+  final bool showNavigateButton;
 
   const ErrandCard({
     super.key,
@@ -37,6 +41,7 @@ class ErrandCard extends StatelessWidget {
     this.payButtonText,
     this.showApproveButton = false,
     this.onApprove,
+    this.showNavigateButton = false,
   });
 
   @override
@@ -175,6 +180,28 @@ class ErrandCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (showNavigateButton &&
+                      MapUtils.getErrandNavigationAddress(errand) != null)
+                    IconButton(
+                      icon: const Icon(Icons.directions),
+                      iconSize: Responsive.isSmallMobile(context) ? 20 : 22,
+                      color: theme.colorScheme.primary,
+                      tooltip: 'Follow route to location',
+                      onPressed: () {
+                        final address =
+                            MapUtils.getErrandNavigationAddress(errand);
+                        if (address != null) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => RouteMapPage(
+                                destinationAddress: address,
+                                title: errand['title']?.toString(),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   const SizedBox(width: 16),
                   const Icon(Icons.schedule,
                       color: LottoRunnersColors.primaryYellow, size: 16),
@@ -400,9 +427,9 @@ class ErrandCard extends StatelessWidget {
 
     // If we only have Pay + (Chat or Cancel), use the special stacked layout:
     // Pay on top, Chat/Cancel underneath.
-    final hasStackedLayout =
-        primaryRowButtons.isEmpty && payButton != null &&
-            (chatButton != null || cancelButton != null);
+    final hasStackedLayout = primaryRowButtons.isEmpty &&
+        payButton != null &&
+        (chatButton != null || cancelButton != null);
 
     if (hasStackedLayout) {
       return Column(
@@ -410,7 +437,7 @@ class ErrandCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              payButton!,
+              payButton,
             ],
           ),
           const SizedBox(height: 8),

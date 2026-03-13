@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class MessageChatPage extends StatefulWidget {
   final Map<String, dynamic> message;
 
-  const MessageChatPage({Key? key, required this.message}) : super(key: key);
+  const MessageChatPage({super.key, required this.message});
 
   @override
   State<MessageChatPage> createState() => _MessageChatPageState();
@@ -36,8 +36,9 @@ class _MessageChatPageState extends State<MessageChatPage> {
     setState(() => _isLoading = true);
 
     try {
-      final thread = await SupabaseConfig.getMessageThread(widget.message['id']);
-      
+      final thread =
+          await SupabaseConfig.getMessageThread(widget.message['id']);
+
       setState(() {
         _messages = thread;
         _isLoading = false;
@@ -113,11 +114,12 @@ class _MessageChatPageState extends State<MessageChatPage> {
           children: [
             Text(
               widget.message['subject'] ?? 'Message',
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
             Text(
               'From: ${widget.message['sender']?['full_name'] ?? 'Admin'}',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
             ),
           ],
         ),
@@ -192,7 +194,8 @@ class _MessageChatPageState extends State<MessageChatPage> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               child: Text(
                 senderName[0].toUpperCase(),
-                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onPrimary),
               ),
             ),
             const SizedBox(width: 8),
@@ -316,7 +319,8 @@ class _MessageChatPageState extends State<MessageChatPage> {
               backgroundColor: Theme.of(context).colorScheme.secondary,
               child: Text(
                 senderName[0].toUpperCase(),
-                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onPrimary),
               ),
             ),
           ],
@@ -381,4 +385,3 @@ class _MessageChatPageState extends State<MessageChatPage> {
     );
   }
 }
-

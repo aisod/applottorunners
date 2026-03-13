@@ -9,10 +9,13 @@ class SpecialOrdersManagementPage extends StatefulWidget {
   const SpecialOrdersManagementPage({super.key});
 
   @override
-  State<SpecialOrdersManagementPage> createState() => _SpecialOrdersManagementPageState();
+  State<SpecialOrdersManagementPage> createState() =>
+      _SpecialOrdersManagementPageState();
 }
 
-class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPage> with SingleTickerProviderStateMixin {
+class _SpecialOrdersManagementPageState
+    extends State<SpecialOrdersManagementPage>
+    with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> _pendingOrders = [];
   List<Map<String, dynamic>> _quotedOrders = [];
   bool _isLoading = true;
@@ -22,7 +25,8 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: _selectedTab);
+    _tabController =
+        TabController(length: 2, vsync: this, initialIndex: _selectedTab);
     _loadOrders();
   }
 
@@ -36,12 +40,13 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
     setState(() => _isLoading = true);
     try {
       final orders = await SupabaseConfig.getSpecialOrdersForAdmin();
-      
+
       setState(() {
-        _pendingOrders = orders.where((order) => 
-          order['status'] == 'pending_price').toList();
-        _quotedOrders = orders.where((order) => 
-          order['status'] == 'price_quoted').toList();
+        _pendingOrders = orders
+            .where((order) => order['status'] == 'pending_price')
+            .toList();
+        _quotedOrders =
+            orders.where((order) => order['status'] == 'price_quoted').toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -49,7 +54,8 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load orders. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to load orders. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -123,7 +129,7 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
   Future<void> _setPrice(Map<String, dynamic> order, double price) async {
     try {
       await SupabaseConfig.setSpecialOrderPrice(
-        order['id'], 
+        order['id'],
         price,
       );
 
@@ -141,7 +147,8 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to set price. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to set price. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -194,9 +201,12 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
                     _buildDetailSection(
                       'Customer Information',
                       [
-                        _buildDetailRow('Name', order['customer']?['full_name'] ?? 'N/A'),
-                        _buildDetailRow('Phone', order['customer']?['phone'] ?? 'N/A'),
-                        _buildDetailRow('Email', order['customer']?['email'] ?? 'N/A'),
+                        _buildDetailRow(
+                            'Name', order['customer']?['full_name'] ?? 'N/A'),
+                        _buildDetailRow(
+                            'Phone', order['customer']?['phone'] ?? 'N/A'),
+                        _buildDetailRow(
+                            'Email', order['customer']?['email'] ?? 'N/A'),
                       ],
                     ),
 
@@ -206,15 +216,19 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
                     _buildDetailSection(
                       'Order Details',
                       [
-                        _buildDetailRow('Description', order['description'] ?? 'No description'),
+                        _buildDetailRow('Description',
+                            order['description'] ?? 'No description'),
                         if (order['location_address'] != null)
-                          _buildDetailRow('Location', order['location_address']),
+                          _buildDetailRow(
+                              'Location', order['location_address']),
                         if (order['pickup_address'] != null)
                           _buildDetailRow('Pickup', order['pickup_address']),
                         if (order['delivery_address'] != null)
-                          _buildDetailRow('Delivery', order['delivery_address']),
+                          _buildDetailRow(
+                              'Delivery', order['delivery_address']),
                         if (order['special_instructions'] != null)
-                          _buildDetailRow('Instructions', order['special_instructions']),
+                          _buildDetailRow(
+                              'Instructions', order['special_instructions']),
                       ],
                     ),
 
@@ -224,9 +238,11 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
                     _buildDetailSection(
                       'Status',
                       [
-                        _buildDetailRow('Current Status', _getStatusText(order['status'])),
+                        _buildDetailRow(
+                            'Current Status', _getStatusText(order['status'])),
                         if (order['price_amount'] != null)
-                          _buildDetailRow('Quoted Price', 'N\$${order['price_amount'].toStringAsFixed(2)}'),
+                          _buildDetailRow('Quoted Price',
+                              'N\$${order['price_amount'].toStringAsFixed(2)}'),
                       ],
                     ),
 
@@ -376,7 +392,8 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
     );
   }
 
-  Widget _buildOrdersList(List<Map<String, dynamic>> orders, {required bool isPending}) {
+  Widget _buildOrdersList(List<Map<String, dynamic>> orders,
+      {required bool isPending}) {
     final isSmallMobile = Responsive.isSmallMobile(context);
 
     if (orders.isEmpty) {
@@ -436,11 +453,14 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: (isPending ? Colors.orange : Colors.green).withOpacity(0.1),
+                          color: (isPending ? Colors.orange : Colors.green)
+                              .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          isPending ? Icons.pending_actions : Icons.check_circle,
+                          isPending
+                              ? Icons.pending_actions
+                              : Icons.check_circle,
                           color: isPending ? Colors.orange : Colors.green,
                           size: 24,
                         ),
@@ -488,7 +508,8 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
                   if (!isPending && order['price_amount'] != null) ...[
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -522,6 +543,3 @@ class _SpecialOrdersManagementPageState extends State<SpecialOrdersManagementPag
     );
   }
 }
-
-
-

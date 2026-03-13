@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Mobile/Desktop implementation for PDF saving
@@ -75,9 +74,7 @@ Future<bool> downloadPDFPlatform(dynamic pdfFile, String fileName) async {
       }
 
       // Fallback to app documents directory
-      if (targetDir == null) {
-        targetDir = await getApplicationDocumentsDirectory();
-      }
+      targetDir ??= await getApplicationDocumentsDirectory();
     } else if (Platform.isIOS) {
       // For iOS, use documents directory
       targetDir = await getApplicationDocumentsDirectory();
@@ -104,7 +101,8 @@ Future<bool> downloadPDFPlatform(dynamic pdfFile, String fileName) async {
 
 /// Download PDF bytes directly to device (enhanced mobile implementation)
 /// Uses share_plus for reliable cross-platform file sharing/saving
-Future<bool> downloadPDFBytesPlatform(List<int> pdfBytes, String fileName) async {
+Future<bool> downloadPDFBytesPlatform(
+    List<int> pdfBytes, String fileName) async {
   try {
     // Get temporary directory to save the PDF file
     final tempDir = await getTemporaryDirectory();

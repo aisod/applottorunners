@@ -752,16 +752,48 @@ class SupabaseConfig {
     try {
       print('🔧 startErrand called with ID: $errandId');
 
-      // Get errand details first
+      // Get errand details first, including price for payment checks
       final errandResponse = await client
           .from('errands')
-          .select('customer_id, runner_id, title')
+          .select('customer_id, runner_id, title, price_amount')
           .eq('id', errandId)
           .single();
 
       final customerId = errandResponse['customer_id'];
       final runnerId = errandResponse['runner_id'];
       final errandTitle = errandResponse['title'];
+      final priceAmount =
+          (errandResponse['price_amount'] as num?)?.toDouble() ?? 0.0;
+
+      // If this errand has a price, ensure the customer has paid in full
+      if (priceAmount > 0) {
+        try {
+          final pendingResponse = await client.rpc(
+            'get_errand_pending_amount',
+            params: {'p_errand_id': errandId},
+          );
+
+          final pendingAmount =
+              (pendingResponse as num?)?.toDouble() ?? 0.0;
+
+          print(
+              '🔍 Pending payment for errand $errandId: $pendingAmount (price: $priceAmount)');
+
+          // Block starting the errand if any amount is still pending
+          if (pendingAmount > 0.01) {
+            throw Exception(
+              'PAYMENT_REQUIRED: Customer payment is still pending for this order. Please ask the customer to pay in the app before starting.',
+            );
+          }
+        } catch (paymentError) {
+          // If the payment RPC itself fails, surface a clear message to the runner
+          print(
+              '❌ Error verifying payment status for errand $errandId: $paymentError');
+          throw Exception(
+            'PAYMENT_REQUIRED: Could not verify customer payment for this order. Please ask the customer to complete payment and try again.',
+          );
+        }
+      }
 
       final updateData = {
         'status': 'in_progress',
@@ -1608,13 +1640,13 @@ class SupabaseConfig {
     }
   }
 
+  /// Fetches all transactions for admin payment tracking. Restricted to admins via RLS/RPC.
   static Future<List<Map<String, dynamic>>> getAllPayments() async {
     try {
-      final response = await client
-          .from('admin_all_transactions')
-          .select()
-          .order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      final response = await client.rpc('get_admin_all_transactions');
+      if (response == null) return [];
+      final list = response is List ? response : [response];
+      return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       throw Exception('Failed to fetch payments: $e');
     }
@@ -5140,7 +5172,7 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getAllBookings(
       {String? status}) async {
     try {
-      print('🔄 Loading all bookings (transportation + bus)...');
+      print('🔄 Loading all bookings (transportation + bus + contracts)...');
 
       // Get transportation bookings
       var transportationQuery =
@@ -5199,15 +5231,44 @@ class SupabaseConfig {
         booking['booking_type'] = 'bus';
       }
 
-      // Combine both types
-      final allBookings = [...transportationBookings, ...busBookings];
+      // Get contract bookings
+      var contractQuery = client.from('contract_bookings').select('''
+            *,
+            user:users!contract_bookings_user_id_fkey(
+              id,
+              full_name,
+              email,
+              phone
+            )
+          ''');
+
+      if (status != null) {
+        contractQuery = contractQuery.eq('status', status);
+      }
+
+      final contractResponse =
+          await contractQuery.order('created_at', ascending: false);
+      final contractBookings =
+          List<Map<String, dynamic>>.from(contractResponse);
+
+      // Add booking type identifier
+      for (var booking in contractBookings) {
+        booking['booking_type'] = 'contract';
+      }
+
+      // Combine all types
+      final allBookings = [
+        ...transportationBookings,
+        ...busBookings,
+        ...contractBookings,
+      ];
 
       // Sort by created_at descending
       allBookings.sort((a, b) => DateTime.parse(b['created_at'])
           .compareTo(DateTime.parse(a['created_at'])));
 
-      print(
-          '✅ Loaded ${transportationBookings.length} transportation bookings and ${busBookings.length} bus bookings');
+      print('✅ Loaded ${transportationBookings.length} transportation, '
+          '${busBookings.length} bus, ${contractBookings.length} contract bookings');
       return allBookings;
     } catch (e) {
       print('❌ Error loading all bookings: $e');
@@ -6571,6 +6632,72 @@ class SupabaseConfig {
 
   // ============= NOTIFICATION MANAGEMENT =============
 
+  /// Notify all admin users that a new shopping errand has been created.
+  /// This helps admins track shopping requests that must be funded and monitored.
+  static Future<void> notifyAdminsOfShoppingRequest(
+      Map<String, dynamic> errand) async {
+    try {
+      final errandId = errand['id']?.toString();
+      final title = errand['title']?.toString() ?? 'Shopping Service';
+      final price = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+      final category = errand['category']?.toString() ?? 'shopping';
+
+      // Fetch all admins
+      final admins =
+          await client.from('users').select('id').eq('user_type', 'admin');
+
+      for (final admin in admins) {
+        final adminId = admin['id'];
+        if (adminId == null) continue;
+
+        await client.from('notifications').insert({
+          'user_id': adminId,
+          'title': 'New Shopping Request',
+          'message':
+              '$title (Category: $category) was posted with total amount NAD ${price.toStringAsFixed(2)}.',
+          'type': 'shopping_request',
+          'errand_id': errandId,
+          'is_read': false,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
+    } catch (e) {
+      print('Error notifying admins of shopping request: $e');
+    }
+  }
+
+  /// Notify all admin users that a shopping errand has been accepted by a runner.
+  /// Includes runner name so admins can see who is responsible for the request.
+  static Future<void> notifyAdminsOfShoppingAcceptance({
+    required String errandId,
+    required String errandTitle,
+    required String runnerName,
+  }) async {
+    try {
+      // Fetch all admins
+      final admins =
+          await client.from('users').select('id').eq('user_type', 'admin');
+
+      for (final admin in admins) {
+        final adminId = admin['id'];
+        if (adminId == null) continue;
+
+        await client.from('notifications').insert({
+          'user_id': adminId,
+          'title': 'Shopping Request Accepted',
+          'message':
+              '$runnerName has accepted the shopping request: $errandTitle.',
+          'type': 'shopping_accepted',
+          'errand_id': errandId,
+          'is_read': false,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
+    } catch (e) {
+      print('Error notifying admins of shopping acceptance: $e');
+    }
+  }
+
   // Get user's notifications
   static Future<List<Map<String, dynamic>>> getUserNotifications(
       String userId) async {
@@ -6681,10 +6808,9 @@ class SupabaseConfig {
     try {
       print('💰 Getting runner earnings summary');
 
-      final response = await client.from('runner_earnings_summary').select('*');
-      // .order('total_revenue', ascending: false); // Removed to prevent crash if column missing
-
-      final data = List<Map<String, dynamic>>.from(response);
+      // RLS: use RPC so only admins get all rows
+      final response = await client.rpc('get_runner_earnings_summary');
+      final data = List<Map<String, dynamic>>.from(response ?? []);
 
       print('✅ Loaded earnings for ${data.length} runners');
       return data;

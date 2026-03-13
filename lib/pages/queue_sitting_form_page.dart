@@ -51,7 +51,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
           'Queue Sitting Service',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                    ? 20
+                    : 22,
           ),
         ),
         backgroundColor: LottoRunnersColors.primaryBlue,
@@ -76,22 +80,22 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-              Transform.translate(
-                offset: Offset(0, isMobile ? -8.0 : 0),
-                child: _buildServiceHeader(theme, isMobile, isTablet),
-              ),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildLocationField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildRequestNowToggle(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildArrivalTimeField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildInstructionsField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildImageSection(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 28 : 32),
-              _buildSubmitButton(theme, isMobile, isTablet),
+                  Transform.translate(
+                    offset: Offset(0, isMobile ? -8.0 : 0),
+                    child: _buildServiceHeader(theme, isMobile, isTablet),
+                  ),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildLocationField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildRequestNowToggle(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildArrivalTimeField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildInstructionsField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildImageSection(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 28 : 32),
+                  _buildSubmitButton(theme, isMobile, isTablet),
                 ],
               ),
             ),
@@ -120,7 +124,7 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
       child: Row(
         children: [
           Icon(Icons.attach_money,
-              color: LottoRunnersColors.primaryYellow, 
+              color: LottoRunnersColors.primaryYellow,
               size: isMobile ? 24 : 28),
           SizedBox(width: isMobile ? 8 : 12),
           Text(
@@ -128,7 +132,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
             style: theme.textTheme.titleLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+              fontSize: isMobile
+                  ? 18
+                  : isTablet
+                      ? 20
+                      : 22,
             ),
           ),
         ],
@@ -144,7 +152,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
           'Queue Location *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
@@ -191,7 +203,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
-              fontSize: isMobile ? 15 : isTablet ? 16 : 17,
+              fontSize: isMobile
+                  ? 15
+                  : isTablet
+                      ? 16
+                      : 17,
             ),
           ),
           SizedBox(height: isMobile ? 10 : 12),
@@ -207,7 +223,7 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(
-                        vertical: isMobile ? 10 : 12, 
+                        vertical: isMobile ? 10 : 12,
                         horizontal: isMobile ? 12 : 16),
                     decoration: BoxDecoration(
                       color: !_isImmediateRequest
@@ -238,7 +254,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
                                 ? theme.colorScheme.onPrimary
                                 : theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w500,
-                            fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                            fontSize: isMobile
+                                ? 13
+                                : isTablet
+                                    ? 14
+                                    : 15,
                           ),
                         ),
                       ],
@@ -257,7 +277,7 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(
-                        vertical: isMobile ? 10 : 12, 
+                        vertical: isMobile ? 10 : 12,
                         horizontal: isMobile ? 12 : 16),
                     decoration: BoxDecoration(
                       color: _isImmediateRequest
@@ -288,7 +308,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
                                 ? theme.colorScheme.onPrimary
                                 : theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w500,
-                            fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                            fontSize: isMobile
+                                ? 13
+                                : isTablet
+                                    ? 14
+                                    : 15,
                           ),
                         ),
                       ],
@@ -311,7 +335,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
           'Your Arrival Time *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
@@ -347,7 +375,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
                       color: _arrivalTime == null
                           ? theme.colorScheme.onSurface.withOpacity(0.6)
                           : theme.colorScheme.onSurface,
-                      fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                      fontSize: isMobile
+                          ? 14
+                          : isTablet
+                              ? 15
+                              : 16,
                     ),
                   ),
                 ),
@@ -362,7 +394,8 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
     );
   }
 
-  Widget _buildInstructionsField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildInstructionsField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -370,22 +403,37 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
           'Special Instructions (Optional)',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
         TextFormField(
           controller: _instructionsController,
           maxLines: 3,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText: 'Any specific instructions for the queue sitter...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
           ),
         ),
       ],
@@ -400,7 +448,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
           'Attach Images (Optional)',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
@@ -456,7 +508,8 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickImage(false),
                 icon: Icon(Icons.photo_library, size: isMobile ? 18 : 20),
-                label: Text('Gallery', style: TextStyle(fontSize: isMobile ? 13 : 15)),
+                label: Text('Gallery',
+                    style: TextStyle(fontSize: isMobile ? 13 : 15)),
               ),
             ),
             SizedBox(width: isMobile ? 8 : 12),
@@ -464,7 +517,8 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
               child: ElevatedButton.icon(
                 onPressed: () => _pickImage(true),
                 icon: Icon(Icons.camera_alt, size: isMobile ? 18 : 20),
-                label: Text('Camera', style: TextStyle(fontSize: isMobile ? 13 : 15)),
+                label: Text('Camera',
+                    style: TextStyle(fontSize: isMobile ? 13 : 15)),
               ),
             ),
           ],
@@ -490,7 +544,11 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
               : 'Submit Request - N\$${_calculateFinalPrice().toStringAsFixed(2)}',
           style: TextStyle(
             color: theme.colorScheme.onPrimary,
-            fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+            fontSize: isMobile
+                ? 14
+                : isTablet
+                    ? 15
+                    : 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -565,7 +623,8 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add image. Please try again or select a different image.'),
+            content: const Text(
+                'Unable to add image. Please try again or select a different image.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -630,7 +689,8 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
         'location_latitude': _locationLat,
         'location_longitude': _locationLng,
         'queue_type': _serviceType,
-        'service_type': _serviceType, // Store queue type as service_type for consistency
+        'service_type':
+            _serviceType, // Store queue type as service_type for consistency
         'customer_arrival_time': _arrivalTime?.toIso8601String(),
         'special_instructions': _instructionsController.text.trim(),
         'image_urls': imageUrls,
@@ -704,17 +764,23 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unable to post your queue sitting request. Please try again.';
-        
+        String errorMessage =
+            'Unable to post your queue sitting request. Please try again.';
+
         // Provide more specific error messages
-        if (e.toString().contains('not authenticated') || e.toString().contains('sign in')) {
+        if (e.toString().contains('not authenticated') ||
+            e.toString().contains('sign in')) {
           errorMessage = 'Please sign in to post a queue sitting request.';
-        } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (e.toString().contains('validation') || e.toString().contains('constraint')) {
-          errorMessage = 'Please check that all required fields are filled correctly.';
+        } else if (e.toString().contains('network') ||
+            e.toString().contains('connection')) {
+          errorMessage =
+              'Network error. Please check your internet connection and try again.';
+        } else if (e.toString().contains('validation') ||
+            e.toString().contains('constraint')) {
+          errorMessage =
+              'Please check that all required fields are filled correctly.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),

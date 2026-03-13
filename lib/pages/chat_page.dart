@@ -111,7 +111,8 @@ class _ChatPageState extends State<ChatPage> {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.refresh, color: Theme.of(context).colorScheme.onPrimary, size: 16),
+                Icon(Icons.refresh,
+                    color: Theme.of(context).colorScheme.onPrimary, size: 16),
                 const SizedBox(width: 8),
                 Text('Refreshed - ${messages.length} messages'),
               ],
@@ -222,13 +223,14 @@ class _ChatPageState extends State<ChatPage> {
             SnackBar(
               content: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary, size: 16),
+                  Icon(Icons.check_circle,
+                      color: Theme.of(context).colorScheme.onPrimary, size: 16),
                   const SizedBox(width: 8),
                   const Text('Message sent'),
                 ],
               ),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
+              duration: const Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -273,7 +275,8 @@ class _ChatPageState extends State<ChatPage> {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary, size: 16),
+            Icon(Icons.check_circle,
+                color: Theme.of(context).colorScheme.onPrimary, size: 16),
             const SizedBox(width: 8),
             Text(message),
           ],
@@ -319,14 +322,14 @@ class _ChatPageState extends State<ChatPage> {
             if (_conversation!['status'] == 'accepted') ...[
               IconButton(
                 onPressed: _startErrand,
-                icon: Icon(Icons.play_arrow),
+                icon: const Icon(Icons.play_arrow),
                 tooltip: 'Start Errand',
               ),
             ],
             if (_conversation!['status'] == 'in_progress') ...[
               IconButton(
                 onPressed: _completeErrand,
-                icon: Icon(Icons.check_circle),
+                icon: const Icon(Icons.check_circle),
                 tooltip: 'Complete Errand',
               ),
             ],
@@ -335,14 +338,14 @@ class _ChatPageState extends State<ChatPage> {
             if (_conversation!['status'] == 'accepted') ...[
               IconButton(
                 onPressed: _startBusBooking,
-                icon: Icon(Icons.play_arrow),
+                icon: const Icon(Icons.play_arrow),
                 tooltip: 'Start Bus Service',
               ),
             ],
             if (_conversation!['status'] == 'in_progress') ...[
               IconButton(
                 onPressed: _completeBusBooking,
-                icon: Icon(Icons.check_circle),
+                icon: const Icon(Icons.check_circle),
                 tooltip: 'Complete Bus Service',
               ),
             ],
@@ -352,14 +355,14 @@ class _ChatPageState extends State<ChatPage> {
             if (_conversation!['status'] == 'accepted') ...[
               IconButton(
                 onPressed: _startTransportationBooking,
-                icon: Icon(Icons.play_arrow),
+                icon: const Icon(Icons.play_arrow),
                 tooltip: 'Start Transportation',
               ),
             ],
             if (_conversation!['status'] == 'in_progress') ...[
               IconButton(
                 onPressed: _completeTransportationBooking,
-                icon: Icon(Icons.check_circle),
+                icon: const Icon(Icons.check_circle),
                 tooltip: 'Complete Transportation',
               ),
             ],
@@ -369,21 +372,21 @@ class _ChatPageState extends State<ChatPage> {
             if (_conversation!['status'] == 'accepted') ...[
               IconButton(
                 onPressed: _startContractBooking,
-                icon: Icon(Icons.play_arrow),
+                icon: const Icon(Icons.play_arrow),
                 tooltip: 'Start Contract',
               ),
             ],
             if (_conversation!['status'] == 'in_progress') ...[
               IconButton(
                 onPressed: _completeContractBooking,
-                icon: Icon(Icons.check_circle),
+                icon: const Icon(Icons.check_circle),
                 tooltip: 'Complete Contract',
               ),
             ],
           ],
           IconButton(
             onPressed: _refreshChat,
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Messages',
           ),
         ],
@@ -550,7 +553,10 @@ class _ChatPageState extends State<ChatPage> {
                     style: TextStyle(
                       fontSize: 10,
                       color: isMe
-                          ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7)
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onPrimary
+                              .withValues(alpha: 0.7)
                           : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -626,7 +632,8 @@ class _ChatPageState extends State<ChatPage> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                fillColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 12,
@@ -672,13 +679,18 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _startErrand() async {
     try {
       if (widget.errandId != null) {
-        await SupabaseConfig.updateErrandStatus(
-            widget.errandId!, 'in_progress');
+        await SupabaseConfig.startErrand(widget.errandId!);
         _showSuccessSnackBar('Errand started successfully!');
         _refreshChat();
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to start errand: $e');
+      final errorText = e.toString();
+      if (errorText.contains('PAYMENT_REQUIRED')) {
+        _showErrorSnackBar(
+            'Cannot start this errand yet. The customer must complete payment in the app before you start.');
+      } else {
+        _showErrorSnackBar('Failed to start errand: $e');
+      }
     }
   }
 

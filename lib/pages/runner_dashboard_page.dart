@@ -3,27 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:intl/intl.dart';
-import 'package:lotto_runners/utils/theme_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:lotto_runners/pages/chat_page.dart';
 import 'package:lotto_runners/services/notification_service.dart';
 import 'package:lotto_runners/services/chat_service.dart';
-import 'package:lotto_runners/widgets/theme_toggle_button.dart';
-import 'package:lotto_runners/widgets/errand_card.dart';
-import 'package:lotto_runners/widgets/service_card.dart';
 import 'package:lotto_runners/utils/responsive.dart';
-import 'package:lotto_runners/utils/breakpoints.dart';
-import 'package:lotto_runners/widgets/new_ride_request_popup.dart';
-import 'package:lotto_runners/services/global_ride_popup_service.dart';
-import 'package:lotto_runners/services/global_errand_popup_service.dart';
-import 'package:lotto_runners/services/global_transportation_popup_service.dart';
+import 'package:lotto_runners/utils/map_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:lotto_runners/services/paytoday_config.dart';
-import 'package:lotto_runners/services/paytoday_backend_service.dart';
-import 'package:lotto_runners/pages/paytoday_payment_page.dart';
 import 'package:lotto_runners/pages/profile_page.dart';
 import 'package:lotto_runners/pages/runner_wallet_page.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:lotto_runners/pages/route_map_page.dart';
 
 class RunnerDashboardPage extends StatefulWidget {
   const RunnerDashboardPage({super.key});
@@ -362,7 +351,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
+            Icon(Icons.check_circle,
+                color: Theme.of(context).colorScheme.onPrimary),
             const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
@@ -384,7 +374,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onError),
+            Icon(Icons.error_outline,
+                color: Theme.of(context).colorScheme.onError),
             const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
@@ -516,9 +507,12 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         child: TabBar(
                           controller: _tabController,
                           labelColor: Theme.of(context).colorScheme.onPrimary,
-                          unselectedLabelColor:
-                              Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
-                          indicatorColor: Theme.of(context).colorScheme.onPrimary,
+                          unselectedLabelColor: Theme.of(context)
+                              .colorScheme
+                              .onPrimary
+                              .withValues(alpha: 0.7),
+                          indicatorColor:
+                              Theme.of(context).colorScheme.onPrimary,
                           indicatorWeight: 3,
                           labelStyle: TextStyle(
                             fontWeight: FontWeight.w600,
@@ -829,11 +823,13 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
             height: 80,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+              valueColor:
+                  AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
               strokeWidth: 3,
             ),
           ),
@@ -861,7 +857,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
     }
 
     if (filteredErrands.isEmpty) {
-      return SliverFillRemaining(child: _buildEmptyState(theme));
+      return SliverToBoxAdapter(
+        child: _buildEmptyState(theme),
+      );
     }
 
     return SliverPadding(
@@ -977,7 +975,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                             Text(
                               errand['customer']!['phone'],
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                                 fontSize:
                                     Responsive.isSmallMobile(context) ? 12 : 13,
                               ),
@@ -1023,6 +1023,27 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ),
                     ),
                   ),
+                  if (MapUtils.getErrandNavigationAddress(errand) != null)
+                    IconButton(
+                      icon: const Icon(Icons.directions),
+                      iconSize: Responsive.isSmallMobile(context) ? 20 : 22,
+                      color: Theme.of(context).colorScheme.primary,
+                      tooltip: 'Follow route to location',
+                      onPressed: () {
+                        final address =
+                            MapUtils.getErrandNavigationAddress(errand);
+                        if (address != null) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => RouteMapPage(
+                                destinationAddress: address,
+                                title: errand['title']?.toString(),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   const SizedBox(width: 16),
                   const Icon(Icons.schedule,
                       color: LottoRunnersColors.primaryYellow, size: 16),
@@ -1094,7 +1115,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ElevatedButton.icon(
                         onPressed: () => _openChat(errand),
                         icon: Icon(Icons.chat,
-                            color: Theme.of(context).colorScheme.onPrimary, size: 18),
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            size: 18),
                         label: Text(
                           'Chat',
                           style: theme.textTheme.labelMedium?.copyWith(
@@ -1102,7 +1124,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                               fontWeight: FontWeight.w600),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(
                               vertical: 12, horizontal: 16),
                           shape: RoundedRectangleBorder(
@@ -1116,7 +1139,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         child: ElevatedButton.icon(
                           onPressed: () => _beginWork(errand),
                           icon: Icon(Icons.work,
-                              color: Theme.of(context).colorScheme.onSurface, size: 18),
+                              color: Theme.of(context).colorScheme.onSurface,
+                              size: 18),
                           label: Text(
                             'Begin Work',
                             style: theme.textTheme.labelMedium?.copyWith(
@@ -1137,7 +1161,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         child: ElevatedButton.icon(
                           onPressed: () => _completeErrand(errand),
                           icon: Icon(Icons.check,
-                              color: Theme.of(context).colorScheme.onPrimary, size: 18),
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 18),
                           label: Text(
                             'Complete Errand',
                             style: TextStyle(
@@ -1145,7 +1170,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                                 fontWeight: FontWeight.w600),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1157,7 +1183,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ElevatedButton.icon(
                         onPressed: () => _openChat(errand),
                         icon: Icon(Icons.chat,
-                            color: Theme.of(context).colorScheme.onPrimary, size: 18),
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            size: 18),
                         label: Text(
                           'Chat',
                           style: theme.textTheme.labelMedium?.copyWith(
@@ -1165,7 +1192,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                               fontWeight: FontWeight.w600),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(
                               vertical: 12, horizontal: 16),
                           shape: RoundedRectangleBorder(
@@ -1193,7 +1221,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: BorderSide(color: Theme.of(context).colorScheme.error),
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.error),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1253,7 +1282,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _loadRunnerErrands,
-              icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onPrimary),
+              icon: Icon(Icons.refresh,
+                  color: Theme.of(context).colorScheme.onPrimary),
               label: Text(
                 'Refresh',
                 style: TextStyle(
@@ -1352,7 +1382,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                   PageTransitions.slideAndFade(const ProfilePage()),
                 );
               },
-              icon: Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimary),
+              icon: Icon(Icons.person,
+                  color: Theme.of(context).colorScheme.onPrimary),
               label: Text(
                 'Check Profile Status',
                 style: TextStyle(
@@ -1424,28 +1455,33 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
   /// Intelligently determines which location field to display based on errand category
   String _getDisplayLocation(Map<String, dynamic> errand) {
     final category = errand['category']?.toString().toLowerCase() ?? '';
-    
+
     switch (category) {
       case 'shopping':
         // For shopping, show delivery address (where items go), not store locations
         final deliveryAddress = errand['delivery_address'];
-        if (deliveryAddress != null && deliveryAddress.toString().trim().isNotEmpty) {
+        if (deliveryAddress != null &&
+            deliveryAddress.toString().trim().isNotEmpty) {
           return 'Deliver to: ${deliveryAddress.toString().trim()}';
         }
         // Fallback to location_address (store names)
         return errand['location_address']?.toString() ?? 'Location TBD';
-      
+
       case 'delivery':
         // For delivery, show pickup → delivery
-        final pickupAddress = errand['pickup_address'] ?? errand['location_address'];
+        final pickupAddress =
+            errand['pickup_address'] ?? errand['location_address'];
         final deliveryAddress = errand['delivery_address'];
-        
+
         if (pickupAddress != null && deliveryAddress != null) {
           final pickup = pickupAddress.toString().trim();
           final delivery = deliveryAddress.toString().trim();
           // Truncate if too long
-          final pickupShort = pickup.length > 20 ? '${pickup.substring(0, 20)}...' : pickup;
-          final deliveryShort = delivery.length > 20 ? '${delivery.substring(0, 20)}...' : delivery;
+          final pickupShort =
+              pickup.length > 20 ? '${pickup.substring(0, 20)}...' : pickup;
+          final deliveryShort = delivery.length > 20
+              ? '${delivery.substring(0, 20)}...'
+              : delivery;
           return '$pickupShort → $deliveryShort';
         } else if (pickupAddress != null) {
           return 'From: ${pickupAddress.toString().trim()}';
@@ -1453,25 +1489,29 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           return 'To: ${deliveryAddress.toString().trim()}';
         }
         return errand['location_address']?.toString() ?? 'Location TBD';
-      
+
       case 'document_services':
       case 'license_discs':
         // These forms may have pickup or just location
-        final pickupLocation = errand['pickup_location'] ?? errand['pickup_address'];
-        final dropoffLocation = errand['dropoff_location'] ?? errand['dropoff_address'];
-        
+        final pickupLocation =
+            errand['pickup_location'] ?? errand['pickup_address'];
+        final dropoffLocation =
+            errand['dropoff_location'] ?? errand['dropoff_address'];
+
         if (pickupLocation != null && dropoffLocation != null) {
           final pickup = pickupLocation.toString().trim();
           final dropoff = dropoffLocation.toString().trim();
-          final pickupShort = pickup.length > 20 ? '${pickup.substring(0, 20)}...' : pickup;
-          final dropoffShort = dropoff.length > 20 ? '${dropoff.substring(0, 20)}...' : dropoff;
+          final pickupShort =
+              pickup.length > 20 ? '${pickup.substring(0, 20)}...' : pickup;
+          final dropoffShort =
+              dropoff.length > 20 ? '${dropoff.substring(0, 20)}...' : dropoff;
           return '$pickupShort → $dropoffShort';
         } else if (pickupLocation != null) {
           return 'Pickup: ${pickupLocation.toString().trim()}';
         }
         // Fallback to location_address
         return errand['location_address']?.toString() ?? 'Location TBD';
-      
+
       case 'elderly_services':
       case 'queue_sitting':
       default:
@@ -1601,6 +1641,32 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       '${errand['time_limit_hours']}h', Icons.timer, theme),
                   _buildDetailRow('Location', _getDisplayLocation(errand),
                       Icons.location_on, theme),
+                  if (MapUtils.getErrandNavigationAddress(errand) != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          final address =
+                              MapUtils.getErrandNavigationAddress(errand);
+                          if (address != null) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => RouteMapPage(
+                                  destinationAddress: address,
+                                  title: errand['title']?.toString(),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.directions, size: 18),
+                        label: const Text('Follow route to location'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.primary,
+                          side: BorderSide(color: theme.colorScheme.primary),
+                        ),
+                      ),
+                    ),
                   if (errand['customer'] != null)
                     _buildDetailRow(
                         'Customer',
@@ -1627,7 +1693,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -1677,7 +1744,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.primary
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
                                 .withValues(alpha: 0.3),
                             blurRadius: isSmallMobile ? 15 : 20,
                             offset: Offset(0, isSmallMobile ? 7 : 10),
@@ -1753,7 +1822,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.work,
-                                color: Theme.of(context).colorScheme.onPrimary, size: 24),
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                size: 24),
                             const SizedBox(width: 12),
                             Text(
                               'Begin Work',
@@ -1781,7 +1851,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.primary
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
                                 .withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
@@ -1907,11 +1979,13 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation(
+                      Theme.of(context).colorScheme.primary),
                 ),
                 const SizedBox(height: 16),
                 Text('Starting errand...',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
               ],
             ),
           ),
@@ -1930,13 +2004,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        _showErrorSnackBar('Failed to start errand. Please try again.');
-      }
-
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        String errorMsg = _getUserFriendlyErrorMessage(e.toString());
+        Navigator.pop(context); // Close loading dialog (only once)
+        final errorMsg = _getUserFriendlyErrorMessage(e.toString());
         _showErrorSnackBar(errorMsg);
       }
     }
@@ -1963,7 +2032,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 backgroundColor: Theme.of(context).colorScheme.primary,
               ),
               child: Text('Complete',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary)),
             ),
           ],
         ),
@@ -1986,11 +2056,13 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation(
+                      Theme.of(context).colorScheme.primary),
                 ),
                 const SizedBox(height: 16),
                 Text('Checking payment status...',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
               ],
             ),
           ),
@@ -2007,8 +2079,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       final paymentRequired = result['payment_required'] == true;
       if (paymentRequired) {
         final amount = (result['amount'] as num?)?.toDouble() ?? 0.0;
-        final amountText =
-            amount > 0 ? ' N\$${amount.toStringAsFixed(2)}' : '';
+        final amountText = amount > 0 ? ' N\$${amount.toStringAsFixed(2)}' : '';
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2054,8 +2125,6 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       }
     }
   }
-
-
 
   Widget _buildErrandsTab(ThemeData theme) {
     return RefreshIndicator(
@@ -2183,7 +2252,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
     final filteredBookings = _filteredTransportationBookings;
 
     if (filteredBookings.isEmpty) {
-      return SliverFillRemaining(child: _buildEmptyTransportationState(theme));
+      return SliverToBoxAdapter(
+        child: _buildEmptyTransportationState(theme),
+      );
     }
 
     return SliverPadding(
@@ -2227,7 +2298,10 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: const Icon(
@@ -2260,7 +2334,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _loadTransportationBookings,
-              icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onPrimary),
+              icon: Icon(Icons.refresh,
+                  color: Theme.of(context).colorScheme.onPrimary),
               label: Text(
                 'Refresh',
                 style: TextStyle(
@@ -2392,7 +2467,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                             Text(
                               user!['phone'],
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                                 fontSize:
                                     Responsive.isSmallMobile(context) ? 12 : 13,
                               ),
@@ -2499,7 +2576,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         }
                       },
                       icon: Icon(Icons.check_circle,
-                          color: Theme.of(context).colorScheme.onSurface, size: 18),
+                          color: Theme.of(context).colorScheme.onSurface,
+                          size: 18),
                       label: Text(
                         'Accept',
                         style: TextStyle(
@@ -2507,7 +2585,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                             fontWeight: FontWeight.w600),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -2546,7 +2625,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ElevatedButton.icon(
                         onPressed: () => _openChatWithCustomer(booking),
                         icon: Icon(Icons.chat,
-                            color: Theme.of(context).colorScheme.onPrimary, size: 18),
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            size: 18),
                         label: Text(
                           'Chat',
                           style: theme.textTheme.labelMedium?.copyWith(
@@ -2554,7 +2634,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                               fontWeight: FontWeight.w600),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(
                               vertical: 12, horizontal: 16),
                           shape: RoundedRectangleBorder(
@@ -2580,7 +2661,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: BorderSide(color: Theme.of(context).colorScheme.error),
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.error),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -2597,7 +2679,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                           onPressed: () =>
                               _completeTransportationBooking(booking),
                           icon: Icon(Icons.check,
-                              color: Theme.of(context).colorScheme.onPrimary, size: 18),
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 18),
                           label: Text(
                             'Complete Trip',
                             style: TextStyle(
@@ -2605,7 +2688,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                                 fontWeight: FontWeight.w600),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -2617,7 +2701,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ElevatedButton.icon(
                         onPressed: () => _openChatWithCustomer(booking),
                         icon: Icon(Icons.chat,
-                            color: Theme.of(context).colorScheme.onPrimary, size: 18),
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            size: 18),
                         label: Text(
                           'Chat',
                           style: theme.textTheme.labelMedium?.copyWith(
@@ -2625,7 +2710,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                               fontWeight: FontWeight.w600),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(
                               vertical: 12, horizontal: 16),
                           shape: RoundedRectangleBorder(
@@ -2735,7 +2821,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
     } catch (e) {
       print('Error opening chat: $e');
       if (mounted) {
-        _showErrorSnackBar('Unable to open chat. Please check your internet connection and try again.');
+        _showErrorSnackBar(
+            'Unable to open chat. Please check your internet connection and try again.');
       }
     }
   }
@@ -2996,12 +3083,14 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation(
+                      Theme.of(context).colorScheme.primary),
                 ),
                 const SizedBox(height: 16),
                 Text(
                     'Starting ${booking['booking_type'] == 'contract' ? 'contract service' : 'shuttle service'}...',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
               ],
             ),
           ),
@@ -3066,7 +3155,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 backgroundColor: Theme.of(context).colorScheme.primary,
               ),
               child: Text('Complete',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary)),
             ),
           ],
         ),
@@ -3089,12 +3179,14 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation(
+                      Theme.of(context).colorScheme.primary),
                 ),
                 const SizedBox(height: 16),
                 Text(
                     'Completing ${booking['booking_type'] == 'contract' ? 'contract service' : 'shuttle service'}...',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
               ],
             ),
           ),
@@ -3167,7 +3259,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                 backgroundColor: Theme.of(context).colorScheme.tertiary,
               ),
               child: Text('Begin Work',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onTertiary)),
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onTertiary)),
             ),
           ],
         ),
@@ -3190,11 +3283,13 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation(
+                      Theme.of(context).colorScheme.primary),
                 ),
                 const SizedBox(height: 16),
                 Text('Starting work...',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
               ],
             ),
           ),
@@ -3246,13 +3341,14 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                          valueColor: AlwaysStoppedAnimation(
+                              Theme.of(context).colorScheme.primary),
                         ),
                         const SizedBox(height: 16),
                         Text('Deleting data...',
-                            style:
-                                TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                            style: TextStyle(
+                                color:
+                                    Theme.of(context).colorScheme.onSurface)),
                       ],
                     ),
                   ),
@@ -3455,11 +3551,15 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color:
-                            Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .tertiary
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: Theme.of(context).colorScheme.tertiary
+                            color: Theme.of(context)
+                                .colorScheme
+                                .tertiary
                                 .withValues(alpha: 0.3)),
                       ),
                       child: Column(
@@ -3468,7 +3568,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                           Row(
                             children: [
                               Icon(Icons.person_pin,
-                                  color: Theme.of(context).colorScheme.tertiary, size: 20),
+                                  color: Theme.of(context).colorScheme.tertiary,
+                                  size: 20),
                               const SizedBox(width: 8),
                               Text(
                                 'Assigned Runner',
@@ -3484,7 +3585,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                           Text(
                             'You have been assigned to this booking',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -3494,7 +3597,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                             Text(
                               'Accepted on ${_formatDate(booking['updated_at'])}',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                                 fontSize: 12,
                               ),
                             ),
@@ -3520,7 +3625,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -3552,7 +3658,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.secondary
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondary
                                 .withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
@@ -3575,7 +3683,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.check_circle,
-                                color: Theme.of(context).colorScheme.onSecondary, size: 24),
+                                color:
+                                    Theme.of(context).colorScheme.onSecondary,
+                                size: 24),
                             const SizedBox(width: 12),
                             Text(
                               'Accept',
@@ -3649,7 +3759,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.primary
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
                                 .withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
@@ -3672,7 +3784,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.check,
-                                color: Theme.of(context).colorScheme.onPrimary, size: 24),
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                size: 24),
                             const SizedBox(width: 12),
                             Text(
                               'Complete Trip',
@@ -3856,11 +3969,13 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation(
+                      Theme.of(context).colorScheme.primary),
                 ),
                 const SizedBox(height: 16),
                 Text('Cancelling errand...',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
               ],
             ),
           ),
@@ -3980,7 +4095,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         builder: (context) => AlertDialog(
           title: Row(
             children: [
-              Icon(Icons.notifications, color: Theme.of(context).colorScheme.primary),
+              Icon(Icons.notifications,
+                  color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 8),
               const Text('Notifications'),
             ],
@@ -4002,7 +4118,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         Text(
                           'No notifications',
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -4018,7 +4135,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                         margin: const EdgeInsets.only(bottom: 8),
                         color: isRead
                             ? Theme.of(context).colorScheme.surface
-                            : Theme.of(context).colorScheme.primaryContainer
+                            : Theme.of(context)
+                                .colorScheme
+                                .primaryContainer
                                 .withValues(alpha: 0.1),
                         child: ListTile(
                           leading: Icon(
@@ -4043,7 +4162,9 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                                 _formatNotificationTime(
                                     notification['created_at']),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -4476,6 +4597,11 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
   }
 
   String _getUserFriendlyErrorMessage(String errorMessage) {
+    // Handle pending payment / payment required errors
+    if (errorMessage.contains('PAYMENT_REQUIRED')) {
+      return '💳 Customer has not completed payment for this order yet.\n\nAsk the customer to pay in "My Orders" before you start the errand.';
+    }
+
     // Handle job limit errors
     if (errorMessage.contains('limit') || errorMessage.contains('maximum')) {
       if (errorMessage.contains('2 active jobs')) {

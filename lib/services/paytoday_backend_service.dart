@@ -16,7 +16,8 @@ class PayTodayBackendService {
   }) async {
     try {
       // Log attempt
-      PayTodayConfig.log('Creating payment intent for $bookingType $errandId ($paymentType)');
+      PayTodayConfig.log(
+          'Creating payment intent for $bookingType $errandId ($paymentType)');
 
       // Calculate amount based on payment type (100% for full_payment)
       double amount = totalAmount;
@@ -36,12 +37,13 @@ class PayTodayBackendService {
       // Get current user details
       final user = SupabaseConfig.currentUser;
       final userEmail = user?.email;
-      
+
       // Get the active session token or use the anon key
       final session = SupabaseConfig.client.auth.currentSession;
       final token = session?.accessToken ?? SupabaseConfig.supabaseAnonKey;
-      
-      PayTodayConfig.log('Using token (first 10 chars): ${token.substring(0, token.length > 10 ? 10 : token.length)}...');
+
+      PayTodayConfig.log(
+          'Using token (first 10 chars): ${token.substring(0, token.length > 10 ? 10 : token.length)}...');
 
       // Prepare request data with new fields for SDK
       final requestData = {
@@ -55,12 +57,25 @@ class PayTodayBackendService {
         'return_url': PayTodayConfig.getReturnUrl(errandId, paymentType),
         // New fields for the refactored Edge Function
         'user_email': userEmail,
-        'user_phone_number': user?.phone ?? user?.userMetadata?['phone'] ?? '0000000000',
+        'user_phone_number':
+            user?.phone ?? user?.userMetadata?['phone'] ?? '0000000000',
         // Prioritize explicit first/last name fields from metadata, fallback to splitting full_name
-        'user_first_name': user?.userMetadata?['first_name'] ?? user?.userMetadata?['full_name']?.toString().split(' ').first ?? 'Customer',
-        'user_last_name': user?.userMetadata?['last_name'] ?? user?.userMetadata?['family_name'] ?? 
-            (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().split(' ').length > 1 
-                ? user.userMetadata!['full_name'].toString().split(' ').skip(1).join(' ') 
+        'user_first_name': user?.userMetadata?['first_name'] ??
+            user?.userMetadata?['full_name']?.toString().split(' ').first ??
+            'Customer',
+        'user_last_name': user?.userMetadata?['last_name'] ??
+            user?.userMetadata?['family_name'] ??
+            (user?.userMetadata?['full_name'] != null &&
+                    user!.userMetadata!['full_name']
+                            .toString()
+                            .split(' ')
+                            .length >
+                        1
+                ? user.userMetadata!['full_name']
+                    .toString()
+                    .split(' ')
+                    .skip(1)
+                    .join(' ')
                 : ''),
       };
 
@@ -330,8 +345,7 @@ class PayTodayBackendService {
   }
 
   /// Calculate payment amount (50% for split payments)
-  static double calculatePaymentAmount(
-      double totalAmount, String paymentType) {
+  static double calculatePaymentAmount(double totalAmount, String paymentType) {
     if (paymentType == PayTodayConfig.paymentTypeFirstHalf ||
         paymentType == PayTodayConfig.paymentTypeSecondHalf) {
       return totalAmount / 2;
@@ -368,9 +382,8 @@ class PayTodayBackendService {
   /// Get pending payment amount for errand
   static Future<double> getPendingAmount(String errandId) async {
     try {
-      final response = await SupabaseConfig.client.rpc(
-          'get_errand_pending_amount',
-          params: {'p_errand_id': errandId});
+      final response = await SupabaseConfig.client
+          .rpc('get_errand_pending_amount', params: {'p_errand_id': errandId});
 
       return (response as num?)?.toDouble() ?? 0.0;
     } catch (e) {

@@ -23,6 +23,8 @@ class _BrowseRunnersPageState extends State<BrowseRunnersPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  ThemeData get theme => Theme.of(context);
+
   @override
   void initState() {
     super.initState();
@@ -117,11 +119,11 @@ class _BrowseRunnersPageState extends State<BrowseRunnersPage>
       pinned: true,
       backgroundColor: LottoRunnersColors.primaryBlue,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
+        icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
         onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
+        title: Text(
           'Browse Runners',
           style: TextStyle(
             color: theme.colorScheme.onPrimary,
@@ -178,11 +180,12 @@ class _BrowseRunnersPageState extends State<BrowseRunnersPage>
   Widget _buildStatItem(String value, String label, IconData icon) {
     return Column(
       children: [
-        Icon(icon, color: theme.colorScheme.onPrimary.withOpacity(0.9), size: 20),
+        Icon(icon,
+            color: theme.colorScheme.onPrimary.withOpacity(0.9), size: 20),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             color: theme.colorScheme.onPrimary,
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -394,7 +397,7 @@ class _BrowseRunnersPageState extends State<BrowseRunnersPage>
                                         .substring(0, 1)
                                         .toUpperCase() ??
                                     'R',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: theme.colorScheme.onPrimary,
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -577,9 +580,9 @@ class _BrowseRunnersPageState extends State<BrowseRunnersPage>
         minChildSize: 0.5,
         maxChildSize: 0.9,
         builder: (_, controller) => Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: theme.colorScheme.onPrimary,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SingleChildScrollView(
             controller: controller,
@@ -638,7 +641,7 @@ class _BrowseRunnersPageState extends State<BrowseRunnersPage>
                                   .substring(0, 1)
                                   .toUpperCase() ??
                               'R',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: theme.colorScheme.onPrimary,
                             fontSize: 32,
                             fontWeight: FontWeight.bold,

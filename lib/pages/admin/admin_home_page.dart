@@ -13,6 +13,9 @@ import 'transportation_management_page.dart';
 import 'user_management_page.dart';
 import 'feedback_management_page.dart';
 import 'payment_tracking_page.dart';
+import 'all_bookings_page.dart';
+import 'errand_oversight_page.dart';
+import 'package:lotto_runners/widgets/theme_toggle_button.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -160,6 +163,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
+                const ThemeToggleButton(),
               ],
             ),
           ],
@@ -417,6 +422,28 @@ class _AdminHomePageState extends State<AdminHomePage> {
               () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const PaymentTrackingPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
+            _buildManagementCard(
+              'All Bookings',
+              Icons.list_alt,
+              Colors.deepPurple,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AllBookingsPage()),
+              ),
+              theme,
+              isSmallMobile,
+            ),
+            _buildManagementCard(
+              'Errand Oversight',
+              Icons.assignment,
+              Colors.brown,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ErrandOversightPage()),
               ),
               theme,
               isSmallMobile,

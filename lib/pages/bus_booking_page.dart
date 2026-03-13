@@ -4,8 +4,6 @@ import '../theme.dart';
 
 import '../supabase/supabase_config.dart';
 
-import '../widgets/theme_toggle_button.dart';
-
 import '../utils/responsive.dart';
 
 /// Bus Service Booking Page
@@ -83,7 +81,7 @@ class _BusBookingPageState extends State<BusBookingPage> {
     try {
       // Get bus services with provider_names from transportation_services table
       final services = await SupabaseConfig.getBusServicesWithProviderNames();
-      
+
       // Extract all unique providers from all services
       Set<String> uniqueProviders = {};
       for (var service in services) {
@@ -94,7 +92,7 @@ class _BusBookingPageState extends State<BusBookingPage> {
           }
         }
       }
-      
+
       setState(() {
         _busServices = services;
         _allProviders = uniqueProviders.toList()..sort();
@@ -107,7 +105,8 @@ class _BusBookingPageState extends State<BusBookingPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load bus services. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to load bus services. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -159,11 +158,12 @@ class _BusBookingPageState extends State<BusBookingPage> {
       _selectedService = null;
       _selectedServiceId = null;
       _selectedDate = null;
-      
+
       // Find a service that matches the selected provider
       if (provider != null) {
         for (var service in _busServices) {
-          final providerNames = service['provider_names'] as List<dynamic>? ?? [];
+          final providerNames =
+              service['provider_names'] as List<dynamic>? ?? [];
           if (providerNames.contains(provider)) {
             _selectedService = service;
             _selectedServiceId = service['id'];
@@ -325,7 +325,8 @@ class _BusBookingPageState extends State<BusBookingPage> {
               ],
 
               // Route information
-              if (_selectedOriginRegion != null && _selectedDestinationRegion != null) ...[
+              if (_selectedOriginRegion != null &&
+                  _selectedDestinationRegion != null) ...[
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -670,7 +671,7 @@ class _BusBookingPageState extends State<BusBookingPage> {
           ),
           SizedBox(height: isSmallMobile ? 16 : 20),
           DropdownButtonFormField<String>(
-            value: _selectedProvider,
+            initialValue: _selectedProvider,
             isExpanded: true,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: isSmallMobile ? 13 : 14,
@@ -726,7 +727,7 @@ class _BusBookingPageState extends State<BusBookingPage> {
           SizedBox(height: isSmallMobile ? 16 : 20),
           // Origin region dropdown
           DropdownButtonFormField<String>(
-            value: _selectedOriginRegion,
+            initialValue: _selectedOriginRegion,
             isExpanded: true,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: isSmallMobile ? 13 : 14,
@@ -774,7 +775,7 @@ class _BusBookingPageState extends State<BusBookingPage> {
           SizedBox(height: isSmallMobile ? 16 : 20),
           // Destination region dropdown
           DropdownButtonFormField<String>(
-            value: _selectedDestinationRegion,
+            initialValue: _selectedDestinationRegion,
             isExpanded: true,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: isSmallMobile ? 13 : 14,
@@ -985,7 +986,6 @@ class _BusBookingPageState extends State<BusBookingPage> {
               ),
             ),
 
-
             // Passenger count
 
             TextFormField(
@@ -1090,7 +1090,8 @@ class _BusBookingPageState extends State<BusBookingPage> {
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(isSmallMobile ? 10 : 12),
+                    borderRadius:
+                        BorderRadius.circular(isSmallMobile ? 10 : 12),
                   ),
                 ),
                 child: Text(

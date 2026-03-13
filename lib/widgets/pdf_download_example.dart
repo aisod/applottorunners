@@ -35,21 +35,21 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: _downloadStatus.contains('Error') 
-                      ? Colors.red[100] 
+                  color: _downloadStatus.contains('Error')
+                      ? Colors.red[100]
                       : Colors.green[100],
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: _downloadStatus.contains('Error') 
-                        ? Colors.red 
+                    color: _downloadStatus.contains('Error')
+                        ? Colors.red
                         : Colors.green,
                   ),
                 ),
                 child: Text(
                   _downloadStatus,
                   style: TextStyle(
-                    color: _downloadStatus.contains('Error') 
-                        ? Colors.red[800] 
+                    color: _downloadStatus.contains('Error')
+                        ? Colors.red[800]
                         : Colors.green[800],
                     fontWeight: FontWeight.w500,
                   ),
@@ -66,8 +66,8 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
                     Text(
                       'Download Existing PDF',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -76,14 +76,16 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: _isDownloading ? null : _downloadExistingPDF,
-                      icon: _isDownloading 
+                      icon: _isDownloading
                           ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.download),
-                      label: Text(_isDownloading ? 'Downloading...' : 'Pick & Download PDF'),
+                      label: Text(_isDownloading
+                          ? 'Downloading...'
+                          : 'Pick & Download PDF'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue[600],
                         foregroundColor: Colors.white,
@@ -110,8 +112,8 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
                     Text(
                       'Generate & Download PDF',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -119,15 +121,18 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      onPressed: _isDownloading ? null : _generateAndDownloadPDF,
-                      icon: _isDownloading 
+                      onPressed:
+                          _isDownloading ? null : _generateAndDownloadPDF,
+                      icon: _isDownloading
                           ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.picture_as_pdf),
-                      label: Text(_isDownloading ? 'Generating...' : 'Generate & Download'),
+                      label: Text(_isDownloading
+                          ? 'Generating...'
+                          : 'Generate & Download'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green[600],
                         foregroundColor: Colors.white,
@@ -154,12 +159,14 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
                     Text(
                       'Platform Information',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 8),
-                    Text('Platform: ${kIsWeb ? 'Web' : defaultTargetPlatform.name}'),
-                    Text('PDF Downloads: ${kIsWeb ? 'Browser download' : 'Device storage'}'),
+                    Text(
+                        'Platform: ${kIsWeb ? 'Web' : defaultTargetPlatform.name}'),
+                    const Text(
+                        'PDF Downloads: ${kIsWeb ? 'Browser download' : 'Device storage'}'),
                     if (!kIsWeb)
                       const Text(
                         'Files will be saved to Downloads folder on Android or Documents folder on iOS.',
@@ -222,7 +229,7 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
     try {
       // Pick a PDF file from device
       final pdfBytes = await ImageUploadHelper.pickPDFFromFiles();
-      
+
       if (pdfBytes == null) {
         setState(() {
           _downloadStatus = 'No PDF file selected';
@@ -239,12 +246,11 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
       final success = await PdfUtils.downloadPDFBytes(pdfBytes, fileName);
 
       setState(() {
-        _downloadStatus = success 
+        _downloadStatus = success
             ? 'PDF downloaded successfully as $fileName'
             : 'Error: Failed to download PDF';
         _isDownloading = false;
       });
-
     } catch (e) {
       setState(() {
         _downloadStatus = 'Error: $e';
@@ -266,7 +272,11 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
         'title': 'Sample Document',
         'date': DateTime.now().toIso8601String(),
         'content': 'This is a sample PDF generated by the Lotto Runners app.',
-        'features': ['PDF Generation', 'Mobile Download', 'Cross-platform Support'],
+        'features': [
+          'PDF Generation',
+          'Mobile Download',
+          'Cross-platform Support'
+        ],
         'user': 'Demo User',
       };
 
@@ -275,15 +285,15 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
       final fileName = 'generated_document_$timestamp.pdf';
 
       // Generate and download PDF
-      final success = await PdfUtils.generateAndDownloadPDF(sampleData, fileName);
+      final success =
+          await PdfUtils.generateAndDownloadPDF(sampleData, fileName);
 
       setState(() {
-        _downloadStatus = success 
+        _downloadStatus = success
             ? 'PDF generated and downloaded successfully as $fileName'
             : 'Error: Failed to generate and download PDF';
         _isDownloading = false;
       });
-
     } catch (e) {
       setState(() {
         _downloadStatus = 'Error: $e';
@@ -292,4 +302,3 @@ class _PdfDownloadExampleState extends State<PdfDownloadExample> {
     }
   }
 }
-

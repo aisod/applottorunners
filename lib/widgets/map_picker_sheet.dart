@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:lotto_runners/services/location_service.dart';
 
@@ -39,6 +38,7 @@ class _MapPickerSheetState extends State<MapPickerSheet> {
   bool _isLoading = true;
   String? _currentAddress;
   bool _mapReady = false;
+  bool _isMoving = false;
 
   @override
   void initState() {
@@ -84,6 +84,7 @@ class _MapPickerSheetState extends State<MapPickerSheet> {
   Future<void> _updateAddress() async {
     if (!mounted) return;
     try {
+      setState(() => _isMoving = false);
       final addr = await LocationService.getAddressFromCoordinates(
         _selectedPosition.latitude,
         _selectedPosition.longitude,
@@ -107,10 +108,7 @@ class _MapPickerSheetState extends State<MapPickerSheet> {
             CameraPosition(target: target, zoom: 16),
           ),
         );
-        if (mounted) {
-          setState(() => _selectedPosition = target);
-          _updateAddress();
-        }
+        // _selectedPosition will be updated by onCameraMove/onCameraIdle
       }
     } catch (e) {
       if (mounted) {
@@ -156,8 +154,7 @@ class _MapPickerSheetState extends State<MapPickerSheet> {
           title: const Text('Select Location'),
           backgroundColor: theme.colorScheme.surface,
           foregroundColor: theme.colorScheme.onSurface,
-          elevation: 1,
-          automaticallyImplyLeading: false,
+          elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
@@ -167,149 +164,168 @@ class _MapPickerSheetState extends State<MapPickerSheet> {
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : GestureDetector(
-                // Intercept gestures to prevent external app opening
-                onTap: () {},
-                onPanUpdate: (_) {},
-                child: Stack(
-                  children: [
-                    AbsorbPointer(
-                      // Temporarily absorb pointer events during map initialization
-                      absorbing: !_mapReady,
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: _selectedPosition,
-                          zoom: 15,
-                        ),
-                        myLocationEnabled: false, // Disable to prevent external app opening
-                        myLocationButtonEnabled: false,
-                        zoomControlsEnabled: false,
-                        mapType: MapType.normal,
-                        mapToolbarEnabled: false, // Critical: disable toolbar to prevent external links
-                        compassEnabled: false, // Disable compass
-                        rotateGesturesEnabled: true,
-                        scrollGesturesEnabled: true,
-                        tiltGesturesEnabled: false,
-                        zoomGesturesEnabled: true,
-                        onMapCreated: (controller) {
-                          if (!_mapController.isCompleted) {
-                            _mapController.complete(controller);
-                          }
-                          if (mounted) {
-                            setState(() => _mapReady = true);
-                          }
-                        },
-                        markers: {
-                          Marker(
-                            markerId: const MarkerId('selected'),
-                            position: _selectedPosition,
-                            infoWindow: const InfoWindow(
-                              title: 'Selected Location',
-                            ),
-                          ),
-                        },
-                        onTap: (pos) {
-                          if (mounted) {
-                            setState(() {
-                              _selectedPosition = pos;
-                            });
-                            _updateAddress();
-                            // Update marker position
-                            _mapController.future.then((controller) {
-                              controller.animateCamera(
-                                CameraUpdate.newLatLng(pos),
-                              );
-                            });
-                          }
-                        },
-                        onCameraMove: (position) {
-                          if (mounted) {
-                            setState(() {
-                              _selectedPosition = position.target;
-                            });
-                          }
-                        },
-                        onCameraIdle: () {
-                          _updateAddress();
-                        },
+            : Stack(
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: _selectedPosition,
+                      zoom: 15,
+                    ),
+                    // Disable GoogleMap's built-in myLocation layer to avoid
+                    // native crashes when runtime permissions are missing.
+                    myLocationEnabled: false,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapType: MapType.normal,
+                    mapToolbarEnabled: false,
+                    compassEnabled: false,
+                    rotateGesturesEnabled: true,
+                    scrollGesturesEnabled: true,
+                    tiltGesturesEnabled: false,
+                    zoomGesturesEnabled: true,
+                    onMapCreated: (controller) {
+                      if (!_mapController.isCompleted) {
+                        _mapController.complete(controller);
+                      }
+                      if (mounted) {
+                        setState(() => _mapReady = true);
+                      }
+                    },
+                    // Removed markers to avoid duplication with the center pin
+                    markers: {},
+                    onCameraMove: (position) {
+                      if (mounted) {
+                        setState(() {
+                          _selectedPosition = position.target;
+                          _isMoving = true;
+                        });
+                      }
+                    },
+                    onCameraIdle: () {
+                      _updateAddress();
+                    },
+                  ),
+                  
+                  // Center Pin
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 35.0), // Adjust for pin height
+                      child: Icon(
+                        Icons.location_on,
+                        color: widget.accentColor,
+                        size: 50,
                       ),
                     ),
-                  // Center indicator
-                  const Center(
-                    child: Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 48,
+                  ),
+                  
+                  // Center Pin Shadow/Dot
+                  Center(
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
-                  // Bottom controls
+
+                  // Bottom Card
                   Positioned(
                     left: 16,
                     right: 16,
                     bottom: 24,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        if (_currentAddress != null)
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              _currentAddress!,
-                              style: theme.textTheme.bodyMedium,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                        FloatingActionButton(
+                          onPressed: _goToCurrentLocation,
+                          backgroundColor: theme.colorScheme.surface,
+                          foregroundColor: widget.accentColor,
+                          mini: true,
+                          child: const Icon(Icons.my_location),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        if (_currentAddress != null) const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _goToCurrentLocation,
-                                icon: Icon(Icons.my_location, color: widget.accentColor),
-                                label: Text(
-                                  'My Location',
-                                  style: TextStyle(color: widget.accentColor),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: widget.accentColor),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'Selected Location',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: _confirmSelection,
-                                icon: const Icon(Icons.check),
-                                label: const Text('Confirm'),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    color: widget.accentColor,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _isMoving
+                                        ? Text(
+                                            'Locating...',
+                                            style: theme.textTheme.bodyLarge?.copyWith(
+                                              color: theme.colorScheme.onSurfaceVariant,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          )
+                                        : Text(
+                                            _currentAddress ?? 'Unknown location',
+                                            style: theme.textTheme.bodyLarge?.copyWith(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _isMoving ? null : _confirmSelection,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: widget.accentColor,
                                   foregroundColor: theme.colorScheme.onPrimary,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  'Confirm Location',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-            ),
       ),
     );
   }

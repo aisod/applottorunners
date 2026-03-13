@@ -139,24 +139,28 @@ class _MyErrandsPageState extends State<MyErrandsPage>
   Map<String, dynamic> _calculatePaymentStatus(Map<String, dynamic> errand) {
     final transactions = (errand['paytoday_transactions'] as List?) ?? [];
     double totalPaid = 0.0;
-    
+
     for (var tx in transactions) {
       // Consider successful statuses
       final status = tx['status']?.toString().toLowerCase();
-      if (status == 'paid' || status == 'captured' || status == 'verified' || status == 'completed') {
+      if (status == 'paid' ||
+          status == 'captured' ||
+          status == 'verified' ||
+          status == 'completed') {
         totalPaid += (tx['amount'] as num?)?.toDouble() ?? 0.0;
       }
     }
-    
+
     final price = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
-    
+
     return {
       'totalPaid': totalPaid,
       'hasFullPayment': price > 0 && totalPaid >= price - 1.0,
     };
   }
 
-  Future<void> _handlePayment(Map<String, dynamic> errand, double amount, String paymentType) async {
+  Future<void> _handlePayment(
+      Map<String, dynamic> errand, double amount, String paymentType) async {
     final success = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -174,7 +178,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
                 backgroundColor: Colors.green,
               ),
             );
-            
+
             // Wait for DB trigger/edge function to process
             await Future.delayed(const Duration(seconds: 2));
             _loadMyErrands(forceRefresh: true);
@@ -182,7 +186,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           onFailure: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Payment failed. Please try again.'),
+                content: const Text('Payment failed. Please try again.'),
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
             );
@@ -268,18 +272,18 @@ class _MyErrandsPageState extends State<MyErrandsPage>
     try {
       print('🎯 Approving price for errand: ${errand['id']}');
       print('🎯 Current status: ${errand['status']}');
-      
+
       await SupabaseConfig.approveSpecialOrderPrice(errand['id']);
-      
+
       if (mounted) {
         Navigator.pop(context); // Close details sheet
-        
+
         // Give database a moment to update
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         // Force refresh to get updated status
         await _loadMyErrands(forceRefresh: true);
-        
+
         // Log the updated errands
         final approvedErrand = _errands.firstWhere(
           (e) => e['id'] == errand['id'],
@@ -287,12 +291,14 @@ class _MyErrandsPageState extends State<MyErrandsPage>
         );
         print('🎯 After refresh - Errand status: ${approvedErrand['status']}');
         print('🎯 Total errands in list: ${_errands.length}');
-        print('🎯 Posted errands: ${_errands.where((e) => e['status'] == 'posted').length}');
-        
+        print(
+            '🎯 Posted errands: ${_errands.where((e) => e['status'] == 'posted').length}');
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('✅ Price approved! Your order is now available to runners.'),
+              content: Text(
+                  '✅ Price approved! Your order is now available to runners.'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 3),
             ),
@@ -304,7 +310,8 @@ class _MyErrandsPageState extends State<MyErrandsPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to approve price. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to approve price. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -318,7 +325,8 @@ class _MyErrandsPageState extends State<MyErrandsPage>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reject Price Quote?'),
-        content: const Text('Are you sure you want to reject this price? This will cancel the order.'),
+        content: const Text(
+            'Are you sure you want to reject this price? This will cancel the order.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -336,7 +344,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
     if (confirmed == true) {
       try {
         await SupabaseConfig.rejectSpecialOrderPrice(errand['id']);
-        
+
         if (mounted) {
           Navigator.pop(context); // Close details sheet
           ScaffoldMessenger.of(context).showSnackBar(
@@ -351,7 +359,8 @@ class _MyErrandsPageState extends State<MyErrandsPage>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Unable to reject price. Please check your internet connection and try again.'),
+              content: const Text(
+                  'Unable to reject price. Please check your internet connection and try again.'),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -535,12 +544,22 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildErrandsList(['posted', 'pending', 'pending_price', 'price_quoted'], 'active', theme),
+              _buildErrandsList(
+                  ['posted', 'pending', 'pending_price', 'price_quoted'],
+                  'active',
+                  theme),
               _buildErrandsList(['accepted'], 'accepted', theme),
               _buildErrandsList(['in_progress'], 'in_progress', theme),
               _buildErrandsList(['completed'], 'completed', theme),
-              _buildErrandsList(
-                  ['posted', 'pending', 'pending_price', 'price_quoted', 'accepted', 'in_progress', 'completed'], 'all', theme),
+              _buildErrandsList([
+                'posted',
+                'pending',
+                'pending_price',
+                'price_quoted',
+                'accepted',
+                'in_progress',
+                'completed'
+              ], 'all', theme),
             ],
           ),
         ),
@@ -553,15 +572,16 @@ class _MyErrandsPageState extends State<MyErrandsPage>
     print('📋 Building errands list for tab: $tabType');
     print('📋 Status filter: $statusFilter');
     print('📋 Total errands: ${_errands.length}');
-    
+
     final filteredErrands = _errands.where((errand) {
       final matches = statusFilter.contains(errand['status']);
       if (errand['category'] == 'special_orders') {
-        print('📋 Special order ${errand['id']}: status=${errand['status']}, matches=$matches');
+        print(
+            '📋 Special order ${errand['id']}: status=${errand['status']}, matches=$matches');
       }
       return matches;
     }).toList();
-    
+
     print('📋 Filtered errands for $tabType: ${filteredErrands.length}');
 
     if (filteredErrands.isEmpty) {
@@ -589,12 +609,15 @@ class _MyErrandsPageState extends State<MyErrandsPage>
             final paymentStatus = _calculatePaymentStatus(errand);
             final price = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
             final paymentStatusFromDb = errand['payment_status']?.toString();
-            
-            if (errand['status'] == 'accepted' && !(paymentStatus['hasFullPayment'] as bool)) {
+
+            if (errand['status'] == 'accepted' &&
+                !(paymentStatus['hasFullPayment'] as bool)) {
               showPayButton = true;
               payButtonText = 'Pay Upfront (N\$${price.toStringAsFixed(2)})';
-              onPay = () => _handlePayment(errand, price, PayTodayConfig.paymentTypeFull);
-            } else if (errand['status'] == 'completed' && paymentStatusFromDb == 'in_escrow') {
+              onPay = () =>
+                  _handlePayment(errand, price, PayTodayConfig.paymentTypeFull);
+            } else if (errand['status'] == 'completed' &&
+                paymentStatusFromDb == 'in_escrow') {
               showApproveButton = true;
               onApprove = () => _handleApprovePayment(errand);
             }
@@ -743,17 +766,21 @@ class _MyErrandsPageState extends State<MyErrandsPage>
                   ),
                   SizedBox(height: isSmallMobile ? 16 : 24),
                   _buildDetailRow(
-                      'Status', _getStatusDisplayText(errand['status'] ?? 'Unknown'), theme),
+                      'Status',
+                      _getStatusDisplayText(errand['status'] ?? 'Unknown'),
+                      theme),
                   _buildDetailRow(
                       'Category', errand['category'] ?? 'General', theme),
-                  
+
                   // Show quoted price for special orders with price_quoted status
-                  if (errand['status'] == 'price_quoted' && errand['price_amount'] != null) ...[
+                  if (errand['status'] == 'price_quoted' &&
+                      errand['price_amount'] != null) ...[
                     SizedBox(height: isSmallMobile ? 16 : 24),
                     Container(
                       padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
                       decoration: BoxDecoration(
-                        color: LottoRunnersColors.primaryYellow.withOpacity(0.1),
+                        color:
+                            LottoRunnersColors.primaryYellow.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: LottoRunnersColors.primaryYellow,
@@ -839,7 +866,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
                     _buildDetailRow(
                         'Budget', '₦${errand['budget'] ?? '0'}', theme),
                   ],
-                  
+
                   if (errand['pickup_location'] != null)
                     _buildDetailRow('Pickup', errand['pickup_location'], theme),
                   if (errand['dropoff_location'] != null)
@@ -882,7 +909,9 @@ class _MyErrandsPageState extends State<MyErrandsPage>
                   ],
 
                   // Show approved message for special orders that customer approved
-                  if ((errand['status'] == 'posted' || errand['status'] == 'pending') && errand['category'] == 'special_orders') ...[
+                  if ((errand['status'] == 'posted' ||
+                          errand['status'] == 'pending') &&
+                      errand['category'] == 'special_orders') ...[
                     SizedBox(height: isSmallMobile ? 16 : 24),
                     Container(
                       padding: EdgeInsets.all(isSmallMobile ? 12 : 16),
@@ -930,7 +959,8 @@ class _MyErrandsPageState extends State<MyErrandsPage>
                             'Your order is now visible to runners. You will be notified when a runner accepts it.',
                             style: TextStyle(
                               fontSize: isSmallMobile ? 12 : 13,
-                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
                           ),
                         ],

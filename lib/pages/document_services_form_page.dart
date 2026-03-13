@@ -60,7 +60,11 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
           'Document Services',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                    ? 20
+                    : 22,
           ),
         ),
         backgroundColor: LottoRunnersColors.primaryBlue,
@@ -80,33 +84,33 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-              _buildServiceHeader(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildServiceTypeField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildDocumentDescriptionField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildServiceOptionField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildRequestNowToggle(theme, isMobile, isTablet),
-              if (!_isImmediateRequest) ...[
-                SizedBox(height: isMobile ? 20 : 24),
-                _buildScheduledDateTime(theme, isMobile, isTablet),
-              ],
-              SizedBox(height: isMobile ? 20 : 24),
-              if (_serviceOption == 'collect_and_deliver') ...[
-                _buildPickupLocationField(theme, isMobile, isTablet),
-                SizedBox(height: isMobile ? 20 : 24),
-                _buildLocationField(theme, isMobile, isTablet),
-              ] else if (_serviceOption == 'drop_off_only') ...[
-                _buildLocationField(theme, isMobile, isTablet),
-              ],
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildInstructionsField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildImageSection(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 28 : 32),
-              _buildSubmitButton(theme, isMobile, isTablet),
+                  _buildServiceHeader(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildServiceTypeField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildDocumentDescriptionField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildServiceOptionField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildRequestNowToggle(theme, isMobile, isTablet),
+                  if (!_isImmediateRequest) ...[
+                    SizedBox(height: isMobile ? 20 : 24),
+                    _buildScheduledDateTime(theme, isMobile, isTablet),
+                  ],
+                  SizedBox(height: isMobile ? 20 : 24),
+                  if (_serviceOption == 'collect_and_deliver') ...[
+                    _buildPickupLocationField(theme, isMobile, isTablet),
+                    SizedBox(height: isMobile ? 20 : 24),
+                    _buildLocationField(theme, isMobile, isTablet),
+                  ] else if (_serviceOption == 'drop_off_only') ...[
+                    _buildLocationField(theme, isMobile, isTablet),
+                  ],
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildInstructionsField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildImageSection(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 28 : 32),
+                  _buildSubmitButton(theme, isMobile, isTablet),
                 ],
               ),
             ),
@@ -143,7 +147,11 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
             style: theme.textTheme.titleLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+              fontSize: isMobile
+                  ? 18
+                  : isTablet
+                      ? 20
+                      : 22,
             ),
           ),
         ],
@@ -159,12 +167,16 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
           'Service Type *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
         DropdownButtonFormField<String>(
-          value: _serviceType,
+          initialValue: _serviceType,
           style: TextStyle(
             fontSize: isMobile ? 14 : 16,
             color: theme.colorScheme.onSurface,
@@ -177,13 +189,18 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
           ),
           items: [
-            DropdownMenuItem(value: 'application_submission', 
-                child: Text('Application Submission', style: TextStyle(fontSize: isMobile ? 14 : 16))),
-            DropdownMenuItem(value: 'certification', 
-                child: Text('Certification of Documents', style: TextStyle(fontSize: isMobile ? 14 : 16))),
+            DropdownMenuItem(
+                value: 'application_submission',
+                child: Text('Application Submission',
+                    style: TextStyle(fontSize: isMobile ? 14 : 16))),
+            DropdownMenuItem(
+                value: 'certification',
+                child: Text('Certification of Documents',
+                    style: TextStyle(fontSize: isMobile ? 14 : 16))),
           ],
           onChanged: (value) => setState(() => _serviceType = value!),
         ),
@@ -191,7 +208,8 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
     );
   }
 
-  Widget _buildDocumentDescriptionField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildDocumentDescriptionField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -199,22 +217,37 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
           'Document Description *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
         TextFormField(
           controller: _documentDescriptionController,
           maxLines: 3,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText: 'Describe your documents and requirements...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -227,16 +260,20 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
     );
   }
 
-  Widget _buildServiceOptionField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildServiceOptionField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Service Option *',
-          style: theme.textTheme.titleMedium
-              ?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 12 : 16),
@@ -252,14 +289,22 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
                 title: Text(
                   'Collect & Deliver',
                   style: TextStyle(
-                    fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                            ? 15
+                            : 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 subtitle: Text(
                   'We collect documents and deliver completed work',
                   style: TextStyle(
-                    fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                    fontSize: isMobile
+                        ? 12
+                        : isTablet
+                            ? 13
+                            : 14,
                   ),
                 ),
                 value: 'collect_and_deliver',
@@ -275,14 +320,22 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
                 title: Text(
                   'Drop-off Only',
                   style: TextStyle(
-                    fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                            ? 15
+                            : 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 subtitle: Text(
                   'You drop off documents, we deliver completed work',
                   style: TextStyle(
-                    fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                    fontSize: isMobile
+                        ? 12
+                        : isTablet
+                            ? 13
+                            : 14,
                   ),
                 ),
                 value: 'drop_off_only',
@@ -299,7 +352,6 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
       ],
     );
   }
-
 
   Widget _buildRequestNowToggle(ThemeData theme, bool isMobile, bool isTablet) {
     return Container(
@@ -319,7 +371,11 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
-              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16,
             ),
           ),
           SizedBox(height: isMobile ? 10 : 12),
@@ -367,7 +423,11 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
                                   ? theme.colorScheme.onPrimary
                                   : theme.colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
-                              fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                              fontSize: isMobile
+                                  ? 13
+                                  : isTablet
+                                      ? 14
+                                      : 15,
                             ),
                           ),
                         ),
@@ -419,7 +479,11 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
                                   ? theme.colorScheme.onPrimary
                                   : theme.colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
-                              fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                              fontSize: isMobile
+                                  ? 13
+                                  : isTablet
+                                      ? 14
+                                      : 15,
                             ),
                           ),
                         ),
@@ -435,7 +499,8 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
     );
   }
 
-  Widget _buildScheduledDateTime(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildScheduledDateTime(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -526,16 +591,20 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
     );
   }
 
-  Widget _buildPickupLocationField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildPickupLocationField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Pickup Location *',
-          style: theme.textTheme.titleMedium
-              ?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         const SizedBox(height: 8),
@@ -571,10 +640,13 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
       children: [
         Text(
           'Delivery Location *',
-          style: theme.textTheme.titleMedium
-              ?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         const SizedBox(height: 8),
@@ -603,31 +675,46 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
     );
   }
 
-  Widget _buildInstructionsField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildInstructionsField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Special Instructions (Optional)',
-          style: theme.textTheme.titleMedium
-              ?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
         TextFormField(
           controller: _instructionsController,
           maxLines: 3,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText: 'Any special requirements or notes...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
           ),
         ),
       ],
@@ -642,10 +729,13 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
           _serviceOption == 'drop_off_only'
               ? 'Attach Documents *'
               : 'Attach Documents (Required for some services)',
-          style: theme.textTheme.titleMedium
-              ?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         const SizedBox(height: 8),
@@ -910,23 +1000,23 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
     return (widget.selectedService['base_price'] ?? 0.0).toDouble();
   }
 
-  /// Get the actual price based on selected service type
+  /// Get the actual price from the database (type_prices or base/business_price).
+  /// No hardcoded fallbacks; values come from admin-configured service.
   double _getServiceTypePrice() {
-    // Service type specific prices
-    final Map<String, double> individualPrices = {
-      'application_submission': 200.0,  // Application submission service
-      'certification': 150.0,  // Document certification
-    };
-
-    final Map<String, double> businessPrices = {
-      'application_submission': 350.0,  // Application submission (business)
-      'certification': 220.0,  // Document certification (business)
-    };
-
-    final isBusiness = widget.userProfile?['user_type'] == 'business';
-    final prices = isBusiness ? businessPrices : individualPrices;
-
-    return prices[_serviceType] ?? _getBasePrice();
+    final raw = widget.selectedService['type_prices'];
+    if (raw is Map) {
+      final tier = widget.userProfile?['user_type'] == 'business'
+          ? (raw['business'] is Map ? raw['business'] as Map : null)
+          : (raw['individual'] is Map ? raw['individual'] as Map : null);
+      if (tier != null) {
+        final v = tier[_serviceType];
+        if (v != null) {
+          final n = (v is num) ? v.toDouble() : double.tryParse(v.toString());
+          if (n != null && n >= 0) return n;
+        }
+      }
+    }
+    return _getBasePrice();
   }
 
   Future<void> _pickImage(bool fromCamera) async {
@@ -942,7 +1032,8 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add image. Please try again or select a different image.'),
+            content: const Text(
+                'Unable to add image. Please try again or select a different image.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -960,7 +1051,8 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add PDF. Please try again or select a different file.'),
+            content: const Text(
+                'Unable to add PDF. Please try again or select a different file.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -1143,17 +1235,23 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unable to post your document service request. Please try again.';
-        
+        String errorMessage =
+            'Unable to post your document service request. Please try again.';
+
         // Provide more specific error messages
-        if (e.toString().contains('not authenticated') || e.toString().contains('sign in')) {
+        if (e.toString().contains('not authenticated') ||
+            e.toString().contains('sign in')) {
           errorMessage = 'Please sign in to post a document service request.';
-        } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (e.toString().contains('validation') || e.toString().contains('constraint')) {
-          errorMessage = 'Please check that all required fields are filled correctly.';
+        } else if (e.toString().contains('network') ||
+            e.toString().contains('connection')) {
+          errorMessage =
+              'Network error. Please check your internet connection and try again.';
+        } else if (e.toString().contains('validation') ||
+            e.toString().contains('constraint')) {
+          errorMessage =
+              'Please check that all required fields are filled correctly.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),

@@ -7,29 +7,24 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 
 class LocationService {
   // Prefer passing your key at build/run time: --dart-define=GOOGLE_MAPS_API_KEY=YOUR_KEY
+  // No hardcoded API keys are stored in source; if GOOGLE_MAPS_API_KEY is not
+  // provided, HTTP calls that require it will gracefully fall back.
   static const String _envApiKey =
       String.fromEnvironment('GOOGLE_MAPS_API_KEY');
-
-  // Fallback API keys for each platform (these should match your platform configs)
-  static const String _androidApiKey =
-      'AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo';
-  static const String _iosApiKey = 'AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo';
-  static const String _webApiKey = 'AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo';
-  static const String _macosApiKey = 'AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo';
 
   // Cache for recent searches to improve performance
   static final Map<String, List<PlaceModel>> _searchCache = {};
   static final Map<String, DateTime> _cacheTimestamps = {};
   static const Duration _cacheExpiry = Duration(minutes: 5);
 
-  // Get the resolved API key, preferring environment variable, then platform-specific
+  // Get the resolved API key, preferring environment variable only.
   static String get _resolvedApiKey {
     if (_envApiKey.isNotEmpty) {
       return _envApiKey;
     }
 
-    // Return platform-specific key (this will work for the current platform)
-    return _androidApiKey; // This will work for all platforms since they all use the same key
+    // No client-side key configured: return empty so callers can fall back gracefully.
+    return '';
   }
 
   static const String _baseUrl = 'https://maps.googleapis.com/maps/api';
@@ -41,19 +36,22 @@ class LocationService {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        throw Exception('Location services are disabled. Please enable location services in your device settings.');
+        throw Exception(
+            'Location services are disabled. Please enable location services in your device settings.');
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          throw Exception('Location permission is required to use this feature. Please grant location permission in your device settings.');
+          throw Exception(
+              'Location permission is required to use this feature. Please grant location permission in your device settings.');
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permission is permanently denied. Please enable it in your device settings to use this feature.');
+        throw Exception(
+            'Location permission is permanently denied. Please enable it in your device settings to use this feature.');
       }
 
       return await Geolocator.getCurrentPosition(
@@ -65,13 +63,36 @@ class LocationService {
     }
   }
 
-  // Get address from coordinates
+  // Get address from coordinates (used by "Use current location" and map picker).
+  // Prefers Supabase reverse-geocode for accurate street-level address; falls back to platform geocoding.
   static Future<String?> getAddressFromCoordinates(
     double latitude,
     double longitude,
   ) async {
+    // 1) Prefer Supabase Edge Function (Google Geocoding API) for full street-level address.
     try {
-      // First try the geocoding package
+      final response = await SupabaseConfig.client.functions.invoke(
+        _reverseGeocodeFunction,
+        body: {'latitude': latitude, 'longitude': longitude},
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => throw Exception('Reverse geocode timeout'),
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final formatted = data['formatted_address'];
+        if (formatted is String && formatted.trim().isNotEmpty) {
+          return _normalizeAddress(formatted);
+        }
+      }
+    } catch (e) {
+      print('Reverse geocode (Supabase) failed: $e');
+    }
+
+    // 2) Try platform geocoding package (often only city/country on Android).
+    try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
         latitude,
         longitude,
@@ -79,8 +100,6 @@ class LocationService {
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-
-        // Build a more readable address with null safety
         List<String> addressParts = [];
 
         if (place.street != null && place.street!.isNotEmpty) {
@@ -101,16 +120,14 @@ class LocationService {
         }
 
         if (addressParts.isNotEmpty) {
-          return addressParts.join(', ');
+          return _normalizeAddress(addressParts.join(', '));
         }
       }
     } catch (e) {
       print('Error getting address from coordinates with geocoding: $e');
-      // Fall back to descriptive location name
-      return _getDescriptiveLocationName(latitude, longitude);
     }
 
-    // If geocoding fails, try Google's Geocoding API as fallback
+    // 3) If we have a client key, try Google Geocoding API directly.
     try {
       final apiKey = _resolvedApiKey;
       if (apiKey.isNotEmpty) {
@@ -125,7 +142,7 @@ class LocationService {
             final result = data['results'][0];
             final formattedAddress = result['formatted_address'];
             if (formattedAddress != null && formattedAddress.isNotEmpty) {
-              return formattedAddress;
+              return _normalizeAddress(formattedAddress);
             }
           }
         }
@@ -134,7 +151,6 @@ class LocationService {
       print('Error getting address from coordinates with Google API: $e');
     }
 
-    // If all geocoding fails, try to get a nearby landmark or create a descriptive name
     return _getDescriptiveLocationName(latitude, longitude);
   }
 
@@ -185,6 +201,32 @@ class LocationService {
     return 'Location (${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)})';
   }
 
+  /// Clean up raw addresses for display (e.g. strip Plus Codes prefix like
+  /// "C3QH+FQ6, Windhoek West, Windhoek, Namibia" -> "Windhoek West, Windhoek, Namibia").
+  static String _normalizeAddress(String address) {
+    final trimmed = address.trim();
+    if (trimmed.isEmpty) return trimmed;
+
+    // If the address starts with a Plus Code segment before the first comma,
+    // drop that first segment and keep the rest.
+    final parts = trimmed.split(',');
+    if (parts.isNotEmpty) {
+      final first = parts.first.trim();
+      if (first.contains('+') && first.length <= 10) {
+        final remaining = parts
+            .skip(1)
+            .map((p) => p.trim())
+            .where((p) => p.isNotEmpty)
+            .toList();
+        if (remaining.isNotEmpty) {
+          return remaining.join(', ');
+        }
+      }
+    }
+
+    return trimmed;
+  }
+
   // Get coordinates from address
   static Future<Map<String, double>?> getCoordinatesFromAddress(
     String address,
@@ -200,7 +242,7 @@ class LocationService {
         final location = locations[0];
         final lat = location.latitude;
         final lng = location.longitude;
-        
+
         // Validate coordinates are valid numbers
         if (lat.isFinite && lng.isFinite) {
           return {
@@ -315,6 +357,42 @@ class LocationService {
     );
   }
 
+  /// Returns encoded polyline points from Directions API for drawing the route on a map.
+  /// Returns null if API key is missing or request fails.
+  static Future<String?> getRoutePolylineEncoded(
+    double originLat,
+    double originLon,
+    double destinationLat,
+    double destinationLon, {
+    String mode = 'driving',
+  }) async {
+    final apiKey = _resolvedApiKey;
+    if (apiKey.isEmpty) return null;
+    try {
+      final url = Uri.parse(
+        '$_directionsUrl/json?origin=$originLat,$originLon'
+        '&destination=$destinationLat,$destinationLon'
+        '&mode=$mode'
+        '&key=$apiKey'
+        '&units=metric',
+      );
+      final response = await http.get(url);
+      if (response.statusCode != 200) return null;
+      final data = json.decode(response.body);
+      final routes = data['routes'] as List?;
+      if (data['status'] != 'OK' || routes == null || routes.isEmpty) {
+        return null;
+      }
+      final route = routes[0] as Map<String, dynamic>?;
+      final overview = route?['overview_polyline'] as Map<String, dynamic>?;
+      final points = overview?['points'] as String?;
+      return points;
+    } catch (e) {
+      print('Error getting route polyline: $e');
+      return null;
+    }
+  }
+
   // Get distance between two addresses
   static Future<RouteInfo?> getAddressDistance(
     String originAddress,
@@ -343,6 +421,9 @@ class LocationService {
 
   /// Name of the Edge Function that proxies Google Places Autocomplete (avoids CORS, keeps API key server-side).
   static const String _placesAutocompleteFunction = 'places-autocomplete';
+
+  /// Edge Function for reverse geocoding so "Use current location" gets a full street-level address.
+  static const String _reverseGeocodeFunction = 'reverse-geocode';
 
   /// Parses a Google Places Autocomplete–style response (status + predictions) into [PlaceModel] list.
   static List<PlaceModel> _parsePlacesResponse(Map<String, dynamic>? data) {
@@ -515,7 +596,7 @@ class LocationService {
         // If toString() fails, use a safe fallback
         errorMessage = 'Error occurred during geocoding';
       }
-      
+
       if (errorMessage.contains('null') || errorMessage.contains('Null')) {
         print('❌ Basic search error: Null value encountered - $errorMessage');
       } else {
@@ -683,18 +764,18 @@ class PlaceDetails {
   factory PlaceDetails.fromJson(Map<String, dynamic> json) {
     final geometry = json['geometry'] as Map<String, dynamic>?;
     final location = geometry?['location'] as Map<String, dynamic>?;
-    
+
     if (location == null) {
       throw Exception('Location data is missing in place details');
     }
-    
+
     final lat = location['lat'];
     final lng = location['lng'];
-    
+
     if (lat == null || lng == null) {
       throw Exception('Latitude or longitude is null in place details');
     }
-    
+
     return PlaceDetails(
       latitude: (lat is num) ? lat.toDouble() : double.parse(lat.toString()),
       longitude: (lng is num) ? lng.toDouble() : double.parse(lng.toString()),

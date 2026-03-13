@@ -8,7 +8,6 @@ import 'package:lotto_runners/widgets/simple_location_picker.dart';
 import 'package:lotto_runners/services/runner_search_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'package:lotto_runners/utils/responsive.dart';
-import 'dart:typed_data';
 import 'package:intl/intl.dart';
 
 class PostErrandFormPage extends StatefulWidget {

@@ -203,6 +203,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     }
   }
 
+  /// Revenue amount for analytics: exclude shopping budget so it is not counted as profit.
+  double _errandRevenueAmount(Map<String, dynamic> errand) {
+    final price = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+    if (errand['category'] != 'shopping') return price;
+    final mod = errand['pricing_modifiers'] as Map<String, dynamic>?;
+    final budget = (mod?['shopping_budget'] as num?)?.toDouble();
+    if (budget == null || budget <= 0) return price;
+    return (price - budget).clamp(0.0, double.infinity);
+  }
+
   Future<List<Map<String, dynamic>>> _calculateTopRunners(
       List<Map<String, dynamic>> errands) async {
     final runnerStats = <String, Map<String, dynamic>>{};
@@ -211,7 +221,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       if (errand['runner_id'] != null && errand['status'] == 'completed') {
         final runnerId = errand['runner_id'];
         final runnerName = errand['runner']?['full_name'] ?? 'Unknown';
-        final amount = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+        final amount = _errandRevenueAmount(errand);
 
         if (!runnerStats.containsKey(runnerId)) {
           runnerStats[runnerId] = {
@@ -257,7 +267,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           errand['status'] == 'completed') {
         final customerId = errand['customer_id'];
         final customerName = errand['customer']?['full_name'] ?? 'Unknown';
-        final amount = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+        final amount = _errandRevenueAmount(errand);
 
         if (!customerStats.containsKey(customerId)) {
           customerStats[customerId] = {
@@ -294,7 +304,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           final date = DateTime.parse(errand['created_at']);
           final monthKey =
               '${date.year}-${date.month.toString().padLeft(2, '0')}';
-          final amount = (errand['price_amount'] as num?)?.toDouble() ?? 0.0;
+          final amount = _errandRevenueAmount(errand);
 
           revenueByMonth[monthKey] = (revenueByMonth[monthKey] ?? 0.0) + amount;
         } catch (e) {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/pages/terms_conditions_runner_page.dart';
 import 'package:lotto_runners/pages/terms_conditions_individual_page.dart';
@@ -78,7 +77,8 @@ class TermsAcceptanceDialog extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.errorContainer.withValues(alpha: 0.1),
+                          color: theme.colorScheme.errorContainer
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: theme.colorScheme.error,
@@ -100,7 +100,8 @@ class TermsAcceptanceDialog extends StatelessWidget {
                                 children: [
                                   Text(
                                     'Important',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.error,
                                     ),
@@ -165,7 +166,8 @@ class TermsAcceptanceDialog extends StatelessWidget {
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           onPressed: () {
-                            Navigator.of(context).pop(); // Close dialog temporarily
+                            Navigator.of(context)
+                                .pop(); // Close dialog temporarily
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -263,4 +265,3 @@ class TermsAcceptanceDialog extends StatelessWidget {
     );
   }
 }
-

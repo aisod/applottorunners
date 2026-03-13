@@ -7,7 +7,7 @@ import 'message_chat_page.dart';
 
 /// Runner page for viewing messages from admin and replying
 class RunnerMessagesPage extends StatefulWidget {
-  const RunnerMessagesPage({Key? key}) : super(key: key);
+  const RunnerMessagesPage({super.key});
 
   @override
   State<RunnerMessagesPage> createState() => _RunnerMessagesPageState();
@@ -250,7 +250,8 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
                     child: Text(
                       message['subject'],
                       style: TextStyle(
-                        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                        fontWeight:
+                            isRead ? FontWeight.normal : FontWeight.bold,
                         fontSize: 16,
                       ),
                       maxLines: 2,
@@ -259,7 +260,8 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
                   ),
                   if (!isRead)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(8),
@@ -275,9 +277,9 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
                     ),
                 ],
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Sender and date
               Text(
                 'From: $senderName • $formattedDate',
@@ -286,14 +288,15 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
                   color: Colors.grey.shade700,
                 ),
               ),
-              
+
               // Broadcast badge
               if (isBroadcast)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Row(
                     children: [
-                      Icon(Icons.campaign, size: 14, color: Colors.blue.shade700),
+                      Icon(Icons.campaign,
+                          size: 14, color: Colors.blue.shade700),
                       const SizedBox(width: 4),
                       Text(
                         'Broadcast to all runners',
@@ -306,9 +309,9 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
                     ],
                   ),
                 ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Message preview
               Container(
                 padding: const EdgeInsets.all(12),
@@ -323,15 +326,16 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Badges and action hint
               Row(
                 children: [
                   // Priority badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: priorityColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -345,12 +349,13 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 8),
-                  
+
                   // Type badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(12),
@@ -364,9 +369,9 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
                       ),
                     ),
                   ),
-                  
+
                   const Spacer(),
-                  
+
                   // Tap to open hint
                   Row(
                     children: [
@@ -395,4 +400,3 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
     );
   }
 }
-

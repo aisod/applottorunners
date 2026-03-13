@@ -23,6 +23,8 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  ThemeData get theme => Theme.of(context);
+
   final List<Map<String, String>> _categories = [
     {'value': 'all', 'label': 'All History', 'icon': 'history'},
     {'value': 'errands', 'label': 'My Errands', 'icon': 'assignment'},
@@ -233,7 +235,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
       pinned: true,
       backgroundColor: LottoRunnersColors.primaryBlue,
       flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
+        title: Text(
           'My History',
           style: TextStyle(
             color: theme.colorScheme.onPrimary,
@@ -544,7 +546,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                 _loadErrands();
               },
               icon: Icon(Icons.refresh, color: theme.colorScheme.onPrimary),
-              label: const Text(
+              label: Text(
                 'Refresh Errands',
                 style: TextStyle(
                   color: theme.colorScheme.onPrimary,
@@ -616,9 +618,9 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
 
     return Container(
       margin: const EdgeInsets.only(top: 100),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: theme.colorScheme.onPrimary,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       ),
       child: DraggableScrollableSheet(
         initialChildSize: 0.8,
@@ -834,18 +836,18 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.check_circle,
-                                color: theme.colorScheme.onPrimary, size: 24),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Accept Errand',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                      children: [
+                        Icon(Icons.check_circle,
+                            color: theme.colorScheme.onPrimary, size: 24),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Accept Errand',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                         ),
                       ),
                     ),
@@ -896,9 +898,9 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
               color: theme.colorScheme.onPrimary,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: [
+              children: const [
                 CircularProgressIndicator(
                   valueColor:
                       AlwaysStoppedAnimation(LottoRunnersColors.primaryBlue),
@@ -1196,9 +1198,9 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
         minChildSize: 0.4,
         maxChildSize: 0.9,
         builder: (_, controller) => Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: theme.colorScheme.onPrimary,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SingleChildScrollView(
             controller: controller,

@@ -51,11 +51,6 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <meta-data
-                android:name="com.google.android.geo.API_KEY"
-                android:value="AIzaSyAkC1M3uRZhK_rGpAXCfIadUHuPXdWCkZo"
-            />
-                        
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -75,12 +70,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Optional: Google Maps API key for native map tiles if using Maps SDK -->
-        <!--
+
+        <!-- Google Maps Android SDK key provided via manifest placeholder.
+             Must be in the <application> element for the Maps SDK to find it. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_ACTUAL_API_KEY_HERE" />
-        -->
+            android:value="${GOOGLE_MAPS_API_KEY}" />
             
 
     </application>

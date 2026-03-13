@@ -14,17 +14,16 @@ import 'package:lotto_runners/pages/admin/vehicle_discount_management_page.dart'
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/pages/available_errands_page.dart';
 import 'package:lotto_runners/pages/runner_dashboard_page.dart';
-import 'package:lotto_runners/pages/runner_messages_page.dart';
 import 'package:lotto_runners/pages/runner_home_page.dart';
 import 'package:lotto_runners/pages/service_selection_page.dart';
 import 'bus_booking_page.dart';
 import 'contract_booking_page.dart';
 import 'package:lotto_runners/services/errand_acceptance_notification_service.dart';
 import 'package:lotto_runners/services/transportation_acceptance_notification_service.dart';
+import 'package:lotto_runners/widgets/theme_toggle_button.dart';
 // Import page transitions for fun customer animations
 import 'package:lotto_runners/utils/page_transitions.dart';
 // Import custom icons
-import 'package:lotto_runners/widgets/custom_icons.dart';
 import 'package:lotto_runners/widgets/terms_acceptance_dialog.dart';
 
 class HomePage extends StatefulWidget {
@@ -78,7 +77,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             _isLoading = false;
           });
           _loadDashboardStats();
-          
+
           // Check if terms have been accepted
           _checkTermsAcceptance(profile);
         }
@@ -99,10 +98,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// Check if user has accepted terms and show dialog if not
   void _checkTermsAcceptance(Map<String, dynamic>? profile) {
     if (profile == null) return;
-    
+
     final termsAccepted = profile['terms_accepted'] as bool? ?? false;
     final userType = profile['user_type'] as String? ?? 'individual';
-    
+
     if (!termsAccepted && mounted) {
       // Show terms acceptance dialog after a short delay to ensure UI is ready
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -123,19 +122,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         onAccepted: () async {
           // Mark terms as accepted
           final success = await SupabaseConfig.acceptTermsAndConditions();
-          
+
           if (success && mounted) {
             // Update local profile state
             setState(() {
               if (_userProfile != null) {
                 _userProfile!['terms_accepted'] = true;
-                _userProfile!['terms_accepted_at'] = DateTime.now().toIso8601String();
+                _userProfile!['terms_accepted_at'] =
+                    DateTime.now().toIso8601String();
               }
             });
-            
+
             // Close dialog
             Navigator.of(context).pop();
-            
+
             // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -159,7 +159,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Failed to accept terms. Please try again.'),
+                  content:
+                      const Text('Failed to accept terms. Please try again.'),
                   backgroundColor: Theme.of(context).colorScheme.error,
                 ),
               );
@@ -204,8 +205,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       body: Responsive.isDesktop(context)
           ? _buildDesktopLayout()
           : Responsive.isTablet(context)
-          ? _buildTabletLayout()
-          : _buildMobileLayout(),
+              ? _buildTabletLayout()
+              : _buildMobileLayout(),
+      floatingActionButton: const ThemeToggleButton(),
     );
   }
 
@@ -225,7 +227,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               border: Border(
-                right: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                right: BorderSide(
+                    color: Theme.of(context).colorScheme.outline, width: 1),
               ),
             ),
             child: _buildSidebar(userType),
@@ -323,7 +326,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ClipRRect(
@@ -354,7 +360,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Text(
                 'Welcome back, $userName',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.9),
                   fontSize: 14,
                 ),
               ),
@@ -413,8 +422,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: isDestructive
                   ? Theme.of(context).colorScheme.error
                   : isActive
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline,
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -424,8 +433,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 color: isDestructive
                     ? Theme.of(context).colorScheme.error
                     : isActive
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurface,
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -713,8 +722,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final isDesktop = Responsive.isDesktop(context);
     final isSmallMobile = Responsive.isSmallMobile(context);
 
-      return Scaffold(
-        backgroundColor: Colors.white,
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -746,11 +755,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final isSmallMobile = Responsive.isSmallMobile(context);
     final isTablet = Responsive.isTablet(context);
 
-      return Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-        ),
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+      ),
       child: Container(
         constraints: BoxConstraints(
           maxWidth: isDesktop ? 1200 : double.infinity,
@@ -758,24 +767,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         padding: EdgeInsets.all(isSmallMobile ? 16 : (isDesktop ? 40 : 24)),
         child: Column(
           children: [
-             // Main card container - combined with recent activity
-             Container(
-               padding: EdgeInsets.all(isSmallMobile ? 20 : (isDesktop ? 32 : 24)),
-               decoration: BoxDecoration(
-                 color: Theme.of(context).brightness == Brightness.dark 
-                     ? Theme.of(context).colorScheme.surfaceContainerHighest 
-                     : Colors.white,
-                 borderRadius: BorderRadius.circular(20),
-                 boxShadow: [
-                   BoxShadow(
-                     color: Theme.of(context).brightness == Brightness.dark
-                         ? Colors.black.withOpacity(0.3)
-                         : Colors.black.withOpacity(0.05),
-                     blurRadius: 20,
-                     offset: const Offset(0, 10),
-                   ),
-                 ],
-               ),
+            // Main card container - combined with recent activity
+            Container(
+              padding:
+                  EdgeInsets.all(isSmallMobile ? 20 : (isDesktop ? 32 : 24)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.surfaceContainerHighest
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -785,20 +795,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       Container(
                         width: isSmallMobile ? 50 : (isDesktop ? 60 : 55),
                         height: isSmallMobile ? 50 : (isDesktop ? 60 : 55),
-                         decoration: BoxDecoration(
-                           borderRadius: BorderRadius.circular(25),
-                           border: Border.all(
-                             color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                             width: 1,
-                           ),
-                         ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(25),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(25),
                           child: _userProfile?['avatar_url'] != null
                               ? Image.network(
                                   _userProfile!['avatar_url'],
-                                  width: isSmallMobile ? 48 : (isDesktop ? 58 : 53),
-                                  height: isSmallMobile ? 48 : (isDesktop ? 58 : 53),
+                                  width: isSmallMobile
+                                      ? 48
+                                      : (isDesktop ? 58 : 53),
+                                  height: isSmallMobile
+                                      ? 48
+                                      : (isDesktop ? 58 : 53),
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
                                       _buildDefaultAvatar(userType, isDesktop),
@@ -824,19 +841,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 'Hello $userName!',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: isSmallMobile ? 20 : (isDesktop ? 28 : 24),
+                                  fontSize: isSmallMobile
+                                      ? 20
+                                      : (isDesktop ? 28 : 24),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                             SizedBox(height: isSmallMobile ? 4 : 6),
-                             Text(
-                               'What are you looking for?',
-                               style: TextStyle(
-                                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                 fontSize: isSmallMobile ? 12 : (isDesktop ? 16 : 14),
-                               ),
-                             ),
+                            SizedBox(height: isSmallMobile ? 4 : 6),
+                            Text(
+                              'What are you looking for?',
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                                fontSize:
+                                    isSmallMobile ? 12 : (isDesktop ? 16 : 14),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -856,7 +879,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             width: 48,
                             height: 48,
                             fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
                               Icons.directions_run,
                               size: 32,
                               color: LottoRunnersColors.primaryBlue,
@@ -874,7 +898,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         isSmallMobile: isSmallMobile,
                       ),
                       SizedBox(height: isSmallMobile ? 12 : 16),
-                      
+
                       // Bottom row - Three buttons side by side
                       Row(
                         children: [
@@ -887,17 +911,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 fit: BoxFit.contain,
                                 cacheWidth: 180,
                                 cacheHeight: 180,
-                                loadingBuilder: (context, child, loadingProgress) {
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
                                   if (loadingProgress == null) return child;
                                   return Container(
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryYellow.withOpacity(0.15),
+                                      color: LottoRunnersColors.primaryYellow
+                                          .withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
                                     ),
                                   );
                                 },
@@ -907,7 +934,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryYellow.withOpacity(0.15),
+                                      color: LottoRunnersColors.primaryYellow
+                                          .withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
@@ -921,7 +949,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               label: 'Contract Rides',
                               onTap: () => Navigator.push(
                                 context,
-                                PageTransitions.scale(const ContractBookingPage()),
+                                PageTransitions.scale(
+                                    const ContractBookingPage()),
                               ),
                               isSmallMobile: isSmallMobile,
                             ),
@@ -936,17 +965,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 fit: BoxFit.contain,
                                 cacheWidth: 180,
                                 cacheHeight: 180,
-                                loadingBuilder: (context, child, loadingProgress) {
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
                                   if (loadingProgress == null) return child;
                                   return Container(
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                                      color: LottoRunnersColors.primaryBlue
+                                          .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
                                     ),
                                   );
                                 },
@@ -956,7 +988,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                                      color: LottoRunnersColors.primaryBlue
+                                          .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
@@ -970,7 +1003,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               label: 'Bus Services',
                               onTap: () => Navigator.push(
                                 context,
-                                PageTransitions.rotateAndScale(const BusBookingPage()),
+                                PageTransitions.rotateAndScale(
+                                    const BusBookingPage()),
                               ),
                               isSmallMobile: isSmallMobile,
                             ),
@@ -985,17 +1019,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 fit: BoxFit.contain,
                                 cacheWidth: 180,
                                 cacheHeight: 180,
-                                loadingBuilder: (context, child, loadingProgress) {
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
                                   if (loadingProgress == null) return child;
                                   return Container(
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                                      color: LottoRunnersColors.primaryBlue
+                                          .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
                                     ),
                                   );
                                 },
@@ -1005,7 +1042,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryBlue.withOpacity(0.1),
+                                      color: LottoRunnersColors.primaryBlue
+                                          .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
@@ -1019,7 +1057,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               label: 'Request a Ride',
                               onTap: () => Navigator.push(
                                 context,
-                                PageTransitions.scale(const TransportationPage()),
+                                PageTransitions.scale(
+                                    const TransportationPage()),
                               ),
                               isSmallMobile: isSmallMobile,
                             ),
@@ -1032,7 +1071,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   SizedBox(height: isSmallMobile ? 24 : 32),
                   Divider(
                     height: 1,
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.2),
                   ),
                   SizedBox(height: isSmallMobile ? 24 : 32),
                   // Recent Activity section (now inside main card)
@@ -1101,7 +1143,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                     fontSize: isSmallMobile ? 12 : 14,
                   ),
                 ),
@@ -1138,25 +1183,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-       child: Container(
-         height: isSmallMobile ? 160 : 180,
-         decoration: BoxDecoration(
-           color: Theme.of(context).brightness == Brightness.dark 
-               ? Theme.of(context).colorScheme.surface 
-               : Colors.white,
-           borderRadius: BorderRadius.circular(16),
-           border: Border.all(
-             color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-             width: 1,
-           ),
-           boxShadow: [
-             BoxShadow(
-               color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02),
-               blurRadius: 8,
-               offset: const Offset(0, 2),
-             ),
-           ],
-         ),
+      child: Container(
+        height: isSmallMobile ? 160 : 180,
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Theme.of(context).colorScheme.surface
+              : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(
+                  Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1170,17 +1216,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               child: Center(child: icon),
             ),
             SizedBox(height: isSmallMobile ? 8 : 12),
-             Text(
-               label,
-               style: TextStyle(
-                 color: Theme.of(context).colorScheme.onSurface,
-                 fontSize: isSmallMobile ? 12 : 14,
-                 fontWeight: FontWeight.w600,
-               ),
-               textAlign: TextAlign.center,
-               maxLines: 2,
-               overflow: TextOverflow.ellipsis,
-             ),
+            Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: isSmallMobile ? 12 : 14,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -1230,7 +1276,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 SizedBox(height: isSmallMobile ? 12 : 16),
                 Text(
                   'Failed to load recent activity',
-                  style: Theme.of(context).textTheme.titleMedium
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
                       ?.copyWith(fontWeight: FontWeight.w600),
                   textAlign: TextAlign.center,
                 ),
@@ -1263,8 +1311,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 Text(
                   'No recent activity',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -1531,37 +1579,38 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final createdAt = item['created_at'] ?? item['sort_date'];
     final isSmallMobile = Responsive.isSmallMobile(context);
 
-      Color statusColor;
-      switch (status.toLowerCase()) {
-        case 'completed':
-          statusColor = LottoRunnersColors.accent; // Green color for success
-          break;
-        case 'in_progress':
-        case 'accepted':
-          statusColor = LottoRunnersColors.primaryBlue;
-          break;
-        case 'cancelled':
-          statusColor = Theme.of(context).colorScheme.error; // Red color for error
-          break;
-        default:
-          statusColor = LottoRunnersColors.orange; // Orange for pending
-      }
+    Color statusColor;
+    switch (status.toLowerCase()) {
+      case 'completed':
+        statusColor = LottoRunnersColors.accent; // Green color for success
+        break;
+      case 'in_progress':
+      case 'accepted':
+        statusColor = LottoRunnersColors.primaryBlue;
+        break;
+      case 'cancelled':
+        statusColor =
+            Theme.of(context).colorScheme.error; // Red color for error
+        break;
+      default:
+        statusColor = LottoRunnersColors.orange; // Orange for pending
+    }
 
     return Container(
       margin: EdgeInsets.only(bottom: isSmallMobile ? 12 : 16),
       padding: EdgeInsets.all(isSmallMobile ? 16 : (isDesktop ? 20 : 18)),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
             : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1), 
-          width: 1
-        ),
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02),
+            color: Colors.black.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1577,7 +1626,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              isErrand ? Icons.description_outlined : Icons.directions_bus_outlined,
+              isErrand
+                  ? Icons.description_outlined
+                  : Icons.directions_bus_outlined,
               color: LottoRunnersColors.primaryBlue,
               size: isSmallMobile ? 20 : (isDesktop ? 24 : 22),
             ),
@@ -1602,7 +1653,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
                       fontSize: isSmallMobile ? 11 : 12,
                       height: 1.2,
                     ),
@@ -1632,13 +1686,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                     ),
                     const Spacer(),
-                      Text(
-                        _formatRecentDate(createdAt),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                          fontSize: isSmallMobile ? 10 : 11,
-                        ),
+                    Text(
+                      _formatRecentDate(createdAt),
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.5),
+                        fontSize: isSmallMobile ? 10 : 11,
                       ),
+                    ),
                   ],
                 ),
               ],

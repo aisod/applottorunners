@@ -1,5 +1,4 @@
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 /// Web implementation for PDF saving
 Future<void> savePdfPlatform(List<int> pdfBytes, String fileName) async {
@@ -69,14 +68,16 @@ bool isValidPDFPlatform(dynamic file) {
   try {
     final fileObj = file as html.File;
     // For web, we can check the file type
-    return fileObj.type == 'application/pdf' || fileObj.name.toLowerCase().endsWith('.pdf');
+    return fileObj.type == 'application/pdf' ||
+        fileObj.name.toLowerCase().endsWith('.pdf');
   } catch (e) {
     return false;
   }
 }
 
 /// Download PDF bytes directly to device (web implementation)
-Future<bool> downloadPDFBytesPlatform(List<int> pdfBytes, String fileName) async {
+Future<bool> downloadPDFBytesPlatform(
+    List<int> pdfBytes, String fileName) async {
   try {
     // For web, use the existing save functionality
     await savePdfPlatform(pdfBytes, fileName);

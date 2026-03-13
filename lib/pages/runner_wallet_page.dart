@@ -29,49 +29,51 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
 
   Future<void> _loadEarningsData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final userId = SupabaseConfig.currentUser?.id;
       if (userId == null) throw Exception('User not logged in');
 
-      // Get runner earnings summary from the view
-      final response = await SupabaseConfig.client
-          .from('runner_earnings_summary')
-          .select()
-          .eq('runner_id', userId)
-          .maybeSingle();
+      // Get runner earnings summary via RPC (RLS: runners see only own row)
+      final list = await SupabaseConfig.client
+          .rpc('get_runner_earnings_summary', params: {'p_runner_id': userId});
+      final response = (list is List && list.isNotEmpty) ? list.first : null;
 
       // Get detailed bookings
       final detailedResponse = await SupabaseConfig.client
           .rpc('get_runner_detailed_bookings', params: {'p_runner_id': userId});
 
       // Get withdrawable balance
-      final withdrawableBalance = await SupabaseConfig.getRunnerWithdrawableBalance(userId);
+      final withdrawableBalance =
+          await SupabaseConfig.getRunnerWithdrawableBalance(userId);
 
       // Get withdrawal requests
-      final withdrawalRequests = await SupabaseConfig.getWithdrawalRequests(runnerId: userId);
+      final withdrawalRequests =
+          await SupabaseConfig.getWithdrawalRequests(runnerId: userId);
 
       if (mounted) {
         setState(() {
-          _earningsSummary = response ?? {
-            'total_revenue': 0.0,
-            'total_runner_earnings': 0.0,
-            'total_company_commission': 0.0,
-            'total_bookings': 0,
-            'completed_bookings': 0,
-            'errand_count': 0,
-            'errand_revenue': 0.0,
-            'errand_earnings': 0.0,
-            'transportation_count': 0,
-            'transportation_revenue': 0.0,
-            'transportation_earnings': 0.0,
-            'contract_count': 0,
-            'contract_revenue': 0.0,
-            'contract_earnings': 0.0,
-          };
+          _earningsSummary = response ??
+              {
+                'total_revenue': 0.0,
+                'total_runner_earnings': 0.0,
+                'total_company_commission': 0.0,
+                'total_bookings': 0,
+                'completed_bookings': 0,
+                'errand_count': 0,
+                'errand_revenue': 0.0,
+                'errand_earnings': 0.0,
+                'transportation_count': 0,
+                'transportation_revenue': 0.0,
+                'transportation_earnings': 0.0,
+                'contract_count': 0,
+                'contract_revenue': 0.0,
+                'contract_earnings': 0.0,
+              };
           _detailedBookings = (detailedResponse as List?)
-              ?.map((e) => e as Map<String, dynamic>)
-              .toList() ?? [];
+                  ?.map((e) => e as Map<String, dynamic>)
+                  .toList() ??
+              [];
           _withdrawableBalance = withdrawableBalance;
           _withdrawalRequests = withdrawalRequests;
           _isLoading = false;
@@ -83,7 +85,8 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load earnings. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to load earnings. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -154,8 +157,10 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
 
   Widget _buildEarningsSummaryCard(ThemeData theme, bool isMobile) {
     final totalRevenue = (_earningsSummary?['total_revenue'] ?? 0.0).toDouble();
-    final runnerEarnings = (_earningsSummary?['total_runner_earnings'] ?? 0.0).toDouble();
-    final companyCommission = (_earningsSummary?['total_company_commission'] ?? 0.0).toDouble();
+    final runnerEarnings =
+        (_earningsSummary?['total_runner_earnings'] ?? 0.0).toDouble();
+    final companyCommission =
+        (_earningsSummary?['total_company_commission'] ?? 0.0).toDouble();
 
     return Card(
       elevation: 4,
@@ -236,10 +241,13 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
       ),
     );
   }
-  Widget _buildStatColumn(String label, String value, IconData icon, bool isMobile) {
+
+  Widget _buildStatColumn(
+      String label, String value, IconData icon, bool isMobile) {
     return Column(
       children: [
-        Icon(icon, color: LottoRunnersColors.primaryYellow, size: isMobile ? 20 : 24),
+        Icon(icon,
+            color: LottoRunnersColors.primaryYellow, size: isMobile ? 20 : 24),
         SizedBox(height: isMobile ? 4 : 8),
         Text(
           value,
@@ -296,13 +304,15 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
                   ),
                 ),
                 ElevatedButton.icon(
-                  onPressed: _withdrawableBalance > 0 ? _showWithdrawDialog : null,
+                  onPressed:
+                      _withdrawableBalance > 0 ? _showWithdrawDialog : null,
                   icon: const Icon(Icons.outbox),
                   label: const Text('Withdraw'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: LottoRunnersColors.primaryBlue,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -348,7 +358,9 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
                   final amount = double.tryParse(value);
                   if (amount == null) return 'Invalid number';
                   if (amount <= 0) return 'Must be greater than 0';
-                  if (amount > _withdrawableBalance) return 'Insufficient balance';
+                  if (amount > _withdrawableBalance) {
+                    return 'Insufficient balance';
+                  }
                   return null;
                 },
               ),
@@ -375,19 +387,21 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
               if (formKey.currentState!.validate()) {
                 final amount = double.parse(amountController.text);
                 final notes = notesController.text;
-                
+
                 Navigator.pop(context); // Close dialog
-                
+
                 try {
                   final userId = SupabaseConfig.currentUser?.id;
                   if (userId == null) return;
-                  
-                  await SupabaseConfig.submitWithdrawalRequest(userId, amount, notes);
-                  
+
+                  await SupabaseConfig.submitWithdrawalRequest(
+                      userId, amount, notes);
+
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('✅ Withdrawal request submitted successfully!'),
+                        content: Text(
+                            '✅ Withdrawal request submitted successfully!'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -430,21 +444,28 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
           ),
         ),
         SizedBox(height: isMobile ? 12 : 16),
-        ..._withdrawalRequests.map((req) => _buildWithdrawalRequestCard(req, theme, isMobile)),
+        ..._withdrawalRequests
+            .map((req) => _buildWithdrawalRequestCard(req, theme, isMobile)),
       ],
     );
   }
 
-  Widget _buildWithdrawalRequestCard(Map<String, dynamic> req, ThemeData theme, bool isMobile) {
+  Widget _buildWithdrawalRequestCard(
+      Map<String, dynamic> req, ThemeData theme, bool isMobile) {
     final status = req['status'] ?? 'pending';
     final amount = (req['amount'] ?? 0.0).toDouble();
     final date = DateTime.parse(req['created_at']);
-    
+
     Color statusColor;
     switch (status) {
-      case 'approved': statusColor = Colors.green; break;
-      case 'rejected': statusColor = Colors.red; break;
-      default: statusColor = Colors.orange;
+      case 'approved':
+        statusColor = Colors.green;
+        break;
+      case 'rejected':
+        statusColor = Colors.red;
+        break;
+      default:
+        statusColor = Colors.orange;
     }
 
     return Card(
@@ -473,11 +494,14 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
   }
 
   Widget _buildBreakdownCard(ThemeData theme, bool isMobile) {
-    final errandEarnings = (_earningsSummary?['errand_earnings'] ?? 0.0).toDouble();
+    final errandEarnings =
+        (_earningsSummary?['errand_earnings'] ?? 0.0).toDouble();
     final errandCount = (_earningsSummary?['errand_count'] ?? 0);
-    final transportEarnings = (_earningsSummary?['transportation_earnings'] ?? 0.0).toDouble();
+    final transportEarnings =
+        (_earningsSummary?['transportation_earnings'] ?? 0.0).toDouble();
     final transportCount = (_earningsSummary?['transportation_count'] ?? 0);
-    final contractEarnings = (_earningsSummary?['contract_earnings'] ?? 0.0).toDouble();
+    final contractEarnings =
+        (_earningsSummary?['contract_earnings'] ?? 0.0).toDouble();
     final contractCount = (_earningsSummary?['contract_count'] ?? 0);
 
     return Card(
@@ -799,27 +823,31 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
             ),
           )
         else
-          ...filteredBookings.map((booking) => _buildBookingCard(booking, theme, isMobile)),
+          ...filteredBookings
+              .map((booking) => _buildBookingCard(booking, theme, isMobile)),
       ],
     );
   }
 
-  Widget _buildBookingCard(Map<String, dynamic> booking, ThemeData theme, bool isMobile) {
+  Widget _buildBookingCard(
+      Map<String, dynamic> booking, ThemeData theme, bool isMobile) {
     final bookingType = booking['booking_type'] ?? 'Booking';
     final customerName = booking['customer_name'] ?? 'Unknown';
     final amount = (booking['amount'] ?? 0.0).toDouble();
     final runnerEarnings = (booking['runner_earnings'] ?? 0.0).toDouble();
     final commission = (booking['company_commission'] ?? 0.0).toDouble();
+    final shoppingBudget = (booking['shopping_budget'] as num?)?.toDouble() ?? 0.0;
     final status = booking['status'] ?? 'unknown';
     final date = booking['booking_date'] != null
         ? DateTime.parse(booking['booking_date'])
         : DateTime.now();
     final description = booking['description'] ?? '';
-    
+
     // Extract service type information from pricing_modifiers
     final serviceType = booking['service_type'] as String?;
     final pricingModifiers = booking['pricing_modifiers'] as Map?;
-    final serviceTypeFromModifiers = pricingModifiers?['service_type'] as String?;
+    final serviceTypeFromModifiers =
+        pricingModifiers?['service_type'] as String?;
     final finalServiceType = serviceType ?? serviceTypeFromModifiers;
 
     final statusColor = _getStatusColor(status);
@@ -856,10 +884,12 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
                             vertical: isMobile ? 2 : 3,
                           ),
                           decoration: BoxDecoration(
-                            color: LottoRunnersColors.primaryYellow.withOpacity(0.2),
+                            color: LottoRunnersColors.primaryYellow
+                                .withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
-                              color: LottoRunnersColors.primaryYellow.withOpacity(0.4),
+                              color: LottoRunnersColors.primaryYellow
+                                  .withOpacity(0.4),
                             ),
                           ),
                           child: Text(
@@ -914,6 +944,36 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            if (shoppingBudget > 0) ...[
+              SizedBox(height: isMobile ? 8 : 10),
+              Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 10 : 12, vertical: isMobile ? 8 : 10),
+                decoration: BoxDecoration(
+                  color: LottoRunnersColors.primaryYellow.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: LottoRunnersColors.primaryYellow.withOpacity(0.4),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shopping_basket,
+                        size: 16, color: LottoRunnersColors.primaryBlue),
+                    SizedBox(width: isMobile ? 6 : 8),
+                    Expanded(
+                      child: Text(
+                        'N\$${shoppingBudget.toStringAsFixed(2)} is the customer\'s shopping budget (for items – not your earnings). Your earnings are from the service fee only.',
+                        style: TextStyle(
+                          fontSize: isMobile ? 11 : 12,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
             SizedBox(height: isMobile ? 12 : 16),
@@ -992,7 +1052,8 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
             SizedBox(height: isMobile ? 8 : 10),
             Row(
               children: [
-                Icon(Icons.calendar_today, size: isMobile ? 12 : 14, color: Colors.grey[500]),
+                Icon(Icons.calendar_today,
+                    size: isMobile ? 12 : 14, color: Colors.grey[500]),
                 SizedBox(width: isMobile ? 4 : 6),
                 Text(
                   DateFormat('MMM dd, yyyy • HH:mm').format(date),
@@ -1053,7 +1114,7 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
       'specific_items': 'Specific Items',
     };
 
-    return serviceTypeNames[serviceType] ?? serviceType.replaceAll('_', ' ').toUpperCase();
+    return serviceTypeNames[serviceType] ??
+        serviceType.replaceAll('_', ' ').toUpperCase();
   }
 }
-

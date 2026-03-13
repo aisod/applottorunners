@@ -31,6 +31,8 @@ class SimpleLocationPicker extends StatefulWidget {
 class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final LayerLink _layerLink = LayerLink();
+
   List<PlaceModel> _searchResults = [];
   bool _isSearching = false;
   bool _showSuggestions = false;
@@ -57,25 +59,12 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
 
   void _onFocusChange() {
     if (_focusNode.hasFocus) {
-      if (kIsWeb) {
-        // For web, just update the state to show inline suggestions
-        setState(() {
-          _showSuggestions = _searchResults.isNotEmpty;
-        });
-      } else {
-        _showSuggestionOverlay();
-      }
+      _showSuggestionOverlay();
     } else {
       // Delay hiding overlay to allow tap on suggestions
       Timer(const Duration(milliseconds: 200), () {
         if (mounted && !_focusNode.hasFocus) {
-          if (kIsWeb) {
-            setState(() {
-              _showSuggestions = false;
-            });
-          } else {
-            _removeOverlay();
-          }
+          _removeOverlay();
         }
       });
     }
@@ -93,102 +82,72 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
       return;
     }
 
-    _debounceTimer = Timer(const Duration(milliseconds: 150), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       _searchPlaces(value);
     });
   }
 
   Future<void> _searchPlaces(String query) async {
     setState(() => _isSearching = true);
+    _updateOverlay(); // Update to show loading indicator
 
     try {
       final results = await LocationService.searchPlaces(query);
-      setState(() {
-        _searchResults = results;
-        _showSuggestions = _focusNode.hasFocus && results.isNotEmpty;
-      });
-
-      if (kIsWeb) {
-        // For web, the suggestions are shown inline, no overlay needed
-      } else {
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+          _showSuggestions = true;
+        });
         _updateOverlay();
       }
     } catch (e) {
       print('Error searching places: $e');
-      // Show error message to user
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unable to search locations. Please check your internet connection and try again.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-      setState(() {
-        _searchResults = [];
-        _showSuggestions = _focusNode.hasFocus;
-      });
-
-      if (kIsWeb) {
-        // For web, the suggestions are shown inline, no overlay needed
-      } else {
+        setState(() {
+          _searchResults = [];
+          _showSuggestions = true;
+        });
         _updateOverlay();
       }
     } finally {
-      setState(() => _isSearching = false);
+      if (mounted) {
+        setState(() => _isSearching = false);
+        _updateOverlay();
+      }
     }
   }
 
   void _showSuggestionOverlay() {
-    _removeOverlay();
+    if (_overlayEntry != null) return;
 
-    // For web, use a simpler overlay approach
-    if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _updateOverlay();
-      });
-      return;
-    }
-
-    // Add safety check for renderbox (mobile)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      final RenderObject? renderObject = context.findRenderObject();
-      if (renderObject == null || !renderObject.attached) return;
-
-      final RenderBox renderBox = renderObject as RenderBox;
-      if (!renderBox.hasSize) return;
-
-      final size = renderBox.size;
-      final offset = renderBox.localToGlobal(Offset.zero);
-
-      _overlayEntry = OverlayEntry(
-        builder: (context) => Positioned(
-          left: offset.dx,
-          top: offset.dy + size.height + 4,
-          width: size.width,
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).colorScheme.surface,
-            child: _buildSuggestionsList(),
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Positioned(
+          width: _layerLink.leaderSize?.width ?? 300,
+          child: CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: const Offset(0, 60), // Push down below the text field
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.surface,
+              shadowColor: Colors.black.withOpacity(0.2),
+              child: _buildSuggestionsList(),
+            ),
           ),
-        ),
-      );
+        );
+      },
+    );
 
-      final overlay = Overlay.of(context);
-      if (overlay.mounted) {
-        overlay.insert(_overlayEntry!);
-      }
-    });
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
   void _updateOverlay() {
     if (_overlayEntry != null && _overlayEntry!.mounted) {
       _overlayEntry!.markNeedsBuild();
+    } else if (_focusNode.hasFocus) {
+      _showSuggestionOverlay();
     }
   }
 
@@ -200,175 +159,219 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
   }
 
   Widget _buildSuggestionsList() {
-    if (!_showSuggestions) return const SizedBox.shrink();
-
     // Get screen size for responsiveness
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1200;
-    final textSize = isMobile ? 14.0 : isTablet ? 15.0 : 16.0;
-    final subtitleSize = isMobile ? 12.0 : isTablet ? 13.0 : 14.0;
+    final textSize = isMobile
+        ? 14.0
+        : isTablet
+            ? 15.0
+            : 16.0;
+    final subtitleSize = isMobile
+        ? 12.0
+        : isTablet
+            ? 13.0
+            : 14.0;
     final iconSize = isMobile ? 20.0 : 24.0;
-
-    if (_isSearching) {
-      return Container(
-        padding: EdgeInsets.all(isMobile ? 12 : 16),
-        child: Row(
-          children: [
-            SizedBox(
-              width: isMobile ? 16 : 20,
-              height: isMobile ? 16 : 20,
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            ),
-            SizedBox(width: isMobile ? 8 : 12),
-            Expanded(
-              child: Text(
-                'Searching locations...',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: textSize,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
 
     return Container(
       constraints: const BoxConstraints(maxHeight: 300),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // "Use current location" option
-            ListTile(
-              leading: Icon(Icons.my_location, color: widget.iconColor, size: iconSize),
-              title: Text('Use current location', style: TextStyle(fontSize: textSize)),
-              subtitle: Text('Get your current GPS location', style: TextStyle(fontSize: subtitleSize)),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 12 : 16,
-                vertical: isMobile ? 4 : 8,
-              ),
-              onTap: () => _useCurrentLocation(),
-            ),
-            ListTile(
-              leading: Icon(Icons.map, color: widget.iconColor.withOpacity(0.9), size: iconSize),
-              title: Text('Pick on map', style: TextStyle(fontSize: textSize)),
-              subtitle: Text('Tap to select exact point', style: TextStyle(fontSize: subtitleSize)),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 12 : 16,
-                vertical: isMobile ? 4 : 8,
-              ),
-              onTap: _openMapPicker,
-            ),
-            if (_searchResults.isNotEmpty) const Divider(height: 1),
-            // Search results
-            if (_searchResults.isEmpty && _controller.text.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.all(isMobile ? 12 : 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: iconSize,
-                        ),
-                        SizedBox(width: isMobile ? 8 : 12),
-                        Expanded(
-                          child: Text(
-                            'No locations found',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: textSize,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: isMobile ? 6 : 8),
-                    Text(
-                      'You can manually enter the address:\nExample: Wanaheda, Street 123, House 45',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        fontSize: subtitleSize,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_isSearching)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       ),
-                    ),
-                    SizedBox(height: isMobile ? 6 : 8),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        _removeOverlay();
-                        _focusNode.unfocus();
-                        // Accept the manually entered address
-                        if (_controller.text.isNotEmpty) {
-                          widget.onLocationSelected(_controller.text, null, null);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Using manually entered address'),
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        }
-                      },
-                      icon: Icon(Icons.check, size: isMobile ? 16 : 18),
-                      label: Text(
-                        'Use This Address',
-                        style: TextStyle(fontSize: isMobile ? 12 : 13),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isMobile ? 12 : 16,
-                          vertical: isMobile ? 8 : 10,
+                      const SizedBox(width: 12),
+                      Text(
+                        'Searching...',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: textSize,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+
+              // Static Options
+              _buildOptionTile(
+                icon: Icons.my_location,
+                title: 'Use current location',
+                subtitle: 'Get your current GPS location',
+                onTap: _useCurrentLocation,
+                iconColor: widget.iconColor,
               ),
-            ...(_searchResults
-                .take(3)
-                .map((place) => _buildSuggestionTile(place))),
+              _buildOptionTile(
+                icon: Icons.map,
+                title: 'Pick on map',
+                subtitle: 'Select exact location on map',
+                onTap: _openMapPicker,
+                iconColor: widget.iconColor,
+              ),
+
+              if (_searchResults.isNotEmpty) ...[
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Text(
+                    'SUGGESTIONS',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+                ..._searchResults
+                    .take(5)
+                    .map((place) => _buildPlaceTile(place)),
+              ] else if (_controller.text.isNotEmpty && !_isSearching) ...[
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'No matching locations found',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: textSize,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () {
+                          _removeOverlay();
+                          _focusNode.unfocus();
+                          widget.onLocationSelected(
+                              _controller.text, null, null);
+                        },
+                        icon: const Icon(Icons.check),
+                        label: const Text('Use entered address anyway'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required Color iconColor,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSuggestionTile(PlaceModel place) {
-    // Get screen size for responsiveness
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final isTablet = screenWidth >= 600 && screenWidth < 1200;
-    final titleSize = isMobile ? 14.0 : isTablet ? 15.0 : 16.0;
-    final subtitleSize = isMobile ? 12.0 : isTablet ? 13.0 : 14.0;
-    final iconSize = isMobile ? 20.0 : 24.0;
-
-    return ListTile(
-      leading: Icon(
-        Icons.location_on,
-        color: widget.iconColor.withOpacity(0.7),
-        size: iconSize,
-      ),
-      title: Text(
-        place.mainText,
-        style: TextStyle(fontWeight: FontWeight.w500, fontSize: titleSize),
-      ),
-      subtitle: Text(
-        place.secondaryText,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: subtitleSize),
-      ),
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : 16,
-        vertical: isMobile ? 4 : 8,
-      ),
+  Widget _buildPlaceTile(PlaceModel place) {
+    return InkWell(
       onTap: () => _selectPlace(place),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    place.mainText,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    place.secondaryText,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -377,7 +380,6 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
     _focusNode.unfocus();
 
     try {
-      // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Row(
@@ -405,7 +407,6 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
         if (address != null) {
           setState(() {
             _controller.text = address;
-            _showSuggestions = false;
           });
 
           widget.onLocationSelected(
@@ -414,7 +415,6 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
             position.longitude,
           );
 
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('Location found successfully!'),
@@ -423,32 +423,18 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
             ),
           );
         } else {
-          throw Exception('Unable to get address for your location. Please try selecting a location manually.');
+          throw Exception('Unable to get address for your location.');
         }
       } else {
-        throw Exception('Unable to get your current location. Please check your location settings or select a location manually.');
+        throw Exception('Unable to get your current location.');
       }
     } catch (e) {
       if (mounted) {
-        String message = 'Failed to get current location';
-        if (e.toString().contains('permission')) {
-          message =
-              'Location permission denied. Please enable location access in settings.';
-        } else if (e.toString().contains('disabled')) {
-          message =
-              'Location services are disabled. Please enable them in your device settings.';
-        }
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(message),
+            content:
+                const Text('Failed to get current location. Please try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Theme.of(context).colorScheme.onError,
-              onPressed: () => _useCurrentLocation(),
-            ),
           ),
         );
       }
@@ -464,7 +450,6 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
     final selectedAddress = place.description;
     setState(() {
       _controller.text = selectedAddress;
-      _showSuggestions = false;
     });
 
     double? lat = place.latitude;
@@ -472,13 +457,28 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
 
     // If coordinates are not available, try to get them
     if (lat == null || lng == null) {
-      // Try geocoding
-      final coords = await LocationService.getCoordinatesFromAddress(
-        selectedAddress,
-      );
-      if (coords != null) {
-        lat = coords['latitude'];
-        lng = coords['longitude'];
+      // First try to get details using place_id if available
+      if (place.placeId.isNotEmpty) {
+        try {
+          final details = await LocationService.getPlaceDetails(place.placeId);
+          if (details != null) {
+            lat = details.latitude;
+            lng = details.longitude;
+          }
+        } catch (e) {
+          print('Error getting place details: $e');
+        }
+      }
+
+      // If still no coordinates, try geocoding from address string
+      if (lat == null || lng == null) {
+        final coords = await LocationService.getCoordinatesFromAddress(
+          selectedAddress,
+        );
+        if (coords != null) {
+          lat = coords['latitude'];
+          lng = coords['longitude'];
+        }
       }
     }
 
@@ -494,7 +494,6 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
     if (!mounted) return;
 
     try {
-      // Use Navigator.push with a full-screen route to keep it contained
       final result = await Navigator.of(context).push<PickedLocation>(
         MaterialPageRoute(
           fullscreenDialog: false,
@@ -506,7 +505,6 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
         final selectedAddress = result.address;
         setState(() {
           _controller.text = selectedAddress;
-          _showSuggestions = false;
         });
         widget.onLocationSelected(
           selectedAddress,
@@ -515,13 +513,11 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
         );
       }
     } catch (e) {
-      // Handle any navigation errors gracefully
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to open map picker. Please try again.'),
+            content: const Text('Failed to open map picker.'),
             backgroundColor: Theme.of(context).colorScheme.error,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -535,160 +531,84 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1200;
 
-    // Responsive text sizes
-    final textSize = isMobile ? 14.0 : isTablet ? 15.0 : 16.0;
-    final labelSize = isMobile ? 14.0 : isTablet ? 15.0 : 16.0;
-    final hintSize = isMobile ? 13.0 : isTablet ? 14.0 : 15.0;
+    final textSize = isMobile
+        ? 14.0
+        : isTablet
+            ? 15.0
+            : 16.0;
+    final labelSize = isMobile
+        ? 14.0
+        : isTablet
+            ? 15.0
+            : 16.0;
+    final hintSize = isMobile
+        ? 13.0
+        : isTablet
+            ? 14.0
+            : 15.0;
     final iconSize = isMobile ? 20.0 : 24.0;
     final padding = isMobile ? 12.0 : 16.0;
     final borderRadius = isMobile ? 10.0 : 12.0;
 
-    // For web, use a Column with inline suggestions
-    if (kIsWeb) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextFormField(
-            controller: _controller,
-            focusNode: _focusNode,
-            style: TextStyle(fontSize: textSize),
-            keyboardType: TextInputType.streetAddress,
-            textInputAction: TextInputAction.done,
-            decoration: InputDecoration(
-              labelText: widget.labelText,
-              labelStyle: TextStyle(fontSize: labelSize),
-              hintText: widget.hintText,
-              hintStyle: TextStyle(fontSize: hintSize),
-              helperText: 'You can search or manually enter: Region, Street Name, House #',
-              helperStyle: TextStyle(fontSize: isMobile ? 11.0 : 12.0),
-              helperMaxLines: 2,
-              prefixIcon: Icon(widget.prefixIcon, color: widget.iconColor, size: iconSize),
-              suffixIcon: _controller.text.isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        _controller.clear();
-                        widget.onLocationSelected('', null, null);
-                        setState(() {
-                          _searchResults.clear();
-                          _showSuggestions = false;
-                        });
-                        _removeOverlay();
-                      },
-                      icon: Icon(Icons.clear, color: widget.iconColor, size: iconSize),
-                      tooltip: 'Clear',
-                    )
-                  : null,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: padding,
-                vertical: padding,
-              ),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(borderRadius)),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(borderRadius),
-                borderSide: BorderSide(color: widget.iconColor, width: 2),
-              ),
-            ),
-            onChanged: (value) {
-              _onTextChanged(value);
-              // Allow manual entry - accept any non-empty text as valid
-              if (value.isNotEmpty && value.length > 5) {
-                widget.onLocationSelected(value, null, null);
-              }
-            },
-            onFieldSubmitted: (value) {
-              // When user presses done, accept their manual entry
-              if (value.isNotEmpty) {
-                widget.onLocationSelected(value, null, null);
-                _focusNode.unfocus();
-              }
-            },
-            validator: widget.validator,
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: TextFormField(
+        controller: _controller,
+        focusNode: _focusNode,
+        style: TextStyle(fontSize: textSize),
+        keyboardType: TextInputType.streetAddress,
+        textInputAction: TextInputAction.done,
+        decoration: InputDecoration(
+          labelText: widget.labelText,
+          labelStyle: TextStyle(fontSize: labelSize),
+          hintText: widget.hintText,
+          hintStyle: TextStyle(fontSize: hintSize),
+          helperText:
+              'You can search or manually enter: Region, Street Name, House #',
+          helperStyle: TextStyle(fontSize: isMobile ? 11.0 : 12.0),
+          helperMaxLines: 2,
+          prefixIcon:
+              Icon(widget.prefixIcon, color: widget.iconColor, size: iconSize),
+          suffixIcon: _controller.text.isNotEmpty
+              ? IconButton(
+                  onPressed: () {
+                    _controller.clear();
+                    widget.onLocationSelected('', null, null);
+                    setState(() {
+                      _searchResults.clear();
+                    });
+                    _removeOverlay();
+                  },
+                  icon: Icon(Icons.clear,
+                      color: widget.iconColor, size: iconSize),
+                  tooltip: 'Clear',
+                )
+              : null,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: padding,
+            vertical: padding,
           ),
-          // Show suggestions inline for web
-          if (_showSuggestions && _focusNode.hasFocus) ...[
-            SizedBox(height: isMobile ? 6 : 8),
-            Container(
-              constraints: const BoxConstraints(maxHeight: 200),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(borderRadius),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: _buildSuggestionsList(),
-              ),
-            ),
-          ],
-        ],
-      );
-    }
-
-    // For mobile, use the original TextFormField with overlay
-    return TextFormField(
-      controller: _controller,
-      focusNode: _focusNode,
-      style: TextStyle(fontSize: textSize),
-      keyboardType: TextInputType.streetAddress,
-      textInputAction: TextInputAction.done,
-      decoration: InputDecoration(
-        labelText: widget.labelText,
-        labelStyle: TextStyle(fontSize: labelSize),
-        hintText: widget.hintText,
-        hintStyle: TextStyle(fontSize: hintSize),
-        helperText: 'You can search or manually enter: Region, Street Name, House #',
-        helperStyle: TextStyle(fontSize: isMobile ? 11.0 : 12.0),
-        helperMaxLines: 2,
-        prefixIcon: Icon(widget.prefixIcon, color: widget.iconColor, size: iconSize),
-        suffixIcon: _controller.text.isNotEmpty
-            ? IconButton(
-                onPressed: () {
-                  _controller.clear();
-                  widget.onLocationSelected('', null, null);
-                  setState(() {
-                    _searchResults.clear();
-                    _showSuggestions = false;
-                  });
-                  _removeOverlay();
-                },
-                icon: Icon(Icons.clear, color: widget.iconColor, size: iconSize),
-                tooltip: 'Clear',
-              )
-            : null,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: padding,
-          vertical: padding,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(borderRadius)),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: BorderSide(color: widget.iconColor, width: 2),
+          ),
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(borderRadius)),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: widget.iconColor, width: 2),
-        ),
+        onChanged: (value) {
+          _onTextChanged(value);
+          if (value.isNotEmpty && value.length > 5) {
+            widget.onLocationSelected(value, null, null);
+          }
+        },
+        onFieldSubmitted: (value) {
+          if (value.isNotEmpty) {
+            widget.onLocationSelected(value, null, null);
+            _focusNode.unfocus();
+          }
+        },
+        validator: widget.validator,
       ),
-      onChanged: (value) {
-        _onTextChanged(value);
-        // Allow manual entry - accept any non-empty text as valid
-        if (value.isNotEmpty && value.length > 5) {
-          widget.onLocationSelected(value, null, null);
-        }
-      },
-      onFieldSubmitted: (value) {
-        // When user presses done, accept their manual entry
-        if (value.isNotEmpty) {
-          widget.onLocationSelected(value, null, null);
-          _focusNode.unfocus();
-        }
-      },
-      validator: widget.validator,
     );
   }
 }

@@ -5,20 +5,27 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Load local.properties so we can keep API keys out of source control
+def localProps = new Properties()
+def localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream { stream -> localProps.load(stream) }
+}
+
 android {
     namespace = "com.mycompany.LottoRunners"
     compileSdk = flutter.compileSdkVersion
     // ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
         // Enable core library desugaring for newer APIs
         coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
 
     defaultConfig {
@@ -30,6 +37,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Provide Google Maps API key to the manifest via placeholder.
+        // The actual value is read from android/local.properties as GOOGLE_MAPS_API_KEY
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] =
+                localProps.getProperty("GOOGLE_MAPS_API_KEY", "")
     }
 
     buildTypes {

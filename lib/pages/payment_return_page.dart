@@ -42,13 +42,19 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
         remaining[remaining.length - 2] == 'first' &&
         remaining[remaining.length - 1] == 'half') {
       final errandId = remaining.sublist(0, remaining.length - 2).join('_');
-      return (errandId: errandId, paymentType: PayTodayConfig.paymentTypeFirstHalf);
+      return (
+        errandId: errandId,
+        paymentType: PayTodayConfig.paymentTypeFirstHalf
+      );
     }
     if (remaining.length >= 3 &&
         remaining[remaining.length - 2] == 'second' &&
         remaining[remaining.length - 1] == 'half') {
       final errandId = remaining.sublist(0, remaining.length - 2).join('_');
-      return (errandId: errandId, paymentType: PayTodayConfig.paymentTypeSecondHalf);
+      return (
+        errandId: errandId,
+        paymentType: PayTodayConfig.paymentTypeSecondHalf
+      );
     }
     if (remaining.length >= 2 &&
         remaining[remaining.length - 2] == 'full' &&
@@ -87,7 +93,7 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
       }
       await Future.delayed(delay);
     }
-    PayTodayConfig.logError('Auth not ready after ${maxAttempts} attempts');
+    PayTodayConfig.logError('Auth not ready after $maxAttempts attempts');
     return false;
   }
 
@@ -117,8 +123,8 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
     final reference = uri.queryParameters['reference'] ??
         uri.queryParameters['transaction_id'] ??
         uri.queryParameters['ref'];
-    final invoiceNumber = uri.queryParameters['invoice_number'] ??
-        uri.queryParameters['invoice'];
+    final invoiceNumber =
+        uri.queryParameters['invoice_number'] ?? uri.queryParameters['invoice'];
 
     PayTodayConfig.log(
         'Payment return: status=$status, reference=$reference, invoice_number=$invoiceNumber');
@@ -138,7 +144,8 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
         setState(() {
           _isLoading = false;
           _success = true;
-          _message = 'Payment completed successfully. You can close this tab and return to the app.';
+          _message =
+              'Payment completed successfully. You can close this tab and return to the app.';
           if (!updated) {
             _error = parsed == null
                 ? 'We could not identify this payment to update the order. Please check My Orders in the app; if status is still pending, contact support with your order ID.'
@@ -159,7 +166,8 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
         setState(() {
           _isLoading = false;
           _success = false;
-          _message = 'Payment was cancelled. You can close this tab and return to the app.';
+          _message =
+              'Payment was cancelled. You can close this tab and return to the app.';
         });
       }
     } else {
@@ -212,14 +220,18 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
                           const SizedBox(height: 16),
                           Text(
                             _success ? 'Payment successful' : 'Payment return',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            _message ?? 'You can close this tab and return to the app.',
+                            _message ??
+                                'You can close this tab and return to the app.',
                             style: Theme.of(context).textTheme.bodyLarge,
                             textAlign: TextAlign.center,
                           ),
@@ -227,7 +239,10 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
                             const SizedBox(height: 8),
                             Text(
                               _error!,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: Colors.red,
                                   ),
                               textAlign: TextAlign.center,

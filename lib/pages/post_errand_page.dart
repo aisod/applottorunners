@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/image_upload.dart';
 import 'package:lotto_runners/widgets/simple_location_picker.dart';
-import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/service_icons.dart';
@@ -148,7 +147,8 @@ class _PostErrandPageState extends State<PostErrandPage> {
         setState(() => _isLoadingServices = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to load services. Please check your internet connection and try again.'),
+            content: const Text(
+                'Unable to load services. Please check your internet connection and try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

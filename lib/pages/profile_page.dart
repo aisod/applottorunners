@@ -315,7 +315,7 @@ class _ProfilePageState extends State<ProfilePage> {
           controller: _fullNameController,
           decoration: InputDecoration(
             labelText: 'Full Name',
-            prefixIcon: Icon(Icons.person_outlined,
+            prefixIcon: const Icon(Icons.person_outlined,
                 color: LottoRunnersColors.primaryYellow),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
@@ -331,7 +331,7 @@ class _ProfilePageState extends State<ProfilePage> {
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
             labelText: 'Phone Number',
-            prefixIcon: Icon(Icons.phone_outlined,
+            prefixIcon: const Icon(Icons.phone_outlined,
                 color: LottoRunnersColors.primaryYellow),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
@@ -466,7 +466,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.directions_car,
+                  const Icon(Icons.directions_car,
                       color: LottoRunnersColors.primaryYellow, size: 20),
                   const SizedBox(width: 8),
                   Text(
@@ -492,7 +492,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline,
+                      const Icon(Icons.info_outline,
                           color: LottoRunnersColors.primaryYellow, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
@@ -528,7 +528,7 @@ class _ProfilePageState extends State<ProfilePage> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _showUpdateApplicationDialog,
-                icon: Icon(Icons.edit, size: 18),
+                icon: const Icon(Icons.edit, size: 18),
                 label: const Text('Update Application'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: LottoRunnersColors.primaryBlue,
@@ -603,7 +603,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             child: Row(
               children: [
-                Icon(Icons.directions_car,
+                const Icon(Icons.directions_car,
                     color: LottoRunnersColors.primaryYellow),
                 const SizedBox(width: 12),
                 Expanded(
@@ -661,10 +661,10 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 16),
             // Vehicle Type Selection
             DropdownButtonFormField<String>(
-              value: _selectedVehicleType,
+              initialValue: _selectedVehicleType,
               decoration: InputDecoration(
                 labelText: 'Vehicle Type *',
-                prefixIcon: Icon(Icons.directions_car,
+                prefixIcon: const Icon(Icons.directions_car,
                     color: LottoRunnersColors.primaryYellow),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -705,7 +705,7 @@ class _ProfilePageState extends State<ProfilePage> {
               decoration: InputDecoration(
                 labelText: 'Vehicle Details *',
                 hintText: 'e.g., 2020 Honda Civic, Blue',
-                prefixIcon: Icon(Icons.car_rental,
+                prefixIcon: const Icon(Icons.car_rental,
                     color: LottoRunnersColors.primaryYellow),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -728,8 +728,8 @@ class _ProfilePageState extends State<ProfilePage> {
               controller: _licenseController,
               decoration: InputDecoration(
                 labelText: 'License Number *',
-                prefixIcon:
-                    Icon(Icons.badge, color: LottoRunnersColors.primaryYellow),
+                prefixIcon: const Icon(Icons.badge,
+                    color: LottoRunnersColors.primaryYellow),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(
@@ -759,7 +759,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline,
+                  const Icon(Icons.info_outline,
                       color: LottoRunnersColors.primaryYellow),
                   const SizedBox(width: 12),
                   Expanded(
@@ -808,7 +808,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.folder_open,
                       color: LottoRunnersColors.primaryYellow,
                       size: 20,
@@ -966,18 +966,18 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(height: 16),
         ListTile(
-          leading:
-              Icon(Icons.help_outline, color: LottoRunnersColors.primaryYellow),
+          leading: const Icon(Icons.help_outline,
+              color: LottoRunnersColors.primaryYellow),
           title: const Text('Help & Support'),
-          trailing: Icon(Icons.chevron_right,
+          trailing: const Icon(Icons.chevron_right,
               color: LottoRunnersColors.primaryYellow),
           onTap: () => _showHelpPage(),
         ),
         ListTile(
-          leading: Icon(Icons.feedback_outlined,
+          leading: const Icon(Icons.feedback_outlined,
               color: LottoRunnersColors.primaryYellow),
           title: const Text('Feedback'),
-          trailing: Icon(Icons.chevron_right,
+          trailing: const Icon(Icons.chevron_right,
               color: LottoRunnersColors.primaryYellow),
           onTap: () {
             Navigator.push(
@@ -989,18 +989,18 @@ class _ProfilePageState extends State<ProfilePage> {
           },
         ),
         ListTile(
-          leading: Icon(Icons.privacy_tip_outlined,
+          leading: const Icon(Icons.privacy_tip_outlined,
               color: LottoRunnersColors.primaryYellow),
           title: const Text('Privacy Policy'),
-          trailing: Icon(Icons.chevron_right,
+          trailing: const Icon(Icons.chevron_right,
               color: LottoRunnersColors.primaryYellow),
           onTap: () => _showPrivacyPage(),
         ),
         ListTile(
-          leading: Icon(Icons.article_outlined,
+          leading: const Icon(Icons.article_outlined,
               color: LottoRunnersColors.primaryYellow),
           title: const Text('Terms of Service'),
-          trailing: Icon(Icons.chevron_right,
+          trailing: const Icon(Icons.chevron_right,
               color: LottoRunnersColors.primaryYellow),
           onTap: () => _showTermsPage(),
         ),
@@ -1189,7 +1189,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.warning, color: Colors.orange),
+                        const Icon(Icons.warning, color: Colors.orange),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -1243,7 +1243,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.directions_car,
+                      const Icon(Icons.directions_car,
                           color: LottoRunnersColors.primaryYellow),
                       const SizedBox(width: 12),
                       Expanded(
@@ -1304,10 +1304,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 16),
                   // Vehicle Type Selection
                   DropdownButtonFormField<String>(
-                    value: selectedVehicleType,
+                    initialValue: selectedVehicleType,
                     decoration: InputDecoration(
                       labelText: 'Vehicle Type *',
-                      prefixIcon: Icon(Icons.directions_car,
+                      prefixIcon: const Icon(Icons.directions_car,
                           color: LottoRunnersColors.primaryYellow),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -1341,7 +1341,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     decoration: InputDecoration(
                       labelText: 'Vehicle Details *',
                       hintText: 'e.g., 2020 Honda Civic, Blue',
-                      prefixIcon: Icon(Icons.car_rental,
+                      prefixIcon: const Icon(Icons.car_rental,
                           color: LottoRunnersColors.primaryYellow),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -1357,7 +1357,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     controller: licenseController,
                     decoration: InputDecoration(
                       labelText: 'License Number *',
-                      prefixIcon: Icon(Icons.badge,
+                      prefixIcon: const Icon(Icons.badge,
                           color: LottoRunnersColors.primaryYellow),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -1605,7 +1605,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 16),
+                  const Icon(Icons.check_circle, color: Colors.green, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1626,7 +1626,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ] else ...[
             ElevatedButton.icon(
               onPressed: () => _uploadDocument(onFileSelected),
-              icon: Icon(Icons.upload, size: 16),
+              icon: const Icon(Icons.upload, size: 16),
               label: const Text('Upload Document'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
@@ -1727,7 +1727,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               width: 80,
                               height: 80,
                               color: Colors.grey[300],
-                              child: Icon(Icons.error, color: Colors.red),
+                              child: const Icon(Icons.error, color: Colors.red),
                             );
                           },
                         ),
@@ -1764,7 +1764,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
           ElevatedButton.icon(
             onPressed: () => _uploadImages(onImagesSelected, currentImages),
-            icon: Icon(Icons.add_photo_alternate, size: 16),
+            icon: const Icon(Icons.add_photo_alternate, size: 16),
             label: Text('Add Photos (${currentImages.length})'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.primary,
@@ -2279,8 +2279,8 @@ class _ProfilePageState extends State<ProfilePage> {
               Text('Need more help?',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text('Contact us at support@lottorunners.com'),
-              Text('Phone: +264 81 123 4567'),
+              Text('Contact us at info@lottoerunners.com'),
+              Text('Phone: 0811284627'),
               Text('Available 24/7 for assistance'),
             ],
           ),
@@ -2331,7 +2331,7 @@ class _ProfilePageState extends State<ProfilePage> {
               SizedBox(height: 16),
               Text('Contact:', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text('For privacy concerns, email privacy@lottorunners.com'),
+              Text('For privacy concerns, email info@lottoerunners.com or call 0811284627'),
             ],
           ),
         ),

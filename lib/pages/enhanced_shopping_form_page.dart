@@ -97,7 +97,8 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
       setState(() => _isLoadingVehicleTypes = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Unable to load vehicle types. Please check your internet connection and try again.'),
+          content: const Text(
+              'Unable to load vehicle types. Please check your internet connection and try again.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -133,40 +134,40 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
             ),
             child: SingleChildScrollView(
               padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildServiceHeader(theme, isMobile),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildShoppingTypeField(theme, isMobile),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildStoresSection(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 10 : 12),
-              _buildShoppingListField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildBudgetField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildRequestNowToggle(theme, isMobile),
-              if (!_isImmediateRequest) ...[
-                SizedBox(height: isMobile ? 12 : 16),
-                _buildScheduledDateTimeFields(theme, isMobile),
-              ],
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildDeliveryLocationField(theme, isMobile),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildVehicleRequirementQuestion(theme, isMobile),
-              if (_needsVehicle) ...[
-                SizedBox(height: isMobile ? 12 : 16),
-                _buildVehicleTypeField(theme, isMobile),
-              ],
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildInstructionsField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildImageSection(theme, isMobile),
-              SizedBox(height: isMobile ? 28 : 32),
-              _buildSubmitButton(theme, isMobile),
-            ],
-          ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildServiceHeader(theme, isMobile),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildShoppingTypeField(theme, isMobile),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildStoresSection(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 10 : 12),
+                  _buildShoppingListField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildBudgetField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildRequestNowToggle(theme, isMobile),
+                  if (!_isImmediateRequest) ...[
+                    SizedBox(height: isMobile ? 12 : 16),
+                    _buildScheduledDateTimeFields(theme, isMobile),
+                  ],
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildDeliveryLocationField(theme, isMobile),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildVehicleRequirementQuestion(theme, isMobile),
+                  if (_needsVehicle) ...[
+                    SizedBox(height: isMobile ? 12 : 16),
+                    _buildVehicleTypeField(theme, isMobile),
+                  ],
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildInstructionsField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildImageSection(theme, isMobile),
+                  SizedBox(height: isMobile ? 28 : 32),
+                  _buildSubmitButton(theme, isMobile),
+                ],
+              ),
             ),
           ),
         ),
@@ -193,7 +194,7 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
       child: Row(
         children: [
           Icon(Icons.attach_money,
-              color: LottoRunnersColors.primaryYellow, 
+              color: LottoRunnersColors.primaryYellow,
               size: isMobile ? 24 : 28),
           SizedBox(width: isMobile ? 8 : 12),
           Text(
@@ -222,7 +223,7 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
         ),
         SizedBox(height: isMobile ? 6 : 8),
         DropdownButtonFormField<String>(
-          value: _shoppingType,
+          initialValue: _shoppingType,
           style: TextStyle(
             fontSize: isMobile ? 14 : 16,
             color: theme.colorScheme.onSurface,
@@ -243,7 +244,6 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
             DropdownMenuItem(
                 value: 'pharmacy', child: Text('Pharmacy & Health')),
             DropdownMenuItem(value: 'general', child: Text('General Shopping')),
-          
           ],
           onChanged: (value) => setState(() => _shoppingType = value!),
         ),
@@ -261,7 +261,11 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
               'Store Locations *',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+                fontSize: isMobile
+                    ? 16
+                    : isTablet
+                        ? 17
+                        : 18,
               ),
             ),
             const Spacer(),
@@ -282,10 +286,19 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
     );
   }
 
-  Widget _buildStoreField(ThemeData theme, int index, StoreLocation store, bool isMobile, bool isTablet) {
-    final textSize = isMobile ? 14.0 : isTablet ? 15.0 : 16.0;
-    final subtitleSize = isMobile ? 12.0 : isTablet ? 13.0 : 14.0;
-    
+  Widget _buildStoreField(ThemeData theme, int index, StoreLocation store,
+      bool isMobile, bool isTablet) {
+    final textSize = isMobile
+        ? 14.0
+        : isTablet
+            ? 15.0
+            : 16.0;
+    final subtitleSize = isMobile
+        ? 12.0
+        : isTablet
+            ? 13.0
+            : 14.0;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(isMobile ? 12 : 16),
@@ -319,7 +332,8 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
               if (_stores.length > 1)
                 IconButton(
                   onPressed: () => _removeStore(index),
-                  icon: Icon(Icons.remove_circle_outline, size: isMobile ? 20 : 24),
+                  icon: Icon(Icons.remove_circle_outline,
+                      size: isMobile ? 20 : 24),
                   color: theme.colorScheme.error,
                   tooltip: 'Remove Store',
                 ),
@@ -332,21 +346,26 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
             children: [
               RadioListTile<String>(
                 title: Text('Store Name', style: TextStyle(fontSize: textSize)),
-                subtitle: Text('Just enter store name', style: TextStyle(fontSize: subtitleSize)),
+                subtitle: Text('Just enter store name',
+                    style: TextStyle(fontSize: subtitleSize)),
                 value: 'name',
                 groupValue: store.locationType,
-                contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8),
                 onChanged: (value) {
                   final updatedStore = store.copyWith(locationType: value!);
                   _updateStore(index, updatedStore);
                 },
               ),
               RadioListTile<String>(
-                title: Text('Map Location', style: TextStyle(fontSize: textSize)),
-                subtitle: Text('Select exact location', style: TextStyle(fontSize: subtitleSize)),
+                title:
+                    Text('Map Location', style: TextStyle(fontSize: textSize)),
+                subtitle: Text('Select exact location',
+                    style: TextStyle(fontSize: subtitleSize)),
                 value: 'map',
                 groupValue: store.locationType,
-                contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8),
                 onChanged: (value) {
                   final updatedStore = store.copyWith(locationType: value!);
                   _updateStore(index, updatedStore);
@@ -366,18 +385,33 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
     );
   }
 
-  Widget _buildStoreNameField(ThemeData theme, int index, StoreLocation store, bool isMobile, bool isTablet) {
+  Widget _buildStoreNameField(ThemeData theme, int index, StoreLocation store,
+      bool isMobile, bool isTablet) {
     return TextFormField(
       initialValue: store.name,
-      style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+      style: TextStyle(
+          fontSize: isMobile
+              ? 14
+              : isTablet
+                  ? 15
+                  : 16),
       decoration: InputDecoration(
         labelText: 'Store Name *',
-        labelStyle: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+        labelStyle: TextStyle(
+            fontSize: isMobile
+                ? 14
+                : isTablet
+                    ? 15
+                    : 16),
         hintText: 'e.g., Shoprite, Spar, Pharmacy, etc.',
-        hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
-        prefixIcon: Icon(Icons.store, 
-            color: LottoRunnersColors.primaryYellow,
-            size: isMobile ? 20 : 24),
+        hintStyle: TextStyle(
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                    ? 14
+                    : 15),
+        prefixIcon: Icon(Icons.store,
+            color: LottoRunnersColors.primaryYellow, size: isMobile ? 20 : 24),
         contentPadding: EdgeInsets.symmetric(
           horizontal: isMobile ? 12 : 16,
           vertical: isMobile ? 12 : 16,
@@ -423,7 +457,8 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
     );
   }
 
-  Widget _buildShoppingListField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildShoppingListField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -431,17 +466,32 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
           'Shopping List *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 8 : 10),
         TextFormField(
           controller: _shoppingListController,
           maxLines: 6,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
-            hintText: 'List all items you need:\n\n• Milk - 2L\n• Bread - 1 loaf\n• Apples - 1kg\n• etc...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintText:
+                'List all items you need:\n\n• Milk - 2L\n• Bread - 1 loaf\n• Apples - 1kg\n• etc...',
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
@@ -466,23 +516,48 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Budget (Optional)',
+          'Shopping Budget *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 8 : 10),
         TextFormField(
           controller: _budgetController,
           keyboardType: TextInputType.number,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          validator: (value) {
+            final text = value?.trim() ?? '';
+            if (text.isEmpty) {
+              return 'Please enter a shopping budget';
+            }
+            final amount = double.tryParse(text);
+            if (amount == null || amount <= 0) {
+              return 'Please enter a valid amount greater than 0';
+            }
+            return null;
+          },
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             prefixIcon: Icon(Icons.attach_money,
                 color: LottoRunnersColors.primaryYellow,
                 size: isMobile ? 20 : 24),
             hintText: 'e.g., 5000',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
@@ -490,6 +565,8 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
             ),
+            helperText:
+                'This amount will be paid now together with the service fee.',
           ),
         ),
       ],
@@ -761,7 +838,7 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
         ),
         SizedBox(height: isMobile ? 6 : 8),
         DropdownButtonFormField<String>(
-          value: _vehicleTypes.any((t) => t['name'] == _vehicleType)
+          initialValue: _vehicleTypes.any((t) => t['name'] == _vehicleType)
               ? _vehicleType
               : null,
           style: TextStyle(
@@ -837,7 +914,8 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
     );
   }
 
-  Widget _buildInstructionsField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildInstructionsField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -845,17 +923,31 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
           'Special Instructions (Optional)',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 8 : 10),
         TextFormField(
           controller: _instructionsController,
           maxLines: 3,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText: 'Brand preferences, substitutions, delivery notes...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
@@ -1010,7 +1102,8 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add image. Please try again or select a different image.'),
+            content: const Text(
+                'Unable to add image. Please try again or select a different image.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -1026,6 +1119,12 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
     try {
       final userId = SupabaseConfig.currentUser?.id;
       if (userId == null) throw Exception('Please sign in to continue');
+
+      // Parse required shopping budget
+      final shoppingBudget =
+          double.parse(_budgetController.text.trim()); // validated above
+      final basePrice = _getBasePrice();
+      final totalPrice = basePrice + shoppingBudget;
 
       // Upload images
       List<String> imageUrls = [];
@@ -1067,8 +1166,9 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
         'title': 'Shopping Service',
         'description': _buildDescription(),
         'category': 'shopping',
-        'price_amount': _getBasePrice(),
-        'calculated_price': _getBasePrice(),
+        // Charge customer for service fee + shopping budget through the app
+        'price_amount': totalPrice,
+        'calculated_price': totalPrice,
         'location_address': _buildStoresDescription(),
         'location_latitude': _stores.isNotEmpty ? _stores.first.latitude : null,
         'location_longitude':
@@ -1077,22 +1177,21 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
         'delivery_latitude': _deliveryLat,
         'delivery_longitude': _deliveryLng,
         'vehicle_type': _needsVehicle ? _vehicleType : null,
-        'service_type': _shoppingType, // Store shopping type as service_type for consistency
+        'service_type':
+            _shoppingType, // Store shopping type as service_type for consistency
         'special_instructions': _instructionsController.text.trim(),
         'image_urls': imageUrls,
         'status': 'posted',
         'is_immediate': _isImmediateRequest,
         'scheduled_start_time': scheduledStart?.toIso8601String(),
         'pricing_modifiers': {
-          'base_price': _getBasePrice(),
+          'base_price': basePrice,
           'service_type': _shoppingType,
-          'service_type_price': _getBasePrice(),
+          'service_type_price': basePrice,
           'user_type': widget.userProfile?['user_type'] ?? 'individual',
           'shopping_type': _shoppingType,
           'shopping_list': _shoppingListController.text.trim(),
-          'shopping_budget': _budgetController.text.isNotEmpty
-              ? double.parse(_budgetController.text)
-              : null,
+          'shopping_budget': shoppingBudget,
         },
         'stores': _stores.map((store) => store.toMap()).toList(),
       };
@@ -1143,7 +1242,16 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
         }
       } else {
         // For scheduled requests, create errand immediately
-        await SupabaseConfig.createErrand(errandData);
+        final createdErrand = await SupabaseConfig.createErrand(errandData);
+
+        // Notify admins that a new shopping request has been created
+        try {
+          await SupabaseConfig.notifyAdminsOfShoppingRequest(createdErrand);
+        } catch (e) {
+          // Soft-fail admin notification so user flow is not blocked
+          print(
+              '⚠️ Error notifying admins of shopping request ${createdErrand['id']}: $e');
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1155,17 +1263,23 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unable to post your shopping request. Please try again.';
-        
+        String errorMessage =
+            'Unable to post your shopping request. Please try again.';
+
         // Provide more specific error messages
-        if (e.toString().contains('not authenticated') || e.toString().contains('sign in')) {
+        if (e.toString().contains('not authenticated') ||
+            e.toString().contains('sign in')) {
           errorMessage = 'Please sign in to post a shopping request.';
-        } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (e.toString().contains('validation') || e.toString().contains('constraint')) {
-          errorMessage = 'Please check that all required fields are filled correctly.';
+        } else if (e.toString().contains('network') ||
+            e.toString().contains('connection')) {
+          errorMessage =
+              'Network error. Please check your internet connection and try again.';
+        } else if (e.toString().contains('validation') ||
+            e.toString().contains('constraint')) {
+          errorMessage =
+              'Please check that all required fields are filled correctly.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),

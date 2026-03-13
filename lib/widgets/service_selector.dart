@@ -104,7 +104,8 @@ class _ServiceSelectorState extends State<ServiceSelector>
       print('Error loading initial data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Unable to load services. Please check your internet connection and try again.'),
+          content: const Text(
+              'Unable to load services. Please check your internet connection and try again.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

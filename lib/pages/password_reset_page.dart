@@ -75,19 +75,20 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
               style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
             ),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
 
         // Clear password reset flow flag
         DeepLinkService.clearPasswordResetFlow();
-        
+
         // User is already logged in with the recovery session
         // Navigate to home page after a short delay
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             // Navigate to root, which will trigger AuthWrapper to show home page
-            Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil('/', (route) => false);
           }
         });
       }

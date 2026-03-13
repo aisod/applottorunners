@@ -61,7 +61,11 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
           'Elderly Services',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                    ? 20
+                    : 22,
           ),
         ),
         backgroundColor: LottoRunnersColors.primaryBlue,
@@ -81,29 +85,29 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-              _buildServiceHeader(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildServiceTypeField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildRequestNowToggle(theme, isMobile, isTablet),
-              if (!_isImmediateRequest) ...[
-                SizedBox(height: isMobile ? 16 : 20),
-                _buildScheduledDateTime(theme, isMobile, isTablet),
-              ],
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildLocationField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildServicesNeededField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildMedicalInfoField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildEmergencyContactField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildInstructionsField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildImageSection(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 28 : 32),
-              _buildSubmitButton(theme, isMobile, isTablet),
+                  _buildServiceHeader(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildServiceTypeField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildRequestNowToggle(theme, isMobile, isTablet),
+                  if (!_isImmediateRequest) ...[
+                    SizedBox(height: isMobile ? 16 : 20),
+                    _buildScheduledDateTime(theme, isMobile, isTablet),
+                  ],
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildLocationField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildServicesNeededField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildMedicalInfoField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildEmergencyContactField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildInstructionsField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildImageSection(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 28 : 32),
+                  _buildSubmitButton(theme, isMobile, isTablet),
                 ],
               ),
             ),
@@ -140,7 +144,11 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
             style: theme.textTheme.titleLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+              fontSize: isMobile
+                  ? 18
+                  : isTablet
+                      ? 20
+                      : 22,
             ),
           ),
         ],
@@ -154,15 +162,18 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
       children: [
         Text(
           'Service Type *',
-          style: theme.textTheme.titleMedium
-              ?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
         DropdownButtonFormField<String>(
-          value: _serviceType,
+          initialValue: _serviceType,
           style: TextStyle(
             fontSize: isMobile ? 14 : 16,
             color: theme.colorScheme.onSurface,
@@ -242,7 +253,11 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
-              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16,
             ),
           ),
           SizedBox(height: isMobile ? 10 : 12),
@@ -290,7 +305,11 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
                                   ? theme.colorScheme.onPrimary
                                   : theme.colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
-                              fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                              fontSize: isMobile
+                                  ? 13
+                                  : isTablet
+                                      ? 14
+                                      : 15,
                             ),
                           ),
                         ),
@@ -342,7 +361,11 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
                                   ? theme.colorScheme.onPrimary
                                   : theme.colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
-                              fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                              fontSize: isMobile
+                                  ? 13
+                                  : isTablet
+                                      ? 14
+                                      : 15,
                             ),
                           ),
                         ),
@@ -358,7 +381,8 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
     );
   }
 
-  Widget _buildScheduledDateTime(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildScheduledDateTime(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -378,7 +402,12 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
           child: InputDecorator(
             decoration: InputDecoration(
               labelText: 'Date *',
-              labelStyle: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+              labelStyle: TextStyle(
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                          ? 15
+                          : 16),
               prefixIcon: Icon(
                 Icons.calendar_today,
                 size: isMobile ? 20 : 24,
@@ -398,7 +427,12 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
                 _scheduledDate == null
                     ? 'Tap to choose date'
                     : '${_scheduledDate!.year}-${_scheduledDate!.month.toString().padLeft(2, '0')}-${_scheduledDate!.day.toString().padLeft(2, '0')}',
-                style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+                style: TextStyle(
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                            ? 15
+                            : 16),
               ),
             ),
           ),
@@ -417,7 +451,12 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
           child: InputDecorator(
             decoration: InputDecoration(
               labelText: 'Time *',
-              labelStyle: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+              labelStyle: TextStyle(
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                          ? 15
+                          : 16),
               prefixIcon: Icon(
                 Icons.access_time,
                 size: isMobile ? 20 : 24,
@@ -437,7 +476,12 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
                 _scheduledTime == null
                     ? 'Tap to choose time'
                     : '${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+                style: TextStyle(
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                            ? 15
+                            : 16),
               ),
             ),
           ),
@@ -495,7 +539,8 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
     );
   }
 
-  Widget _buildServicesNeededField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildServicesNeededField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -503,17 +548,32 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
           'Specific Services Needed *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 8 : 10),
         TextFormField(
           controller: _servicesNeededController,
           maxLines: 4,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
-            hintText: 'Please describe the specific care and assistance needed...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintText:
+                'Please describe the specific care and assistance needed...',
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
@@ -549,7 +609,11 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
                 'Client has medical conditions or special needs',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                          ? 15
+                          : 16,
                 ),
               ),
             ),
@@ -560,12 +624,28 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
           TextFormField(
             controller: _medicalInfoController,
             maxLines: 3,
-            style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+            style: TextStyle(
+                fontSize: isMobile
+                    ? 14
+                    : isTablet
+                        ? 15
+                        : 16),
             decoration: InputDecoration(
               labelText: 'Medical Information',
-              labelStyle: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
-              hintText: 'Please describe any medical conditions, medications, or special care requirements...',
-              hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+              labelStyle: TextStyle(
+                  fontSize: isMobile
+                      ? 14
+                      : isTablet
+                          ? 15
+                          : 16),
+              hintText:
+                  'Please describe any medical conditions, medications, or special care requirements...',
+              hintStyle: TextStyle(
+                  fontSize: isMobile
+                      ? 13
+                      : isTablet
+                          ? 14
+                          : 15),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: isMobile ? 12 : 16,
                 vertical: isMobile ? 12 : 16,
@@ -586,7 +666,8 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
     );
   }
 
-  Widget _buildEmergencyContactField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildEmergencyContactField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -594,16 +675,30 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
           'Emergency Contact *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 8 : 10),
         TextFormField(
           controller: _emergencyContactController,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText: 'Name and phone number of emergency contact',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             prefixIcon: Icon(
               Icons.emergency,
               color: theme.colorScheme.error,
@@ -628,7 +723,8 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
     );
   }
 
-  Widget _buildInstructionsField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildInstructionsField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -636,17 +732,31 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
           'Additional Instructions (Optional)',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 8 : 10),
         TextFormField(
           controller: _instructionsController,
           maxLines: 3,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText: 'Any additional care instructions or preferences...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
@@ -666,10 +776,13 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
       children: [
         Text(
           'Attach Images (Optional)',
-          style: theme.textTheme.titleMedium
-              ?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         const SizedBox(height: 8),
@@ -808,7 +921,8 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add image. Please try again or select a different image.'),
+            content: const Text(
+                'Unable to add image. Please try again or select a different image.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -946,17 +1060,23 @@ class _ElderlyServicesFormPageState extends State<ElderlyServicesFormPage> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unable to post your elderly services request. Please try again.';
-        
+        String errorMessage =
+            'Unable to post your elderly services request. Please try again.';
+
         // Provide more specific error messages
-        if (e.toString().contains('not authenticated') || e.toString().contains('sign in')) {
+        if (e.toString().contains('not authenticated') ||
+            e.toString().contains('sign in')) {
           errorMessage = 'Please sign in to post an elderly services request.';
-        } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (e.toString().contains('validation') || e.toString().contains('constraint')) {
-          errorMessage = 'Please check that all required fields are filled correctly.';
+        } else if (e.toString().contains('network') ||
+            e.toString().contains('connection')) {
+          errorMessage =
+              'Network error. Please check your internet connection and try again.';
+        } else if (e.toString().contains('validation') ||
+            e.toString().contains('constraint')) {
+          errorMessage =
+              'Please check that all required fields are filled correctly.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),

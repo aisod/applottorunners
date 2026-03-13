@@ -484,7 +484,8 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                       Text(
                         (service['category'] == 'delivery' ||
                                 service['category'] == 'special_orders' ||
-                                service['category'] == 'license_discs')
+                                service['category'] == 'license_discs' ||
+                                service['category'] == 'document_services')
                             ? 'Varies'
                             : 'N\$${price.toStringAsFixed(2)}',
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -521,7 +522,8 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                       Text(
                         (service['category'] == 'delivery' ||
                                 service['category'] == 'special_orders' ||
-                                service['category'] == 'license_discs')
+                                service['category'] == 'license_discs' ||
+                                service['category'] == 'document_services')
                             ? 'Varies'
                             : 'N\$${price.toStringAsFixed(2)}',
                         style: theme.textTheme.bodySmall?.copyWith(

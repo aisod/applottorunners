@@ -15,7 +15,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
   final _formKey = GlobalKey<FormState>();
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
-  
+
   String? _selectedFeedbackType;
   int? _selectedRating;
   bool _isSubmitting = false;
@@ -124,10 +124,11 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Thank you for your feedback! We\'ll review it soon.'),
+          const SnackBar(
+            content:
+                Text('Thank you for your feedback! We\'ll review it soon.'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
+            duration: Duration(seconds: 3),
           ),
         );
 
@@ -234,7 +235,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     Text(
                       'Help us improve by sharing your thoughts, reporting issues, or suggesting new features.',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onPrimary
+                            .withValues(alpha: 0.9),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -267,13 +271,17 @@ class _FeedbackPageState extends State<FeedbackPage> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? LottoRunnersColors.primaryBlue.withValues(alpha: 0.1)
+                            ? LottoRunnersColors.primaryBlue
+                                .withValues(alpha: 0.1)
                             : Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
                               ? LottoRunnersColors.primaryBlue
-                              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .outline
+                                  .withValues(alpha: 0.3),
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -297,7 +305,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
                                     fontWeight: FontWeight.w600,
                                     color: isSelected
                                         ? LottoRunnersColors.primaryBlue
-                                        : Theme.of(context).colorScheme.onSurface,
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -305,7 +315,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
                                   type['description'],
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: Theme.of(context)
-                                        .colorScheme.onSurface
+                                        .colorScheme
+                                        .onSurface
                                         .withValues(alpha: 0.6),
                                   ),
                                 ),
@@ -313,7 +324,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                             ),
                           ),
                           if (isSelected)
-                            Icon(
+                            const Icon(
                               Icons.check_circle,
                               color: LottoRunnersColors.primaryBlue,
                             ),
@@ -367,7 +378,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 decoration: InputDecoration(
                   labelText: 'Subject *',
                   hintText: 'Brief summary of your feedback',
-                  prefixIcon: Icon(
+                  prefixIcon: const Icon(
                     Icons.subject,
                     color: LottoRunnersColors.primaryYellow,
                   ),
@@ -401,7 +412,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 decoration: InputDecoration(
                   labelText: 'Message *',
                   hintText: 'Please provide detailed feedback...',
-                  prefixIcon: Icon(
+                  prefixIcon: const Icon(
                     Icons.message_outlined,
                     color: LottoRunnersColors.primaryYellow,
                   ),
@@ -474,12 +485,13 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   color: LottoRunnersColors.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: LottoRunnersColors.primaryBlue.withValues(alpha: 0.3),
+                    color:
+                        LottoRunnersColors.primaryBlue.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.info_outline,
                       color: LottoRunnersColors.primaryBlue,
                       size: 20,
@@ -504,4 +516,3 @@ class _FeedbackPageState extends State<FeedbackPage> {
     );
   }
 }
-

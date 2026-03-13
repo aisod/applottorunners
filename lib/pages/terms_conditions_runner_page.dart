@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 
 /// Terms and Conditions page specifically for Runners
@@ -35,7 +34,8 @@ class TermsConditionsRunnerPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+                color:
+                    theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -231,9 +231,9 @@ class TermsConditionsRunnerPage extends StatelessWidget {
               '10. Contact Information',
               Icons.contact_support,
               [
-                'For questions about these terms, email: legal@lottorunners.com',
-                'For runner support, use the in-app help feature or contact support@lottorunners.com',
-                'For payment or commission inquiries, contact: payments@lottorunners.com',
+                'For questions about these terms, email: info@lottoerunners.com',
+                'For runner support, use the in-app help feature or contact info@lottoerunners.com. Phone: 0811284627',
+                'For payment or commission inquiries, contact: info@lottoerunners.com',
               ],
             ),
 
@@ -345,4 +345,3 @@ class TermsConditionsRunnerPage extends StatelessWidget {
     );
   }
 }
-

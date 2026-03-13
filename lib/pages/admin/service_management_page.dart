@@ -7,6 +7,18 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 
 import 'package:lotto_runners/utils/responsive.dart';
 
+/// Type keys and labels for variable-priced services (admin can edit these prices).
+const Map<String, List<Map<String, String>>> _variableServiceTypeKeys = {
+  'document_services': [
+    {'key': 'application_submission', 'label': 'Application submission'},
+    {'key': 'certification', 'label': 'Certification'},
+  ],
+  'license_discs': [
+    {'key': 'renewal', 'label': 'Renewal'},
+    {'key': 'registration', 'label': 'Registration'},
+  ],
+};
+
 class ServiceManagementPage extends StatefulWidget {
   const ServiceManagementPage({super.key});
 
@@ -32,6 +44,10 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
   bool _requiresVehicle = false;
 
   String _iconName = 'task_alt';
+
+  /// Controllers for type-specific prices (used when editing document_services or license_discs).
+  /// Key: type key (e.g. 'application_submission'); value: individual and business controllers.
+  Map<String, Map<String, TextEditingController>> _typePriceControllers = {};
 
   // Available icons for services
 
@@ -92,6 +108,15 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
     super.initState();
 
     _loadServices();
+  }
+
+  /// Returns true for services that display "Varies" (variable pricing).
+  bool _isVariablePricedService(Map<String, dynamic> service) {
+    final category = service['category']?.toString().toLowerCase() ?? '';
+    return category == 'delivery' ||
+        category == 'special_orders' ||
+        category == 'license_discs' ||
+        category == 'document_services';
   }
 
   Future<void> _loadServices() async {
@@ -435,7 +460,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
             const SizedBox(height: 12),
 
-            // Price and status row
+            // Price and status row (show "Varies" for variable-priced services)
 
             Row(
               children: [
@@ -446,7 +471,9 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'N\$${(service['base_price'] ?? 0).toStringAsFixed(2)}',
+                  _isVariablePricedService(service)
+                      ? 'Varies'
+                      : 'N\$${(service['base_price'] ?? 0).toStringAsFixed(2)}',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -564,7 +591,14 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
   }
 
   void _showAddServiceDialog() {
-    _clearServiceForm();
+    _serviceNameController.clear();
+    _descriptionController.clear();
+    _basePriceController.clear();
+    _businessPriceController.clear();
+    _discountPercentageController.clear();
+    _requiresVehicle = false;
+    _iconName = 'task_alt';
+    _typePriceControllers.clear();
 
     _showServiceDialog('Add Service', null);
   }
@@ -575,39 +609,24 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
     _showServiceDialog('Edit Service', service);
   }
 
-  void _clearServiceForm() {
-    _serviceNameController.clear();
-
-    _descriptionController.clear();
-
-    _basePriceController.clear();
-
-    _businessPriceController.clear();
-
-    _discountPercentageController.clear();
-
-    _requiresVehicle = false;
-
-    _iconName = 'task_alt';
+  void _disposeTypePriceControllers() {
+    for (final entry in _typePriceControllers.entries) {
+      entry.value['individual']?.dispose();
+      entry.value['business']?.dispose();
+    }
+    _typePriceControllers.clear();
   }
 
   void _populateServiceForm(Map<String, dynamic> service) {
     _serviceNameController.text = service['name'] ?? '';
-
     _descriptionController.text = service['description'] ?? '';
-
     _basePriceController.text = service['base_price']?.toString() ?? '';
-
     _businessPriceController.text = service['business_price']?.toString() ?? '';
-
     _discountPercentageController.text =
         service['discount_percentage']?.toString() ?? '0';
-
     _requiresVehicle = service['requires_vehicle'] == true;
 
     final candidateIconName = service['icon_name'];
-    // Ensure the currently stored icon exists in the available list to avoid
-    // DropdownButton assertion errors when opening the dialog
     if (candidateIconName is String &&
         _availableIcons.any((icon) => icon['name'] == candidateIconName)) {
       _iconName = candidateIconName;
@@ -615,7 +634,37 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
       _iconName = 'task_alt';
     }
 
-    //
+    // Populate type-specific prices for variable-priced services
+    final category = service['category']?.toString() ?? '';
+    final typeKeys = _variableServiceTypeKeys[category];
+    if (typeKeys != null) {
+      final raw = service['type_prices'];
+      final Map<String, dynamic> individual =
+          (raw is Map && raw['individual'] is Map)
+              ? Map<String, dynamic>.from(raw['individual'] as Map)
+              : {};
+      final Map<String, dynamic> business =
+          (raw is Map && raw['business'] is Map)
+              ? Map<String, dynamic>.from(raw['business'] as Map)
+              : {};
+      for (final t in typeKeys) {
+        final key = t['key']!;
+        _typePriceControllers[key] = {
+          'individual': TextEditingController(
+            text: _priceString(individual[key]),
+          ),
+          'business': TextEditingController(
+            text: _priceString(business[key]),
+          ),
+        };
+      }
+    }
+  }
+
+  static String _priceString(dynamic v) {
+    if (v == null) return '';
+    if (v is num) return v.toString();
+    return v.toString();
   }
 
   void _showServiceDialog(String title, Map<String, dynamic>? service) {
@@ -805,58 +854,128 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
                 const SizedBox(height: 8),
 
-                // Base Price
-
-                TextField(
-                  controller: _basePriceController,
-                  decoration: InputDecoration(
-                    labelText: 'Base Price (N\$) *',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
+                // Base and Business price only for non–variable-priced services
+                if (service == null ||
+                    !_variableServiceTypeKeys
+                        .containsKey(service['category']?.toString())) ...[
+                  TextField(
+                    controller: _basePriceController,
+                    decoration: InputDecoration(
+                      labelText: 'Base Price (N\$) *',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.attach_money,
                         color: theme.colorScheme.primary,
-                        width: 2,
                       ),
                     ),
-                    prefixIcon: Icon(
-                      Icons.attach_money,
-                      color: theme.colorScheme.primary,
-                    ),
+                    keyboardType: TextInputType.number,
                   ),
-                  keyboardType: TextInputType.number,
-                ),
-
-                const SizedBox(height: 16),
-
-                // Business Price
-
-                TextField(
-                  controller: _businessPriceController,
-                  decoration: InputDecoration(
-                    labelText: 'Business Price (N\$) *',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.primary,
-                        width: 2,
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _businessPriceController,
+                    decoration: InputDecoration(
+                      labelText: 'Business Price (N\$) *',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.business,
+                        color: theme.colorScheme.primary,
+                      ),
+                      hintText: 'Price for business users',
                     ),
-                    prefixIcon: Icon(
-                      Icons.business,
-                      color: theme.colorScheme.primary,
-                    ),
-                    hintText: 'Price for business users',
+                    keyboardType: TextInputType.number,
                   ),
-                  keyboardType: TextInputType.number,
-                ),
+                  const SizedBox(height: 16),
+                ],
 
-                const SizedBox(height: 16),
+                // Type-specific prices only for variable-priced services (document_services, license_discs)
+                if (service != null &&
+                    _variableServiceTypeKeys
+                        .containsKey(service['category']?.toString())) ...[
+                  Text(
+                    'Type-specific prices (N\$) *',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...(_variableServiceTypeKeys[service['category']?.toString()]
+                          ?.map((t) {
+                        final typeKey = t['key']!;
+                        final label = t['label']!;
+                        final controllers = _typePriceControllers[typeKey];
+                        if (controllers == null) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                label,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: controllers['individual'],
+                                      decoration: InputDecoration(
+                                        labelText: 'Individual',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        prefixText: 'N\$ ',
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (_) => setStateDialog(() {}),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: controllers['business'],
+                                      decoration: InputDecoration(
+                                        labelText: 'Business',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        prefixText: 'N\$ ',
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (_) => setStateDialog(() {}),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }) ??
+                      []),
+                  const SizedBox(height: 16),
+                ],
 
                 // Discount Percentage
 
@@ -987,30 +1106,62 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
         return;
       }
 
-      final basePrice = double.tryParse(_basePriceController.text);
+      final category = existingService?['category']?.toString() ?? '';
+      final isVariablePriced =
+          _variableServiceTypeKeys.containsKey(category) &&
+              _typePriceControllers.isNotEmpty;
 
-      if (basePrice == null || basePrice < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid base price'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      double basePrice;
+      double businessPrice;
 
-        return;
-      }
-
-      final businessPrice = double.tryParse(_businessPriceController.text);
-
-      if (businessPrice == null || businessPrice < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid business price'),
-            backgroundColor: Colors.red,
-          ),
-        );
-
-        return;
+      if (isVariablePriced) {
+        final individual = <String, double>{};
+        final business = <String, double>{};
+        for (final entry in _typePriceControllers.entries) {
+          final ind = double.tryParse(entry.value['individual']?.text ?? '');
+          final bus = double.tryParse(entry.value['business']?.text ?? '');
+          if (ind != null && ind >= 0) individual[entry.key] = ind;
+          if (bus != null && bus >= 0) business[entry.key] = bus;
+        }
+        if (individual.isEmpty && business.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Enter at least one type-specific price (Individual or Business).'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+        basePrice = individual.values.isNotEmpty
+            ? individual.values.reduce((a, b) => a < b ? a : b)
+            : 0.0;
+        businessPrice = business.values.isNotEmpty
+            ? business.values.reduce((a, b) => a < b ? a : b)
+            : 0.0;
+      } else {
+        final base = double.tryParse(_basePriceController.text);
+        final business = double.tryParse(_businessPriceController.text);
+        if (base == null || base < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enter a valid base price'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+        if (business == null || business < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enter a valid business price'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+        basePrice = base;
+        businessPrice = business;
       }
 
       final discountPercentage =
@@ -1029,21 +1180,33 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
       final serviceData = {
         'name': _serviceNameController.text.trim(),
-
         'description': _descriptionController.text.trim(),
-
         'base_price': basePrice,
-
         'business_price': businessPrice,
-
         'discount_percentage': discountPercentage,
-
         'requires_vehicle': _requiresVehicle,
-
         'icon_name': _iconName,
-
-        'is_active': true, // Always set to active when creating/updating
+        'is_active': true,
       };
+
+      // Include type-specific prices for variable-priced services
+      if (_variableServiceTypeKeys.containsKey(category) &&
+          _typePriceControllers.isNotEmpty) {
+        final individual = <String, double>{};
+        final business = <String, double>{};
+        for (final entry in _typePriceControllers.entries) {
+          final ind = double.tryParse(entry.value['individual']?.text ?? '');
+          final bus = double.tryParse(entry.value['business']?.text ?? '');
+          if (ind != null && ind >= 0) individual[entry.key] = ind;
+          if (bus != null && bus >= 0) business[entry.key] = bus;
+        }
+        if (individual.isNotEmpty || business.isNotEmpty) {
+          serviceData['type_prices'] = {
+            if (individual.isNotEmpty) 'individual': individual,
+            if (business.isNotEmpty) 'business': business,
+          };
+        }
+      }
 
       if (existingService == null) {
         await SupabaseConfig.createService(serviceData);
@@ -1302,6 +1465,8 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
   @override
   void dispose() {
+    _disposeTypePriceControllers();
+
     _serviceNameController.dispose();
 
     _descriptionController.dispose();

@@ -232,7 +232,7 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
+                  const IconButton(
                     onPressed: null,
                     icon: Icon(
                       Icons.refresh,
@@ -317,7 +317,8 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
         Text(
           label,
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+            color:
+                Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
             fontSize: isSmallMobile ? 12.0 : 14.0,
           ),
         ),
@@ -388,7 +389,9 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? LottoRunnersColors.primaryBlue
-                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                            : Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: isSelected
@@ -512,12 +515,15 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.person,
+                        const Icon(Icons.person,
                             color: LottoRunnersColors.primaryYellow, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
@@ -537,7 +543,9 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
                                 Text(
                                   item['customer']['phone'],
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
                                     fontSize: Responsive.isSmallMobile(context)
                                         ? 12
                                         : 13,
@@ -587,7 +595,10 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -629,13 +640,16 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.description,
                           size: 16,
                           color: LottoRunnersColors.primaryYellow,
@@ -661,8 +675,10 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
                     Text(
                       'Completed ${_formatDate(item['completed_at'] ?? item['updated_at'] ?? item['created_at'])}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                     Container(
@@ -776,17 +792,20 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
 
     switch (status.toLowerCase()) {
       case 'posted':
-        backgroundColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
+        backgroundColor =
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
         textColor = Theme.of(context).colorScheme.primary;
         displayStatus = 'Open';
         break;
       case 'accepted':
-        backgroundColor = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1);
+        backgroundColor =
+            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1);
         textColor = Theme.of(context).colorScheme.secondary;
         displayStatus = 'Accepted';
         break;
       case 'in_progress':
-        backgroundColor = Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1);
+        backgroundColor =
+            Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1);
         textColor = Theme.of(context).colorScheme.tertiary;
         displayStatus = 'In Progress';
         break;
@@ -796,7 +815,8 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
         displayStatus = 'Completed';
         break;
       case 'cancelled':
-        backgroundColor = Theme.of(context).colorScheme.error.withValues(alpha: 0.1);
+        backgroundColor =
+            Theme.of(context).colorScheme.error.withValues(alpha: 0.1);
         textColor = Theme.of(context).colorScheme.error;
         displayStatus = 'Cancelled';
         break;
@@ -836,7 +856,10 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -868,7 +891,8 @@ class _RunnerHistoryPageState extends State<RunnerHistoryPage> {
         Text(
           '$label:',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             fontWeight: FontWeight.w500,
           ),
         ),

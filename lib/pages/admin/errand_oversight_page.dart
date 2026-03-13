@@ -77,21 +77,74 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
   }
 
   void _showErrandDetails(Map<String, dynamic> errand) {
+    final theme = Theme.of(context);
+    final isShopping = errand['category']?.toString() == 'shopping';
+    final mod = errand['pricing_modifiers'] as Map<String, dynamic>?;
+    final shoppingBudget = (mod?['shopping_budget'] as num?)?.toDouble();
+    final shoppingFg = theme.colorScheme.onSecondaryContainer;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(errand['title'] ?? 'Errand Details'),
+        backgroundColor: theme.dialogBackgroundColor,
+        title: Row(
+          children: [
+            if (isShopping)
+              Icon(Icons.shopping_basket,
+                  color: theme.colorScheme.secondary, size: 28),
+            if (isShopping) const SizedBox(width: 8),
+            Expanded(
+                child: Text(errand['title'] ?? 'Errand Details',
+                    style: TextStyle(color: theme.colorScheme.onSurface))),
+          ],
+        ),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (isShopping && shoppingBudget != null && shoppingBudget > 0) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: theme.colorScheme.secondary),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.payments, color: shoppingFg, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Budget to send to runner for shopping',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                  color: shoppingFg,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              'N\$${shoppingBudget.toStringAsFixed(2)}',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                  color: shoppingFg,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               _buildDetailRow('Description', errand['description'] ?? 'N/A'),
               _buildDetailRow(
                   'Category', _formatCategory(errand['category'] ?? 'N/A')),
               _buildDetailRow(
                   'Status', _formatStatus(errand['status'] ?? 'N/A')),
-              _buildDetailRow('Price', '\$${errand['price_amount'] ?? '0.00'}'),
+              _buildDetailRow('Price', 'N\$${errand['price_amount'] ?? '0.00'}'),
               _buildDetailRow(
                   'Time Limit', '${errand['time_limit_hours'] ?? 0} hours'),
               _buildDetailRow('Location', errand['location_address'] ?? 'N/A'),
@@ -122,7 +175,8 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close',
+                style: TextStyle(color: theme.colorScheme.primary)),
           ),
         ],
       ),
@@ -130,6 +184,7 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -139,11 +194,14 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
             width: 80,
             child: Text(
               '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface),
             ),
           ),
           Expanded(
-            child: Text(value),
+            child: Text(value,
+                style: TextStyle(color: theme.colorScheme.onSurface)),
           ),
         ],
       ),
@@ -194,37 +252,37 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
     }
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(String status, ColorScheme scheme) {
     switch (status) {
       case 'posted':
-        return Colors.blue;
+        return scheme.primary;
       case 'accepted':
-        return Colors.orange;
+        return scheme.secondary;
       case 'in_progress':
-        return Colors.purple;
+        return scheme.tertiary;
       case 'completed':
-        return Colors.green;
+        return scheme.tertiary;
       case 'cancelled':
-        return Colors.red;
+        return scheme.error;
       default:
-        return Colors.grey;
+        return scheme.outline;
     }
   }
 
-  Color _getCategoryColor(String category) {
+  Color _getCategoryColor(String category, ColorScheme scheme) {
     switch (category) {
       case 'grocery':
-        return Colors.green;
+        return scheme.tertiary;
       case 'delivery':
-        return Colors.blue;
+        return scheme.primary;
       case 'document':
-        return Colors.orange;
+        return scheme.secondary;
       case 'shopping':
-        return Colors.purple;
+        return scheme.secondary;
       case 'other':
-        return Colors.grey;
+        return scheme.outline;
       default:
-        return Colors.grey;
+        return scheme.outline;
     }
   }
 
@@ -249,6 +307,17 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Errand Oversight',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        iconTheme: IconThemeData(color: theme.colorScheme.onPrimary),
+      ),
       body: Column(
         children: [
           // Search and Filter Section
@@ -386,9 +455,9 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                             const SizedBox(height: 16),
                             Text(
                               'No errands found',
-                              style: TextStyle(
+                              style: theme.textTheme.bodyLarge?.copyWith(
                                 fontSize: 18,
-                                color: theme.colorScheme.outline,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -418,28 +487,60 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: FilterChip(
-        label: Text(label),
+        label: Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: isSelected
+                ? theme.colorScheme.onPrimaryContainer
+                : theme.colorScheme.onSurface,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
         selected: isSelected,
         onSelected: (selected) {
           onSelected(selected ? value : 'all');
         },
-        selectedColor:
-            theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
+        selectedColor: theme.colorScheme.primaryContainer,
+        backgroundColor: theme.colorScheme.surface,
         checkmarkColor: theme.colorScheme.primary,
+        side: BorderSide(
+          color: isSelected
+              ? theme.colorScheme.primary.withOpacity(0.6)
+              : theme.colorScheme.outline.withOpacity(0.7),
+        ),
       ),
     );
   }
 
   Widget _buildErrandCard(Map<String, dynamic> errand) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final status = errand['status'] ?? 'unknown';
     final category = errand['category'] ?? 'other';
-    final statusColor = _getStatusColor(status);
-    final categoryColor = _getCategoryColor(category);
-    final theme = Theme.of(context);
+    final isShopping = category == 'shopping';
+    final statusColor = _getStatusColor(status, scheme);
+    final categoryColor = _getCategoryColor(category, scheme);
+    final mod = errand['pricing_modifiers'] as Map<String, dynamic>?;
+    final shoppingBudget = (mod?['shopping_budget'] as num?)?.toDouble() ?? 0.0;
+    final shoppingBorder = scheme.secondary;
+    final shoppingBg = scheme.secondaryContainer.withOpacity(0.5);
+    final shoppingFg = scheme.onSecondaryContainer;
+    final shoppingIconBg = scheme.secondary.withOpacity(0.25);
 
     return Card(
       margin:
           EdgeInsets.only(bottom: Responsive.isSmallMobile(context) ? 8 : 12),
+      elevation: isShopping ? 4 : 1,
+      color: isShopping ? shoppingBg : theme.cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isShopping
+              ? shoppingBorder
+              : scheme.outline.withOpacity(0.3),
+          width: isShopping ? 2.5 : 1,
+        ),
+      ),
       child: Padding(
         padding: EdgeInsets.all(Responsive.isSmallMobile(context) ? 12 : 16),
         child: Column(
@@ -451,12 +552,14 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   padding:
                       EdgeInsets.all(Responsive.isSmallMobile(context) ? 6 : 8),
                   decoration: BoxDecoration(
-                    color: categoryColor.withOpacity(0.1),
+                    color: isShopping
+                        ? shoppingIconBg
+                        : categoryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    _getCategoryIcon(category),
-                    color: categoryColor,
+                    isShopping ? Icons.shopping_basket : _getCategoryIcon(category),
+                    color: isShopping ? shoppingFg : categoryColor,
                     size: Responsive.isSmallMobile(context) ? 16 : 20,
                   ),
                 ),
@@ -465,17 +568,31 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (isShopping)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Text(
+                            'SHOPPING ORDER',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: shoppingFg,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
                       Text(
                         errand['title'] ?? 'Unknown',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: Responsive.isSmallMobile(context) ? 14 : 16,
+                          color: scheme.onSurface,
                         ),
                       ),
                       Text(
                         errand['description'] ?? 'No description',
                         style: TextStyle(
-                          color: theme.colorScheme.outline,
+                          color: scheme.outline,
                           fontSize: Responsive.isSmallMobile(context) ? 12 : 14,
                         ),
                         maxLines: 2,
@@ -502,15 +619,43 @@ class _ErrandOversightPageState extends State<ErrandOversightPage> {
                 ),
               ],
             ),
+            if (isShopping && shoppingBudget > 0) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(Responsive.isSmallMobile(context) ? 8 : 10),
+                decoration: BoxDecoration(
+                  color: scheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: scheme.secondary),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.payments, color: shoppingFg, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Budget to send to runner: N\$${shoppingBudget.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: Responsive.isSmallMobile(context) ? 12 : 13,
+                          color: shoppingFg,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.attach_money, size: 16, color: Colors.green),
+                Icon(Icons.attach_money, size: 16, color: scheme.tertiary),
                 Text(
                   'N\$${errand['price_amount'] ?? '0.00'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Colors.green,
+                    color: scheme.tertiary,
                   ),
                 ),
                 const SizedBox(width: 16),

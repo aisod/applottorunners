@@ -8,7 +8,7 @@ import 'package:lotto_runners/utils/page_transitions.dart';
 
 class RunnerHomePage extends StatefulWidget {
   final Function(int)? onNavigateToTab;
-  
+
   const RunnerHomePage({super.key, this.onNavigateToTab});
 
   @override
@@ -37,26 +37,33 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
   Future<void> _loadData() async {
     try {
       setState(() => _isLoading = true);
-      
+
       final userId = SupabaseConfig.currentUser?.id;
       if (userId != null) {
         final profile = await SupabaseConfig.getUserProfile(userId);
         final errands = await SupabaseConfig.getRunnerErrands(userId);
         final bookings = await SupabaseConfig.getRunnerAllBookings(userId);
         final unreadCount = await SupabaseConfig.getUnreadAdminMessagesCount();
-        
+
         // Calculate stats
-        final completedErrands = errands.where((e) => e['status'] == 'completed').length;
-        final activeJobs = errands.where((e) => 
-          e['status'] == 'accepted' || e['status'] == 'in_progress'
-        ).length + bookings.where((b) => 
-          b['status'] == 'accepted' || b['status'] == 'in_progress'
-        ).length;
-        
+        final completedErrands =
+            errands.where((e) => e['status'] == 'completed').length;
+        final activeJobs = errands
+                .where((e) =>
+                    e['status'] == 'accepted' || e['status'] == 'in_progress')
+                .length +
+            bookings
+                .where((b) =>
+                    b['status'] == 'accepted' || b['status'] == 'in_progress')
+                .length;
+
         final totalEarnings = errands
-          .where((e) => e['status'] == 'completed')
-          .fold<double>(0.0, (sum, e) => sum + ((e['price_amount'] as num?)?.toDouble() ?? 0.0));
-        
+            .where((e) => e['status'] == 'completed')
+            .fold<double>(
+                0.0,
+                (sum, e) =>
+                    sum + ((e['price_amount'] as num?)?.toDouble() ?? 0.0));
+
         if (mounted) {
           final isOnline = profile?['is_online'] == true;
           setState(() {
@@ -103,13 +110,14 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
           children: [
             // Hero Section with Greeting and Messages Icon
             _buildHeroSection(userName, isSmallMobile, isMobile, isDesktop),
-            
+
             // Stats Section
             Container(
               constraints: BoxConstraints(
                 maxWidth: isDesktop ? 1200 : double.infinity,
               ),
-              padding: EdgeInsets.all(isSmallMobile ? 16 : (isDesktop ? 40 : 24)),
+              padding:
+                  EdgeInsets.all(isSmallMobile ? 16 : (isDesktop ? 40 : 24)),
               decoration: const BoxDecoration(
                 color: Colors.white,
               ),
@@ -127,7 +135,8 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
     );
   }
 
-  Widget _buildHeroSection(String userName, bool isSmallMobile, bool isMobile, bool isDesktop) {
+  Widget _buildHeroSection(
+      String userName, bool isSmallMobile, bool isMobile, bool isDesktop) {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -142,10 +151,11 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
           children: [
             // Main card container
             Container(
-              padding: EdgeInsets.all(isSmallMobile ? 20 : (isDesktop ? 32 : 24)),
+              padding:
+                  EdgeInsets.all(isSmallMobile ? 20 : (isDesktop ? 32 : 24)),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? Theme.of(context).colorScheme.surfaceContainerHighest 
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.surfaceContainerHighest
                     : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
@@ -171,7 +181,10 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(25),
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withOpacity(0.2),
                             width: 1,
                           ),
                         ),
@@ -180,11 +193,16 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                           child: _userProfile?['avatar_url'] != null
                               ? Image.network(
                                   _userProfile!['avatar_url'],
-                                  width: isSmallMobile ? 48 : (isDesktop ? 58 : 53),
-                                  height: isSmallMobile ? 48 : (isDesktop ? 58 : 53),
+                                  width: isSmallMobile
+                                      ? 48
+                                      : (isDesktop ? 58 : 53),
+                                  height: isSmallMobile
+                                      ? 48
+                                      : (isDesktop ? 58 : 53),
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
-                                      _buildDefaultAvatar(isSmallMobile, isDesktop),
+                                      _buildDefaultAvatar(
+                                          isSmallMobile, isDesktop),
                                 )
                               : _buildDefaultAvatar(isSmallMobile, isDesktop),
                         ),
@@ -207,7 +225,9 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                                 'Hello $userName!',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: isSmallMobile ? 20 : (isDesktop ? 28 : 24),
+                                  fontSize: isSmallMobile
+                                      ? 20
+                                      : (isDesktop ? 28 : 24),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -216,8 +236,12 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                             Text(
                               'Ready to help others and earn money running errands?',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                fontSize: isSmallMobile ? 12 : (isDesktop ? 16 : 14),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                                fontSize:
+                                    isSmallMobile ? 12 : (isDesktop ? 16 : 14),
                               ),
                             ),
                           ],
@@ -231,7 +255,8 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const RunnerMessagesPage(),
+                                  builder: (context) =>
+                                      const RunnerMessagesPage(),
                                 ),
                               ).then((_) => _loadData()); // Refresh on return
                             },
@@ -257,7 +282,9 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                                   minHeight: 18,
                                 ),
                                 child: Text(
-                                  _unreadMessagesCount > 9 ? '9+' : _unreadMessagesCount.toString(),
+                                  _unreadMessagesCount > 9
+                                      ? '9+'
+                                      : _unreadMessagesCount.toString(),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 10,
@@ -299,8 +326,8 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
             ? theme.colorScheme.primaryContainer.withOpacity(0.3)
             : LottoRunnersColors.primaryBlue.withOpacity(0.08))
         : (isDark
-            ? theme.colorScheme.surfaceVariant.withOpacity(0.6)
-            : theme.colorScheme.surfaceVariant.withOpacity(0.6));
+            ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.6)
+            : theme.colorScheme.surfaceContainerHighest.withOpacity(0.6));
 
     final Color borderColor = _isOnline
         ? LottoRunnersColors.primaryBlue.withOpacity(0.7)
@@ -381,8 +408,7 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                       value: _isOnline,
                       activeColor: Colors.white,
                       activeTrackColor: statusColor,
-                      inactiveThumbColor:
-                          theme.colorScheme.onSurfaceVariant,
+                      inactiveThumbColor: theme.colorScheme.onSurfaceVariant,
                       inactiveTrackColor:
                           theme.colorScheme.outline.withOpacity(0.4),
                       onChanged: (value) => _toggleOnlineStatus(value),
@@ -451,7 +477,8 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
     }
   }
 
-Widget _buildQuickActions(bool isSmallMobile, bool isMobile, ThemeData theme) {
+  Widget _buildQuickActions(
+      bool isSmallMobile, bool isMobile, ThemeData theme) {
     return Row(
       children: [
         Expanded(
@@ -516,8 +543,8 @@ Widget _buildQuickActions(bool isSmallMobile, bool isMobile, ThemeData theme) {
       child: Container(
         padding: EdgeInsets.all(isSmallMobile ? 10 : 12),
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark 
-              ? Theme.of(context).colorScheme.surface 
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Theme.of(context).colorScheme.surface
               : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
@@ -527,8 +554,7 @@ Widget _buildQuickActions(bool isSmallMobile, bool isMobile, ThemeData theme) {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(
-                Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02
-              ),
+                  Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -580,12 +606,13 @@ Widget _buildQuickActions(bool isSmallMobile, bool isMobile, ThemeData theme) {
   Widget _buildAnalytics(bool isSmallMobile, bool isMobile, ThemeData theme) {
     final completedErrands = _stats['completed_errands'] as int;
     final totalErrands = _stats['total_errands'] as int;
-    final successRate = totalErrands > 0 
-        ? ((completedErrands / totalErrands) * 100).toStringAsFixed(1) 
+    final successRate = totalErrands > 0
+        ? ((completedErrands / totalErrands) * 100).toStringAsFixed(1)
         : '0.0';
-    
+
     final avgEarnings = completedErrands > 0
-        ? ((_stats['total_earnings'] as double) / completedErrands).toStringAsFixed(2)
+        ? ((_stats['total_earnings'] as double) / completedErrands)
+            .toStringAsFixed(2)
         : '0.00';
 
     return Column(
@@ -657,19 +684,18 @@ Widget _buildQuickActions(bool isSmallMobile, bool isMobile, ThemeData theme) {
     return Container(
       padding: EdgeInsets.all(isSmallMobile ? 8 : 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
             : Colors.white,
         borderRadius: BorderRadius.circular(isSmallMobile ? 8 : 10),
-          border: Border.all(
-            color: LottoRunnersColors.primaryBlue.withOpacity(0.5),
-            width: 2,
-          ),
+        border: Border.all(
+          color: LottoRunnersColors.primaryBlue.withOpacity(0.5),
+          width: 2,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(
-              Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02
-            ),
+                Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -706,4 +732,3 @@ Widget _buildQuickActions(bool isSmallMobile, bool isMobile, ThemeData theme) {
     );
   }
 }
-

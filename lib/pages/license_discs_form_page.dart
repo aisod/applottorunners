@@ -54,7 +54,11 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
           'License Disc Service',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                    ? 20
+                    : 22,
           ),
         ),
         backgroundColor: LottoRunnersColors.primaryBlue,
@@ -74,21 +78,21 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-              _buildServiceHeader(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildServiceTypeField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildServiceOptionField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildPreferredDateField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildLocationFields(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildInstructionsField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildDocumentSection(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 28 : 32),
-              _buildSubmitButton(theme, isMobile, isTablet),
+                  _buildServiceHeader(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildServiceTypeField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildServiceOptionField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildPreferredDateField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildLocationFields(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildInstructionsField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildDocumentSection(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 28 : 32),
+                  _buildSubmitButton(theme, isMobile, isTablet),
                 ],
               ),
             ),
@@ -125,7 +129,11 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
             style: theme.textTheme.titleLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+              fontSize: isMobile
+                  ? 18
+                  : isTablet
+                      ? 20
+                      : 22,
             ),
           ),
         ],
@@ -141,7 +149,11 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
           'Service Type *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 12 : 16),
@@ -157,14 +169,22 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
                 title: Text(
                   'Vehicle Disc Renewal',
                   style: TextStyle(
-                    fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                            ? 15
+                            : 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 subtitle: Text(
                   'N\$250',
                   style: TextStyle(
-                    fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                    fontSize: isMobile
+                        ? 12
+                        : isTablet
+                            ? 13
+                            : 14,
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
                   ),
@@ -182,14 +202,22 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
                 title: Text(
                   'Vehicle Registration',
                   style: TextStyle(
-                    fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                            ? 15
+                            : 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 subtitle: Text(
                   'N\$1500',
                   style: TextStyle(
-                    fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                    fontSize: isMobile
+                        ? 12
+                        : isTablet
+                            ? 13
+                            : 14,
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
                   ),
@@ -209,7 +237,8 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
     );
   }
 
-  Widget _buildServiceOptionField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildServiceOptionField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -217,7 +246,11 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
           'Service Option *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 12 : 16),
@@ -233,14 +266,22 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
                 title: Text(
                   'Collect & Deliver',
                   style: TextStyle(
-                    fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                            ? 15
+                            : 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 subtitle: Text(
                   'We collect documents and deliver completed disc',
                   style: TextStyle(
-                    fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                    fontSize: isMobile
+                        ? 12
+                        : isTablet
+                            ? 13
+                            : 14,
                   ),
                 ),
                 value: 'collect_and_deliver',
@@ -256,14 +297,22 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
                 title: Text(
                   'Drop-off Only',
                   style: TextStyle(
-                    fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+                    fontSize: isMobile
+                        ? 14
+                        : isTablet
+                            ? 15
+                            : 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 subtitle: Text(
                   'You drop off documents, we deliver completed disc',
                   style: TextStyle(
-                    fontSize: isMobile ? 12 : isTablet ? 13 : 14,
+                    fontSize: isMobile
+                        ? 12
+                        : isTablet
+                            ? 13
+                            : 14,
                   ),
                 ),
                 value: 'drop_off_only',
@@ -285,42 +334,42 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
 
   // Scheduled datetime removed
 
-  Widget _buildPreferredDateField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildPreferredDateField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return GestureDetector(
-          onTap: () async {
-            final now = DateTime.now();
-            final pickedDate = await showDatePicker(
-              context: context,
-              initialDate: _preferredDate ?? now,
-              firstDate: now,
-              lastDate: now.add(const Duration(days: 365)),
-              helpText: 'Select preferred date',
-            );
-            if (pickedDate != null) {
-              setState(() => _preferredDate = DateTime(
-                    pickedDate.year,
-                    pickedDate.month,
-                    pickedDate.day,
-                  ));
-            }
-          },
-          child: InputDecorator(
-            decoration: InputDecoration(
-              labelText: 'Preferred Date',
-              hintText: 'Tap to choose a date',
-              prefixIcon: const Icon(Icons.calendar_today),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: isMobile ? 12 : 14),
-              child: Text(
-                _preferredDate == null
-                    ? 'Tap to choose date'
-                    : '${_preferredDate!.year}-${_preferredDate!.month.toString().padLeft(2, '0')}-${_preferredDate!.day.toString().padLeft(2, '0')}',
-              ),
-            ),
+      onTap: () async {
+        final now = DateTime.now();
+        final pickedDate = await showDatePicker(
+          context: context,
+          initialDate: _preferredDate ?? now,
+          firstDate: now,
+          lastDate: now.add(const Duration(days: 365)),
+          helpText: 'Select preferred date',
+        );
+        if (pickedDate != null) {
+          setState(() => _preferredDate = DateTime(
+                pickedDate.year,
+                pickedDate.month,
+                pickedDate.day,
+              ));
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Preferred Date',
+          hintText: 'Tap to choose a date',
+          prefixIcon: const Icon(Icons.calendar_today),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: isMobile ? 12 : 14),
+          child: Text(
+            _preferredDate == null
+                ? 'Tap to choose date'
+                : '${_preferredDate!.year}-${_preferredDate!.month.toString().padLeft(2, '0')}-${_preferredDate!.day.toString().padLeft(2, '0')}',
           ),
+        ),
+      ),
     );
   }
 
@@ -375,20 +424,32 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
     );
   }
 
-  Widget _buildInstructionsField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildInstructionsField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return TextFormField(
-          controller: _instructionsController,
-          maxLines: 3,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
-          decoration: InputDecoration(
-            hintText: 'Any special requirements or notes...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 12 : 16,
-              vertical: isMobile ? 12 : 16,
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
-          ),
+      controller: _instructionsController,
+      maxLines: 3,
+      style: TextStyle(
+          fontSize: isMobile
+              ? 14
+              : isTablet
+                  ? 15
+                  : 16),
+      decoration: InputDecoration(
+        hintText: 'Any special requirements or notes...',
+        hintStyle: TextStyle(
+            fontSize: isMobile
+                ? 13
+                : isTablet
+                    ? 14
+                    : 15),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 16,
+          vertical: isMobile ? 12 : 16,
+        ),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(isMobile ? 10 : 12)),
+      ),
     );
   }
 
@@ -402,7 +463,11 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
               : 'Attach Documents',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
@@ -652,11 +717,8 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
       height: isMobile ? 48 : 52,
       child: ElevatedButton.icon(
         onPressed: _isLoading ? null : _submitForm,
-        icon: Icon(
-          Icons.check, 
-          color: theme.colorScheme.onPrimary, 
-          size: isMobile ? 18 : 20
-        ),
+        icon: Icon(Icons.check,
+            color: theme.colorScheme.onPrimary, size: isMobile ? 18 : 20),
         label: Text(
           'Submit Request - N\$${_getServiceTypePrice().toStringAsFixed(2)}',
           style: TextStyle(
@@ -690,23 +752,23 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
     return (widget.selectedService['base_price'] ?? 0.0).toDouble();
   }
 
-  /// Get the actual price based on selected service type
+  /// Get the actual price from the database (type_prices or base/business_price).
+  /// No hardcoded fallbacks; values come from admin-configured service.
   double _getServiceTypePrice() {
-    // Service type specific prices
-    final Map<String, double> individualPrices = {
-      'renewal': 250.0,  // License disc renewal
-      'registration': 1500.0,  // Vehicle registration
-    };
-
-    final Map<String, double> businessPrices = {
-      'renewal': 350.0,  // License disc renewal (business)
-      'registration': 1900.0,  // Vehicle registration (business)
-    };
-
-    final isBusiness = widget.userProfile?['user_type'] == 'business';
-    final prices = isBusiness ? businessPrices : individualPrices;
-
-    return prices[_serviceType] ?? _getBasePrice();
+    final raw = widget.selectedService['type_prices'];
+    if (raw is Map) {
+      final tier = widget.userProfile?['user_type'] == 'business'
+          ? (raw['business'] is Map ? raw['business'] as Map : null)
+          : (raw['individual'] is Map ? raw['individual'] as Map : null);
+      if (tier != null) {
+        final v = tier[_serviceType];
+        if (v != null) {
+          final n = (v is num) ? v.toDouble() : double.tryParse(v.toString());
+          if (n != null && n >= 0) return n;
+        }
+      }
+    }
+    return _getBasePrice();
   }
 
   Future<void> _pickPDF() async {
@@ -719,7 +781,8 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add PDF. Please try again or select a different file.'),
+            content: const Text(
+                'Unable to add PDF. Please try again or select a different file.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -740,7 +803,8 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add image. Please try again or select a different image.'),
+            content: const Text(
+                'Unable to add image. Please try again or select a different image.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -799,7 +863,8 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Unable to upload image ${i + 1}. Please check your internet connection and try again.'),
+                content: Text(
+                    'Unable to upload image ${i + 1}. Please check your internet connection and try again.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -823,7 +888,8 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Unable to upload PDF ${i + 1}. Please check your internet connection and try again.'),
+                content: Text(
+                    'Unable to upload PDF ${i + 1}. Please check your internet connection and try again.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -878,19 +944,26 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unable to post your license disc request. Please try again.';
-        
+        String errorMessage =
+            'Unable to post your license disc request. Please try again.';
+
         // Provide more specific error messages
-        if (e.toString().contains('not authenticated') || e.toString().contains('sign in')) {
+        if (e.toString().contains('not authenticated') ||
+            e.toString().contains('sign in')) {
           errorMessage = 'Please sign in to post a license disc request.';
-        } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (e.toString().contains('validation') || e.toString().contains('constraint')) {
-          errorMessage = 'Please check that all required fields are filled correctly.';
+        } else if (e.toString().contains('network') ||
+            e.toString().contains('connection')) {
+          errorMessage =
+              'Network error. Please check your internet connection and try again.';
+        } else if (e.toString().contains('validation') ||
+            e.toString().contains('constraint')) {
+          errorMessage =
+              'Please check that all required fields are filled correctly.';
         } else if (e.toString().contains('upload')) {
-          errorMessage = 'Unable to upload files. Please check your internet connection and try again.';
+          errorMessage =
+              'Unable to upload files. Please check your internet connection and try again.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),

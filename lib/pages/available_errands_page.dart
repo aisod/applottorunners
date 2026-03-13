@@ -10,11 +10,12 @@ import 'package:lotto_runners/widgets/new_ride_request_popup.dart';
 import 'package:lotto_runners/services/global_errand_popup_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/utils/map_utils.dart';
+import 'package:lotto_runners/pages/route_map_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lotto_runners/pages/profile_page.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
 import 'package:lotto_runners/services/paytoday_config.dart';
-import 'package:lotto_runners/services/paytoday_backend_service.dart';
 import 'package:lotto_runners/pages/paytoday_payment_page.dart';
 
 class AvailableErrandsPage extends StatefulWidget {
@@ -325,7 +326,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onError),
+            Icon(Icons.error_outline,
+                color: Theme.of(context).colorScheme.onError),
             const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
@@ -373,7 +375,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
+            Icon(Icons.check_circle,
+                color: Theme.of(context).colorScheme.onPrimary),
             const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
@@ -463,7 +466,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
   Widget _buildAppBar(ThemeData theme) {
     final isSmallMobile = Responsive.isSmallMobile(context);
     final isMobile = Responsive.isMobile(context);
-    
+
     return SliverAppBar(
       pinned: true,
       elevation: 0,
@@ -488,7 +491,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.onPrimary),
                   ),
                 )
               : Icon(
@@ -519,7 +523,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
           child: TabBar(
             controller: _tabController,
             labelColor: Theme.of(context).colorScheme.onPrimary,
-            unselectedLabelColor: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
+            unselectedLabelColor:
+                Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
             indicatorColor: Theme.of(context).colorScheme.onPrimary,
             indicatorWeight: 3,
             labelStyle: TextStyle(
@@ -569,7 +574,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                 final isSelected = _selectedCategory == category['value'];
 
                 return Container(
-                  margin: EdgeInsets.only(right: Responsive.isSmallMobile(context) ? 8 : 12),
+                  margin: EdgeInsets.only(
+                      right: Responsive.isSmallMobile(context) ? 8 : 12),
                   child: FilterChip(
                     selected: isSelected,
                     label: Row(
@@ -582,7 +588,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                               ? Theme.of(context).colorScheme.onPrimary
                               : LottoRunnersColors.primaryBlue,
                         ),
-                        SizedBox(width: Responsive.isSmallMobile(context) ? 4 : 6),
+                        SizedBox(
+                            width: Responsive.isSmallMobile(context) ? 4 : 6),
                         Text(
                           category['label']!,
                           style: TextStyle(
@@ -720,7 +727,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
 
     final isSmallMobile = Responsive.isSmallMobile(context);
     return SliverPadding(
-      padding: EdgeInsets.fromLTRB(isSmallMobile ? 12 : 16, 0, isSmallMobile ? 12 : 16, isSmallMobile ? 12 : 16),
+      padding: EdgeInsets.fromLTRB(isSmallMobile ? 12 : 16, 0,
+          isSmallMobile ? 12 : 16, isSmallMobile ? 12 : 16),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -735,6 +743,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                 onTap: () => _showErrandDetails(errand),
                 showAcceptButton: true,
                 onAccept: () => _acceptErrand(errand),
+                showNavigateButton: true,
               ),
             );
           },
@@ -796,7 +805,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                 });
                 _loadAvailableErrands();
               },
-              icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onPrimary),
+              icon: Icon(Icons.refresh,
+                  color: Theme.of(context).colorScheme.onPrimary),
               label: const Text(
                 'Refresh Errands',
                 style: TextStyle(
@@ -924,6 +934,73 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _buildErrandDetailsSheet(errand),
+    );
+  }
+
+  /// Shows service fee vs shopping budget for shopping errands so the runner
+  /// knows the shopping amount is for the customer's items, not their earnings.
+  Widget _buildShoppingAmountBreakdown(
+      Map<String, dynamic> errand, BuildContext context) {
+    final mod = errand['pricing_modifiers'] as Map<String, dynamic>?;
+    if (mod == null) return const SizedBox.shrink();
+    final basePrice = (mod['base_price'] as num?)?.toDouble();
+    final shoppingBudget = (mod['shopping_budget'] as num?)?.toDouble();
+    if (basePrice == null && shoppingBudget == null) return const SizedBox.shrink();
+    final serviceFee = basePrice ?? 0.0;
+    final budget = shoppingBudget ?? 0.0;
+    return Container(
+      padding: EdgeInsets.all(Responsive.isSmallMobile(context) ? 10 : 12),
+      decoration: BoxDecoration(
+        color: LottoRunnersColors.primaryYellow.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: LottoRunnersColors.primaryYellow.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Shopping order – amount breakdown',
+            style: TextStyle(
+              fontSize: Responsive.isSmallMobile(context) ? 12 : 13,
+              fontWeight: FontWeight.w600,
+              color: LottoRunnersColors.gray800,
+            ),
+          ),
+          SizedBox(height: Responsive.isSmallMobile(context) ? 6 : 8),
+          Row(
+            children: [
+              const Icon(Icons.store, size: 16, color: LottoRunnersColors.primaryBlue),
+              SizedBox(width: Responsive.isSmallMobile(context) ? 6 : 8),
+              Text(
+                'Service fee (your earnings base): N\$${serviceFee.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: Responsive.isSmallMobile(context) ? 12 : 13,
+                  color: LottoRunnersColors.gray700,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: Responsive.isSmallMobile(context) ? 4 : 6),
+          Row(
+            children: [
+              const Icon(Icons.shopping_basket,
+                  size: 16, color: LottoRunnersColors.primaryBlue),
+              SizedBox(width: Responsive.isSmallMobile(context) ? 6 : 8),
+              Expanded(
+                child: Text(
+                  'Shopping budget (for customer\'s items – you use this to pay for the shopping): N\$${budget.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: Responsive.isSmallMobile(context) ? 12 : 13,
+                    color: LottoRunnersColors.gray700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -1060,6 +1137,12 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                     ],
                   ),
 
+                  // Shopping breakdown: so runner knows part of total is for customer's items
+                  if (errand['category'] == 'shopping') ...[
+                    SizedBox(height: Responsive.isSmallMobile(context) ? 12 : 16),
+                    _buildShoppingAmountBreakdown(errand, context),
+                  ],
+
                   // Vehicle requirement indicator
                   if (errand['needs_vehicle'] == true) ...[
                     SizedBox(
@@ -1125,8 +1208,9 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                     ),
                   ),
 
-                  // Location
-                  if (errand['location_address'] != null) ...[
+                  // Location (show when we have any location or navigation address)
+                  if (errand['location_address'] != null ||
+                      MapUtils.getErrandNavigationAddress(errand) != null) ...[
                     SizedBox(
                         height: Responsive.isSmallMobile(context) ? 20 : 24),
                     Text(
@@ -1170,6 +1254,28 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                         ],
                       ),
                     ),
+                    if (MapUtils.getErrandNavigationAddress(errand) != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final address =
+                                MapUtils.getErrandNavigationAddress(errand);
+                            if (address != null) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => RouteMapPage(
+                                    destinationAddress: address,
+                                    title: errand['title']?.toString(),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.directions, size: 18),
+                          label: const Text('Follow route to location'),
+                        ),
+                      ),
                   ],
 
                   // Customer info - Only show if not a runner or if runner has accepted
@@ -1394,7 +1500,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Accept Errand'),
-          content: Text('Are you sure you want to accept "${errand['title']}"?'),
+          content:
+              Text('Are you sure you want to accept "${errand['title']}"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -1419,7 +1526,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -1428,14 +1536,15 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
 
       if (mounted) {
         Navigator.pop(context); // Close loading
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Errand accepted successfully! The customer has been notified.'),
+            content: Text(
+                'Errand accepted successfully! The customer has been notified.'),
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Refresh list
         _loadAvailableErrands();
       }
@@ -1443,7 +1552,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       if (mounted) {
         // Close loading if open
         Navigator.canPop(context) ? Navigator.pop(context) : null;
-        
+
         print('❌ Contract acceptance error: $e');
 
         // Show more detailed error message
@@ -1456,7 +1565,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         } else if (e.toString().contains('RLS')) {
           errorMessage = 'Permission denied. Please contact support.';
         }
-        
+
         _showErrorSnackBar(errorMessage);
       }
     }
@@ -1498,7 +1607,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       final shouldProceed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('Payment Required'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1568,7 +1678,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Proceed to Payment', style: TextStyle(color: Colors.white)),
+              child: const Text('Proceed to Payment',
+                  style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -1590,19 +1701,36 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
               onSuccess: () async {
                 // Payment successful - now finalize errand acceptance
                 try {
-                  print('🎯 ACCEPTING ERRAND: ${errand['id']} (Status: ${errand['status']})');
-                  
+                  print(
+                      '🎯 ACCEPTING ERRAND: ${errand['id']} (Status: ${errand['status']})');
+
                   await SupabaseConfig.acceptErrand(errand['id'], userId);
                   print('✅ ERRAND: Status updated to accepted');
 
+                  // Notify admins which runner accepted this shopping request (if applicable)
+                  try {
+                    final runnerName =
+                        _userProfile?['full_name']?.toString() ?? 'Runner';
+                    final errandTitle = errand['title']?.toString() ?? 'Shopping Service';
+                    await SupabaseConfig.notifyAdminsOfShoppingAcceptance(
+                      errandId: errand['id'],
+                      errandTitle: errandTitle,
+                      runnerName: runnerName,
+                    );
+                  } catch (e) {
+                    print(
+                        '⚠️ Error notifying admins of shopping acceptance for errand ${errand['id']}: $e');
+                  }
+
                   // Remove from pending tracking if it was a pending errand
                   if (errand['status'] == 'pending') {
-                    await ImmediateErrandService.removePendingErrand(errand['id']);
+                    await ImmediateErrandService.removePendingErrand(
+                        errand['id']);
                     print('🗑️ PENDING ERRAND: Removed from pending tracking');
                   }
                 } catch (e) {
                   print('❌ Error finalizing errand acceptance: $e');
-                  throw e;
+                  rethrow;
                 }
               },
               onFailure: () {
@@ -1639,7 +1767,6 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
     }
   }
 
-
   Widget _buildTransportationBookingsList(ThemeData theme) {
     final availableBookings = _filteredTransportationBookings;
 
@@ -1656,7 +1783,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
 
     final isSmallMobile = Responsive.isSmallMobile(context);
     return SliverPadding(
-      padding: EdgeInsets.fromLTRB(isSmallMobile ? 12 : 16, 0, isSmallMobile ? 12 : 16, isSmallMobile ? 12 : 16),
+      padding: EdgeInsets.fromLTRB(isSmallMobile ? 12 : 16, 0,
+          isSmallMobile ? 12 : 16, isSmallMobile ? 12 : 16),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -1734,7 +1862,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                       vertical: Responsive.isSmallMobile(context) ? 4 : 6),
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(Responsive.isSmallMobile(context) ? 16 : 20),
+                    borderRadius: BorderRadius.circular(
+                        Responsive.isSmallMobile(context) ? 16 : 20),
                   ),
                   child: Text(
                     'AVAILABLE',
@@ -1874,7 +2003,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                 booking['dropoff_location'] != null) ...[
               SizedBox(height: Responsive.isSmallMobile(context) ? 10 : 12),
               Container(
-                padding: EdgeInsets.all(Responsive.isSmallMobile(context) ? 10 : 12),
+                padding:
+                    EdgeInsets.all(Responsive.isSmallMobile(context) ? 10 : 12),
                 decoration: BoxDecoration(
                   color: LottoRunnersColors.gray50,
                   borderRadius: BorderRadius.circular(10),
@@ -1887,8 +2017,10 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                         children: [
                           Icon(Icons.location_on,
                               color: LottoRunnersColors.primaryYellow,
-                              size: Responsive.isSmallMobile(context) ? 14 : 16),
-                          SizedBox(width: Responsive.isSmallMobile(context) ? 3 : 4),
+                              size:
+                                  Responsive.isSmallMobile(context) ? 14 : 16),
+                          SizedBox(
+                              width: Responsive.isSmallMobile(context) ? 3 : 4),
                           Expanded(
                             child: Text(
                               'Pickup: ${booking['pickup_location']}',
@@ -1987,8 +2119,10 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                     children: [
                       CircleAvatar(
                         radius: 12,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1),
                         child: Icon(
                           Icons.person,
                           size: 14,
@@ -2003,7 +2137,9 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                               ? 'By: ${user?['full_name'] ?? 'Customer'}'
                               : 'Customer info available after acceptance',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
                                 .withValues(alpha: 0.6),
                             fontWeight: FontWeight.w500,
                             fontSize:
@@ -2022,7 +2158,10 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                   Text(
                     _getTimeAgo(createdAt),
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                       fontSize: Responsive.isSmallMobile(context) ? 12 : 13,
                     ),
                   ),
@@ -2135,7 +2274,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
               children: [
                 ElevatedButton.icon(
                   onPressed: _loadAvailableTransportationBookings,
-                  icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onPrimary),
+                  icon: Icon(Icons.refresh,
+                      color: Theme.of(context).colorScheme.onPrimary),
                   label: const Text(
                     'Refresh',
                     style: TextStyle(
@@ -2356,7 +2496,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                     _selectedTransportType == transportType['value'];
 
                 return Container(
-                  margin: EdgeInsets.only(right: Responsive.isSmallMobile(context) ? 8 : 12),
+                  margin: EdgeInsets.only(
+                      right: Responsive.isSmallMobile(context) ? 8 : 12),
                   child: FilterChip(
                     selected: isSelected,
                     label: Row(
@@ -2369,7 +2510,8 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                               ? Theme.of(context).colorScheme.onPrimary
                               : LottoRunnersColors.primaryBlue,
                         ),
-                        SizedBox(width: Responsive.isSmallMobile(context) ? 4 : 6),
+                        SizedBox(
+                            width: Responsive.isSmallMobile(context) ? 4 : 6),
                         Text(
                           transportType['label']!,
                           style: TextStyle(
@@ -2732,28 +2874,33 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
   /// Intelligently determines which location field to display based on errand category
   String _getDisplayLocation(Map<String, dynamic> errand) {
     final category = errand['category']?.toString().toLowerCase() ?? '';
-    
+
     switch (category) {
       case 'shopping':
         // For shopping, show delivery address (where items go), not store locations
         final deliveryAddress = errand['delivery_address'];
-        if (deliveryAddress != null && deliveryAddress.toString().trim().isNotEmpty) {
+        if (deliveryAddress != null &&
+            deliveryAddress.toString().trim().isNotEmpty) {
           return 'Deliver to: ${deliveryAddress.toString().trim()}';
         }
         // Fallback to location_address (store names)
         return errand['location_address']?.toString() ?? 'Location TBD';
-      
+
       case 'delivery':
         // For delivery, show pickup → delivery
-        final pickupAddress = errand['pickup_address'] ?? errand['location_address'];
+        final pickupAddress =
+            errand['pickup_address'] ?? errand['location_address'];
         final deliveryAddress = errand['delivery_address'];
-        
+
         if (pickupAddress != null && deliveryAddress != null) {
           final pickup = pickupAddress.toString().trim();
           final delivery = deliveryAddress.toString().trim();
           // Truncate if too long
-          final pickupShort = pickup.length > 25 ? '${pickup.substring(0, 25)}...' : pickup;
-          final deliveryShort = delivery.length > 25 ? '${delivery.substring(0, 25)}...' : delivery;
+          final pickupShort =
+              pickup.length > 25 ? '${pickup.substring(0, 25)}...' : pickup;
+          final deliveryShort = delivery.length > 25
+              ? '${delivery.substring(0, 25)}...'
+              : delivery;
           return '$pickupShort → $deliveryShort';
         } else if (pickupAddress != null) {
           return 'From: ${pickupAddress.toString().trim()}';
@@ -2761,25 +2908,29 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
           return 'To: ${deliveryAddress.toString().trim()}';
         }
         return errand['location_address']?.toString() ?? 'Location TBD';
-      
+
       case 'document_services':
       case 'license_discs':
         // These forms may have pickup or just location
-        final pickupLocation = errand['pickup_location'] ?? errand['pickup_address'];
-        final dropoffLocation = errand['dropoff_location'] ?? errand['dropoff_address'];
-        
+        final pickupLocation =
+            errand['pickup_location'] ?? errand['pickup_address'];
+        final dropoffLocation =
+            errand['dropoff_location'] ?? errand['dropoff_address'];
+
         if (pickupLocation != null && dropoffLocation != null) {
           final pickup = pickupLocation.toString().trim();
           final dropoff = dropoffLocation.toString().trim();
-          final pickupShort = pickup.length > 25 ? '${pickup.substring(0, 25)}...' : pickup;
-          final dropoffShort = dropoff.length > 25 ? '${dropoff.substring(0, 25)}...' : dropoff;
+          final pickupShort =
+              pickup.length > 25 ? '${pickup.substring(0, 25)}...' : pickup;
+          final dropoffShort =
+              dropoff.length > 25 ? '${dropoff.substring(0, 25)}...' : dropoff;
           return '$pickupShort → $dropoffShort';
         } else if (pickupLocation != null) {
           return 'Pickup: ${pickupLocation.toString().trim()}';
         }
         // Fallback to location_address
         return errand['location_address']?.toString() ?? 'Location TBD';
-      
+
       case 'elderly_services':
       case 'queue_sitting':
       default:

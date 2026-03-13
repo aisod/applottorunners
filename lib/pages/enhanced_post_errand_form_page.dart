@@ -4,7 +4,6 @@ import 'package:lotto_runners/image_upload.dart';
 import 'package:lotto_runners/widgets/simple_location_picker.dart';
 import 'package:lotto_runners/services/runner_search_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
-import 'package:lotto_runners/utils/responsive.dart';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:lotto_runners/theme.dart';
@@ -78,7 +77,8 @@ class _EnhancedPostErrandFormPageState
       setState(() => _isLoadingVehicleTypes = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Unable to load vehicle types. Please check your internet connection and try again.'),
+          content: const Text(
+              'Unable to load vehicle types. Please check your internet connection and try again.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -98,7 +98,11 @@ class _EnhancedPostErrandFormPageState
           '${widget.selectedService['name'] ?? 'Custom Service'}',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+            fontSize: isMobile
+                ? 18
+                : isTablet
+                    ? 20
+                    : 22,
           ),
         ),
         backgroundColor: LottoRunnersColors.primaryBlue,
@@ -115,42 +119,42 @@ class _EnhancedPostErrandFormPageState
             ),
             child: SingleChildScrollView(
               padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Hide price banner for special orders
-              if (widget.selectedService['category'] != 'special_orders')
-                _buildServiceHeader(theme, isMobile, isTablet),
-              if (widget.selectedService['category'] != 'special_orders')
-                SizedBox(height: isMobile ? 20 : 24),
-              _buildTitleField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildDescriptionField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildLocationField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildPickupLocationField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildDeliveryLocationField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildRequestNowToggle(theme, isMobile, isTablet),
-              if (!_isImmediateRequest) ...[
-                SizedBox(height: isMobile ? 16 : 20),
-                _buildScheduledDateTimeFields(theme, isMobile, isTablet),
-              ],
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildVehicleRequirementQuestion(theme, isMobile, isTablet),
-              if (_needsVehicle) ...[
-                SizedBox(height: isMobile ? 16 : 20),
-                _buildVehicleTypeField(theme, isMobile, isTablet),
-              ],
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildInstructionsField(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 20 : 24),
-              _buildImageSection(theme, isMobile, isTablet),
-              SizedBox(height: isMobile ? 28 : 32),
-              _buildSubmitButton(theme, isMobile, isTablet),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Hide price banner for special orders
+                  if (widget.selectedService['category'] != 'special_orders')
+                    _buildServiceHeader(theme, isMobile, isTablet),
+                  if (widget.selectedService['category'] != 'special_orders')
+                    SizedBox(height: isMobile ? 20 : 24),
+                  _buildTitleField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildDescriptionField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildLocationField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildPickupLocationField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildDeliveryLocationField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildRequestNowToggle(theme, isMobile, isTablet),
+                  if (!_isImmediateRequest) ...[
+                    SizedBox(height: isMobile ? 16 : 20),
+                    _buildScheduledDateTimeFields(theme, isMobile, isTablet),
+                  ],
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildVehicleRequirementQuestion(theme, isMobile, isTablet),
+                  if (_needsVehicle) ...[
+                    SizedBox(height: isMobile ? 16 : 20),
+                    _buildVehicleTypeField(theme, isMobile, isTablet),
+                  ],
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildInstructionsField(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 20 : 24),
+                  _buildImageSection(theme, isMobile, isTablet),
+                  SizedBox(height: isMobile ? 28 : 32),
+                  _buildSubmitButton(theme, isMobile, isTablet),
+                ],
               ),
             ),
           ),
@@ -186,7 +190,11 @@ class _EnhancedPostErrandFormPageState
             style: theme.textTheme.titleLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: isMobile ? 18 : isTablet ? 20 : 22,
+              fontSize: isMobile
+                  ? 18
+                  : isTablet
+                      ? 20
+                      : 22,
             ),
           ),
         ],
@@ -202,19 +210,37 @@ class _EnhancedPostErrandFormPageState
           'Service Title *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
         TextFormField(
           controller: _titleController,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText: 'Brief title for your service request',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             prefixIcon: Icon(Icons.title,
                 color: LottoRunnersColors.primaryYellow,
-                size: isMobile ? 20 : isTablet ? 22 : 24),
+                size: isMobile
+                    ? 20
+                    : isTablet
+                        ? 22
+                        : 24),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
@@ -245,18 +271,32 @@ class _EnhancedPostErrandFormPageState
           'Detailed Description *',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
         TextFormField(
           controller: _descriptionController,
           maxLines: 5,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText:
                 'Please provide detailed information about what you need...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
@@ -303,7 +343,8 @@ class _EnhancedPostErrandFormPageState
     );
   }
 
-  Widget _buildPickupLocationField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildPickupLocationField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return SimpleLocationPicker(
       key: const ValueKey('pickup_location'),
       initialAddress: _pickupLocationController.text,
@@ -325,7 +366,8 @@ class _EnhancedPostErrandFormPageState
     );
   }
 
-  Widget _buildDeliveryLocationField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildDeliveryLocationField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return SimpleLocationPicker(
       key: const ValueKey('delivery_location'),
       initialAddress: _deliveryLocationController.text,
@@ -367,7 +409,11 @@ class _EnhancedPostErrandFormPageState
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
-              fontSize: isMobile ? 14 : isTablet ? 15 : 16,
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16,
             ),
           ),
           SizedBox(height: isMobile ? 10 : 12),
@@ -415,7 +461,11 @@ class _EnhancedPostErrandFormPageState
                                   ? theme.colorScheme.onPrimary
                                   : theme.colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
-                              fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                              fontSize: isMobile
+                                  ? 13
+                                  : isTablet
+                                      ? 14
+                                      : 15,
                             ),
                           ),
                         ),
@@ -467,7 +517,11 @@ class _EnhancedPostErrandFormPageState
                                   ? theme.colorScheme.onPrimary
                                   : theme.colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
-                              fontSize: isMobile ? 13 : isTablet ? 14 : 15,
+                              fontSize: isMobile
+                                  ? 13
+                                  : isTablet
+                                      ? 14
+                                      : 15,
                             ),
                           ),
                         ),
@@ -483,7 +537,8 @@ class _EnhancedPostErrandFormPageState
     );
   }
 
-  Widget _buildScheduledDateTimeFields(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildScheduledDateTimeFields(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -602,7 +657,8 @@ class _EnhancedPostErrandFormPageState
     );
   }
 
-  Widget _buildVehicleRequirementQuestion(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildVehicleRequirementQuestion(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -664,7 +720,7 @@ class _EnhancedPostErrandFormPageState
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _vehicleTypes.any((t) => t['name'] == _vehicleType)
+          initialValue: _vehicleTypes.any((t) => t['name'] == _vehicleType)
               ? _vehicleType
               : null,
           decoration: InputDecoration(
@@ -699,8 +755,8 @@ class _EnhancedPostErrandFormPageState
     );
   }
 
-
-  Widget _buildInstructionsField(ThemeData theme, bool isMobile, bool isTablet) {
+  Widget _buildInstructionsField(
+      ThemeData theme, bool isMobile, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -708,17 +764,31 @@ class _EnhancedPostErrandFormPageState
           'Additional Instructions (Optional)',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isMobile ? 16 : isTablet ? 17 : 18,
+            fontSize: isMobile
+                ? 16
+                : isTablet
+                    ? 17
+                    : 18,
           ),
         ),
         SizedBox(height: isMobile ? 6 : 8),
         TextFormField(
           controller: _instructionsController,
           maxLines: 3,
-          style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 15 : 16),
+          style: TextStyle(
+              fontSize: isMobile
+                  ? 14
+                  : isTablet
+                      ? 15
+                      : 16),
           decoration: InputDecoration(
             hintText: 'Any special requirements, preferences, or notes...',
-            hintStyle: TextStyle(fontSize: isMobile ? 13 : isTablet ? 14 : 15),
+            hintStyle: TextStyle(
+                fontSize: isMobile
+                    ? 13
+                    : isTablet
+                        ? 14
+                        : 15),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
               vertical: isMobile ? 12 : 16,
@@ -829,7 +899,9 @@ class _EnhancedPostErrandFormPageState
         ),
         label: Text(
           widget.selectedService['category'] == 'special_orders'
-              ? (_isImmediateRequest ? 'Submit Special Order Request' : 'Submit Special Order Request')
+              ? (_isImmediateRequest
+                  ? 'Submit Special Order Request'
+                  : 'Submit Special Order Request')
               : (_isImmediateRequest
                   ? 'Request Service Now - N\$${_calculateFinalPrice().toStringAsFixed(2)}'
                   : 'Submit Request - N\$${_calculateFinalPrice().toStringAsFixed(2)}'),
@@ -881,7 +953,8 @@ class _EnhancedPostErrandFormPageState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unable to add image. Please try again or select a different image.'),
+            content: const Text(
+                'Unable to add image. Please try again or select a different image.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -973,8 +1046,8 @@ class _EnhancedPostErrandFormPageState
         //'is_flexible_timing': _isFlexibleTiming,
         'special_instructions': _buildSpecialInstructions(),
         'image_urls': imageUrls,
-        'status': widget.selectedService['category'] == 'special_orders' 
-            ? 'pending_price' 
+        'status': widget.selectedService['category'] == 'special_orders'
+            ? 'pending_price'
             : 'posted',
         'is_immediate': _isImmediateRequest,
         'scheduled_start_time': scheduledStart?.toIso8601String(),
@@ -1035,12 +1108,13 @@ class _EnhancedPostErrandFormPageState
         await SupabaseConfig.createErrand(errandData);
 
         if (mounted) {
-          final isSpecialOrder = widget.selectedService['category'] == 'special_orders';
+          final isSpecialOrder =
+              widget.selectedService['category'] == 'special_orders';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isSpecialOrder 
-                ? 'Special order submitted! Admin will contact you with a price quote.'
-                : 'Service request posted successfully!'),
+              content: Text(isSpecialOrder
+                  ? 'Special order submitted! Admin will contact you with a price quote.'
+                  : 'Service request posted successfully!'),
               backgroundColor: isSpecialOrder ? Colors.orange : null,
             ),
           );
@@ -1049,17 +1123,23 @@ class _EnhancedPostErrandFormPageState
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Unable to post your service request. Please try again.';
-        
+        String errorMessage =
+            'Unable to post your service request. Please try again.';
+
         // Provide more specific error messages
-        if (e.toString().contains('not authenticated') || e.toString().contains('sign in')) {
+        if (e.toString().contains('not authenticated') ||
+            e.toString().contains('sign in')) {
           errorMessage = 'Please sign in to post a service request.';
-        } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (e.toString().contains('validation') || e.toString().contains('constraint')) {
-          errorMessage = 'Please check that all required fields are filled correctly.';
+        } else if (e.toString().contains('network') ||
+            e.toString().contains('connection')) {
+          errorMessage =
+              'Network error. Please check your internet connection and try again.';
+        } else if (e.toString().contains('validation') ||
+            e.toString().contains('constraint')) {
+          errorMessage =
+              'Please check that all required fields are filled correctly.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),

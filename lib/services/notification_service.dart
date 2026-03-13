@@ -63,7 +63,7 @@ class NotificationService {
   }) async {
     // Use launcher_icon for the small notification icon (Lotto Runners logo)
     // Use largeIcon to show the colored logo in expanded notifications
-    final androidDetails = AndroidNotificationDetails(
+    final androidDetails = const AndroidNotificationDetails(
       'lotto_runners_channel',
       'Lotto Runners Notifications',
       channelDescription: 'Notifications for errand updates',
@@ -71,7 +71,7 @@ class NotificationService {
       priority: Priority.high,
       showWhen: true,
       icon: '@mipmap/launcher_icon',
-      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/launcher_icon'),
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/launcher_icon'),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -456,7 +456,6 @@ class NotificationService {
       body: 'Your bus booking has been accepted: $serviceName',
     );
   }
-
 }
 
 // Extension to help integrate notifications with the app lifecycle

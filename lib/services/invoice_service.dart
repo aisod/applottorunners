@@ -2,10 +2,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
-import 'package:lotto_runners/supabase/supabase_config.dart';
 
 /// Invoice Service
-/// 
+///
 /// Generates professional invoices for business users when they create
 /// errands or bookings. Invoices include company details, itemized costs,
 /// and payment information.
@@ -34,7 +33,9 @@ class InvoiceService {
               customerName: userProfile['full_name'] ?? 'Business Customer',
               customerEmail: userProfile['email'] ?? '',
               customerPhone: userProfile['phone'] ?? '',
-              companyName: userProfile['company_name'] ?? userProfile['full_name'] ?? 'Company',
+              companyName: userProfile['company_name'] ??
+                  userProfile['full_name'] ??
+                  'Company',
               items: [
                 InvoiceItem(
                   description: title,
@@ -79,7 +80,8 @@ class InvoiceService {
 
       final pdf = pw.Document();
       final now = DateTime.now();
-      final invoiceNumber = 'INV-TRANS-${DateTime.now().millisecondsSinceEpoch}';
+      final invoiceNumber =
+          'INV-TRANS-${DateTime.now().millisecondsSinceEpoch}';
 
       pdf.addPage(
         pw.Page(
@@ -91,10 +93,13 @@ class InvoiceService {
               customerName: userProfile['full_name'] ?? 'Business Customer',
               customerEmail: userProfile['email'] ?? '',
               customerPhone: userProfile['phone'] ?? '',
-              companyName: userProfile['company_name'] ?? userProfile['full_name'] ?? 'Company',
+              companyName: userProfile['company_name'] ??
+                  userProfile['full_name'] ??
+                  'Company',
               items: [
                 InvoiceItem(
-                  description: 'Transportation Service\n$pickupLocation → $dropoffLocation',
+                  description:
+                      'Transportation Service\n$pickupLocation → $dropoffLocation',
                   quantity: passengerCount ?? 1,
                   unitPrice: amount / (passengerCount ?? 1),
                   total: amount,
@@ -135,7 +140,8 @@ class InvoiceService {
 
       final pdf = pw.Document();
       final now = DateTime.now();
-      final invoiceNumber = 'INV-CONTRACT-${DateTime.now().millisecondsSinceEpoch}';
+      final invoiceNumber =
+          'INV-CONTRACT-${DateTime.now().millisecondsSinceEpoch}';
 
       final durationText = durationType != null && durationValue != null
           ? '$durationValue $durationType'
@@ -151,14 +157,18 @@ class InvoiceService {
               customerName: userProfile['full_name'] ?? 'Business Customer',
               customerEmail: userProfile['email'] ?? '',
               customerPhone: userProfile['phone'] ?? '',
-              companyName: userProfile['company_name'] ?? userProfile['full_name'] ?? 'Company',
+              companyName: userProfile['company_name'] ??
+                  userProfile['full_name'] ??
+                  'Company',
               items: [
                 InvoiceItem(
                   description: 'Contract Service\n$description',
                   quantity: 1,
                   unitPrice: amount,
                   total: amount,
-                  details: durationText.isNotEmpty ? 'Duration: $durationText' : null,
+                  details: durationText.isNotEmpty
+                      ? 'Duration: $durationText'
+                      : null,
                 ),
               ],
               subtotal: amount,
@@ -340,9 +350,12 @@ class InvoiceService {
                 ),
                 children: [
                   _buildTableCell('DESCRIPTION', isHeader: true),
-                  _buildTableCell('QTY', isHeader: true, align: pw.TextAlign.center),
-                  _buildTableCell('UNIT PRICE', isHeader: true, align: pw.TextAlign.right),
-                  _buildTableCell('TOTAL', isHeader: true, align: pw.TextAlign.right),
+                  _buildTableCell('QTY',
+                      isHeader: true, align: pw.TextAlign.center),
+                  _buildTableCell('UNIT PRICE',
+                      isHeader: true, align: pw.TextAlign.right),
+                  _buildTableCell('TOTAL',
+                      isHeader: true, align: pw.TextAlign.right),
                 ],
               ),
               // Items
@@ -420,7 +433,7 @@ class InvoiceService {
                   style: const pw.TextStyle(fontSize: 10),
                 ),
                 pw.Text(
-                  'For inquiries, contact: support@lottorunners.com',
+                  'For inquiries, contact: info@lottoerunners.com. Phone: 0811284627',
                   style: const pw.TextStyle(fontSize: 10),
                 ),
               ],
@@ -510,4 +523,3 @@ class InvoiceItem {
     this.details,
   });
 }
-
