@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Helper class for handling file uploads
 class FileUploadHelper {
@@ -34,7 +35,7 @@ class FileUploadHelper {
       }
       return null;
     } catch (e) {
-      print('Error uploading file: $e');
+      appLog('Error uploading file: $e');
       return null;
     }
   }
@@ -44,7 +45,7 @@ class FileUploadHelper {
     final filePath = await uploadFile();
     if (filePath != null) {
       // Do something with the file
-      print('File uploaded: $filePath');
+      appLog('File uploaded: $filePath');
     }
   }
 }

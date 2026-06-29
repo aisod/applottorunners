@@ -2,42 +2,44 @@
     xmlns:tools="http://schemas.android.com/tools">
     <!-- Internet permission for Supabase -->
     <uses-permission android:name="android.permission.INTERNET" />
-    
-    <!-- Camera and photo permissions -->
+
+    <!-- Camera and photos (errand attachments, profile photo) -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    
-    <!-- Storage permissions for Android 11+ (API 30+) for PDF downloads -->
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" 
-        tools:ignore="ScopedStorage" />
-    
-    <!-- Location permissions for GPS tracking -->
+
+
+    <!-- Location (maps, job pickup/drop-off, runner tracking while using the app) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    
-    <!-- Phone permissions for contacting users -->
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-    
-    <!-- Notification permissions -->
+
+    <!-- Notifications (job and payment updates) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    
+
     <!-- Network state for connection monitoring -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Google Maps API key permissions (already declared above) -->
+    <!-- Foreground service for Mapbox turn-by-turn navigation -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- Strip permissions merged from dependencies that this app does not use -->
+    <uses-permission android:name="android.permission.CALL_PHONE" tools:node="remove" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.SEND_SMS" tools:node="remove" />
 
     <application
         android:label="Lotto Runners"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:requestLegacyExternalStorage="true">
-        
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -46,7 +48,7 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            
+
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
@@ -55,7 +57,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            
+
             <!-- Deep link intent filter for email authentication -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -64,23 +66,17 @@
                 <data android:scheme="io.supabase.lottorunners" />
             </intent-filter>
         </activity>
-        
-        <!-- Don't delete the meta-data below.
-             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- Google Maps Android SDK key provided via manifest placeholder.
-             Must be in the <application> element for the Maps SDK to find it. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${GOOGLE_MAPS_API_KEY}" />
-            
 
     </application>
-    
-    <!-- Tell Google Play Store the camera feature is required -->
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />

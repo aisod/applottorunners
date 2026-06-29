@@ -41,3 +41,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local Android Gradle properties (contains secrets + machine-specific JDK paths)
+# Each developer maintains their own copy locally. See android/gradle.properties.example
+android/gradle.properties

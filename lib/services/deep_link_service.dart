@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/navigation_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class DeepLinkService {
   static final DeepLinkService _instance = DeepLinkService._internal();
@@ -13,7 +14,7 @@ class DeepLinkService {
 
   /// Handle incoming deep links for authentication
   static Future<void> handleDeepLink(String link) async {
-    print('🔗 Handling deep link: $link');
+    appLog('🔗 Handling deep link: $link');
 
     try {
       // Parse the URL to extract the fragment/query parameters
@@ -27,16 +28,16 @@ class DeepLinkService {
       else if (link.contains('reset-password')) {
         await _handlePasswordReset(uri);
       } else {
-        print('⚠️ Unknown deep link type: $link');
+        appLog('⚠️ Unknown deep link type: $link');
       }
     } catch (e) {
-      print('❌ Error handling deep link: $e');
+      appLog('❌ Error handling deep link: $e');
     }
   }
 
   /// Handle email confirmation deep link
   static Future<void> _handleEmailConfirmation(Uri uri) async {
-    print('📧 Handling email confirmation');
+    appLog('📧 Handling email confirmation');
 
     try {
       // Extract the access token from the URL
@@ -48,24 +49,24 @@ class DeepLinkService {
         // Recover the session using the access token from the deep link
         await SupabaseConfig.client.auth.recoverSession(accessToken);
 
-        print('✅ Email confirmation successful');
+        appLog('✅ Email confirmation successful');
 
         // Show success message
         _showSuccessMessage(
             'Email verified successfully! You can now sign in.');
       } else {
-        print('❌ Missing tokens in email confirmation link');
+        appLog('❌ Missing tokens in email confirmation link');
         _showErrorMessage('Invalid email confirmation link');
       }
     } catch (e) {
-      print('❌ Error confirming email: $e');
+      appLog('❌ Error confirming email: $e');
       _showErrorMessage('Failed to confirm email. Please try again.');
     }
   }
 
   /// Handle password reset deep link
   static Future<void> _handlePasswordReset(Uri uri) async {
-    print('🔑 Handling password reset');
+    appLog('🔑 Handling password reset');
 
     try {
       // Extract the access token from the URL
@@ -81,7 +82,7 @@ class DeepLinkService {
 
           // If another tab handled a password reset within the last 2 seconds, skip this one
           if (lastResetTime != null && (currentTime - lastResetTime) < 2000) {
-            print(
+            appLog(
                 '🔑 Another tab is already handling password reset, skipping...');
             return;
           }
@@ -97,23 +98,23 @@ class DeepLinkService {
           // Store the access token for later use instead of immediately recovering session
           _storePasswordResetToken(accessToken);
 
-          print('✅ Password reset token stored for web app');
+          appLog('✅ Password reset token stored for web app');
 
           // Navigate to password reset page where user can set new password
           _navigateToPasswordReset();
         } else {
           // For mobile apps, use the normal flow
           await SupabaseConfig.client.auth.recoverSession(accessToken);
-          print(
+          appLog(
               '✅ Password reset link opened successfully - user is now signed in');
           _navigateToPasswordReset();
         }
       } else {
-        print('❌ Missing tokens in password reset link');
+        appLog('❌ Missing tokens in password reset link');
         _showErrorMessage('Invalid password reset link');
       }
     } catch (e) {
-      print('❌ Error handling password reset: $e');
+      appLog('❌ Error handling password reset: $e');
       _showErrorMessage(
           'Failed to process password reset link. Please try again.');
     }
@@ -121,7 +122,7 @@ class DeepLinkService {
 
   /// Navigate to password reset page
   static void _navigateToPasswordReset() {
-    print('🔑 Navigating to password reset page');
+    appLog('🔑 Navigating to password reset page');
     NavigationService.navigateToPasswordReset();
   }
 
@@ -157,7 +158,7 @@ class DeepLinkService {
       // For now, we'll use a simpler approach
       return false;
     } catch (e) {
-      print('Error getting web password reset flag: $e');
+      appLog('Error getting web password reset flag: $e');
       return false;
     }
   }
@@ -168,7 +169,7 @@ class DeepLinkService {
       // This would need to be implemented with web-specific storage
       // For now, we'll use a simpler approach
     } catch (e) {
-      print('Error setting web password reset flag: $e');
+      appLog('Error setting web password reset flag: $e');
     }
   }
 
@@ -178,7 +179,7 @@ class DeepLinkService {
       // This would need to be implemented with web-specific storage
       // For now, we'll use a simpler approach
     } catch (e) {
-      print('Error clearing web password reset flag: $e');
+      appLog('Error clearing web password reset flag: $e');
     }
   }
 
@@ -192,7 +193,7 @@ class DeepLinkService {
       }
       return null;
     } catch (e) {
-      print('Error getting last password reset time: $e');
+      appLog('Error getting last password reset time: $e');
       return null;
     }
   }
@@ -205,7 +206,7 @@ class DeepLinkService {
         // In a real implementation, you'd store this in localStorage
       }
     } catch (e) {
-      print('Error setting last password reset time: $e');
+      appLog('Error setting last password reset time: $e');
     }
   }
 
@@ -232,13 +233,13 @@ class DeepLinkService {
 
   /// Show success message using a global navigator
   static void _showSuccessMessage(String message) {
-    print('✅ Success: $message');
+    appLog('✅ Success: $message');
     NavigationService.showSuccessMessage(message);
   }
 
   /// Show error message using a global navigator
   static void _showErrorMessage(String message) {
-    print('❌ Error: $message');
+    appLog('❌ Error: $message');
     NavigationService.showErrorMessage(message);
   }
 
@@ -249,19 +250,19 @@ class DeepLinkService {
       final event = data.event;
       final session = data.session;
 
-      print('🔐 Auth state changed: $event');
-      print('📊 Session present: ${session != null}');
+      appLog('🔐 Auth state changed: $event');
+      appLog('📊 Session present: ${session != null}');
 
       if (event == AuthChangeEvent.signedIn && session != null) {
-        print('✅ User signed in successfully');
+        appLog('✅ User signed in successfully');
         // Handle successful authentication
       } else if (event == AuthChangeEvent.signedOut) {
-        print('👋 User signed out');
+        appLog('👋 User signed out');
         // Handle sign out
       } else if (event == AuthChangeEvent.passwordRecovery) {
-        print('🔑 Password recovery event detected!');
-        print('📝 User ID: ${session?.user.id}');
-        print('📧 User email: ${session?.user.email}');
+        appLog('🔑 Password recovery event detected!');
+        appLog('📝 User ID: ${session?.user.id}');
+        appLog('📧 User email: ${session?.user.email}');
         
         // Set the password reset flow flag
         _setPasswordResetFlow();

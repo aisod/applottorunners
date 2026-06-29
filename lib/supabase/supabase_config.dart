@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:typed_data';
 import 'package:lotto_runners/services/notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class SupabaseConfig {
   static const String supabaseUrl = 'https://irfbqpruvkkbylwwikwx.supabase.co';
@@ -21,8 +22,8 @@ class SupabaseConfig {
       ),
     );
 
-    print('✅ Supabase initialized successfully');
-    print('🔗 Deep link scheme: io.supabase.lottorunners');
+    appLog('✅ Supabase initialized successfully');
+    appLog('🔗 Deep link scheme: io.supabase.lottorunners');
   }
 
   // Authentication helpers
@@ -32,15 +33,15 @@ class SupabaseConfig {
   // Test connection method for debugging
   static Future<bool> testConnection() async {
     try {
-      print('🔍 Testing connection to Supabase...');
+      appLog('🔍 Testing connection to Supabase...');
 
       // Try a simple database query
       await client.from('users').select('count').limit(1);
 
-      print('✅ Database connection successful!');
+      appLog('✅ Database connection successful!');
       return true;
     } catch (e) {
-      print('❌ Connection test failed: $e');
+      appLog('❌ Connection test failed: $e');
       return false;
     }
   }
@@ -48,19 +49,19 @@ class SupabaseConfig {
   static Future<AuthResponse> signInWithEmail(
       String email, String password) async {
     try {
-      print('🔑 Attempting to sign in with: $email');
-      print('🌐 Supabase URL: $supabaseUrl');
+      appLog('🔑 Attempting to sign in with: $email');
+      appLog('🌐 Supabase URL: $supabaseUrl');
 
       final response = await client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
-      print('✅ Sign in successful!');
+      appLog('✅ Sign in successful!');
       return response;
     } catch (e) {
-      print('❌ Sign in error details: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Sign in error details: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
 
       // Check if it's a network error and provide helpful message
       if (e.toString().contains('XMLHttpRequest') ||
@@ -79,14 +80,14 @@ class SupabaseConfig {
   static Future<AuthResponse> signUpWithEmail(
       String email, String password, Map<String, dynamic> userData) async {
     try {
-      print('📧 Signing up user: $email');
+      appLog('📧 Signing up user: $email');
 
       // Use different redirect URLs based on platform
       final redirectUrl = kIsWeb
           ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
 
-      print('🔗 Email confirmation redirect URL: $redirectUrl');
+      appLog('🔗 Email confirmation redirect URL: $redirectUrl');
 
       final response = await client.auth.signUp(
         email: email,
@@ -95,13 +96,13 @@ class SupabaseConfig {
         emailRedirectTo: redirectUrl,
       );
 
-      print('✅ Sign up successful! Email confirmation sent to: $email');
+      appLog('✅ Sign up successful! Email confirmation sent to: $email');
       return response;
     } on AuthApiException catch (e) {
-      print('❌ Sign up AuthApiException: $e');
-      print('❌ Error code: ${e.code}');
-      print('❌ Error message: ${e.message}');
-      print('❌ Status code: ${e.statusCode}');
+      appLog('❌ Sign up AuthApiException: $e');
+      appLog('❌ Error code: ${e.code}');
+      appLog('❌ Error message: ${e.message}');
+      appLog('❌ Status code: ${e.statusCode}');
 
       // Handle specific error cases
       if (e.message
@@ -124,9 +125,9 @@ class SupabaseConfig {
         throw Exception('AUTH_ERROR: ${e.message}');
       }
     } on AuthRetryableFetchException catch (e) {
-      print('❌ Sign up AuthRetryableFetchException: $e');
-      print('❌ Error message: ${e.message}');
-      print('❌ Status code: ${e.statusCode}');
+      appLog('❌ Sign up AuthRetryableFetchException: $e');
+      appLog('❌ Error message: ${e.message}');
+      appLog('❌ Status code: ${e.statusCode}');
 
       // Parse the error message
       if (e.message.contains('Error sending confirmation email') ||
@@ -136,8 +137,8 @@ class SupabaseConfig {
         throw Exception('NETWORK_ERROR: ${e.message}');
       }
     } catch (e) {
-      print('❌ Sign up error: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Sign up error: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
 
       // Check for email sending errors in the error string
       final errorString = e.toString().toLowerCase();
@@ -168,23 +169,23 @@ class SupabaseConfig {
   /// Send password reset email to user
   static Future<void> resetPasswordForEmail(String email) async {
     try {
-      print('📧 Sending password reset email to: $email');
+      appLog('📧 Sending password reset email to: $email');
 
       // Use different redirect URLs based on platform
       final redirectUrl = kIsWeb
           ? 'https://app.lottoerunners.com/password-reset'
           : 'io.supabase.lottorunners://reset-password';
 
-      print('🔗 Redirect URL: $redirectUrl');
+      appLog('🔗 Redirect URL: $redirectUrl');
 
       await client.auth.resetPasswordForEmail(
         email,
         redirectTo: redirectUrl,
       );
 
-      print('✅ Password reset email sent successfully');
+      appLog('✅ Password reset email sent successfully');
     } on AuthApiException catch (e) {
-      print('❌ Password reset AuthApiException: $e');
+      appLog('❌ Password reset AuthApiException: $e');
 
       // Check for specific error codes
       if (e.code == 'email_address_invalid' ||
@@ -202,9 +203,9 @@ class SupabaseConfig {
         throw Exception('AUTH_ERROR: ${e.message}');
       }
     } on AuthRetryableFetchException catch (e) {
-      print('❌ Password reset AuthRetryableFetchException: $e');
-      print('❌ Error message: ${e.message}');
-      print('❌ Status code: ${e.statusCode}');
+      appLog('❌ Password reset AuthRetryableFetchException: $e');
+      appLog('❌ Error message: ${e.message}');
+      appLog('❌ Status code: ${e.statusCode}');
 
       final lowerMessage = e.message.toLowerCase();
 
@@ -216,7 +217,7 @@ class SupabaseConfig {
               lowerMessage.contains('unexpected_failure'));
 
       if (isEmailSendFailure) {
-        print('📧 Detected email sending failure');
+        appLog('📧 Detected email sending failure');
         throw Exception('EMAIL_SEND_FAILED');
       }
 
@@ -231,7 +232,7 @@ class SupabaseConfig {
       // Generic network error for other cases
       throw Exception('NETWORK_ERROR: ${e.message}');
     } catch (e) {
-      print('❌ Password reset error: $e');
+      appLog('❌ Password reset error: $e');
       throw Exception('Failed to send password reset email: $e');
     }
   }
@@ -239,14 +240,14 @@ class SupabaseConfig {
   /// Resend email confirmation for unverified users
   static Future<void> resendEmailConfirmation(String email) async {
     try {
-      print('📧 Resending email confirmation to: $email');
+      appLog('📧 Resending email confirmation to: $email');
 
       // Use different redirect URLs based on platform
       final redirectUrl = kIsWeb
           ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
 
-      print('🔗 Email confirmation redirect URL: $redirectUrl');
+      appLog('🔗 Email confirmation redirect URL: $redirectUrl');
 
       await client.auth.resend(
         type: OtpType.signup,
@@ -254,12 +255,12 @@ class SupabaseConfig {
         emailRedirectTo: redirectUrl,
       );
 
-      print('✅ Email confirmation resent successfully');
+      appLog('✅ Email confirmation resent successfully');
     } on AuthApiException catch (e) {
-      print('❌ Resend confirmation AuthApiException: $e');
-      print('❌ Error code: ${e.code}');
-      print('❌ Error message: ${e.message}');
-      print('❌ Status code: ${e.statusCode}');
+      appLog('❌ Resend confirmation AuthApiException: $e');
+      appLog('❌ Error code: ${e.code}');
+      appLog('❌ Error message: ${e.message}');
+      appLog('❌ Status code: ${e.statusCode}');
 
       // Handle specific error cases
       if (e.message
@@ -277,9 +278,9 @@ class SupabaseConfig {
         throw Exception('AUTH_ERROR: ${e.message}');
       }
     } on AuthRetryableFetchException catch (e) {
-      print('❌ Resend confirmation AuthRetryableFetchException: $e');
-      print('❌ Error message: ${e.message}');
-      print('❌ Status code: ${e.statusCode}');
+      appLog('❌ Resend confirmation AuthRetryableFetchException: $e');
+      appLog('❌ Error message: ${e.message}');
+      appLog('❌ Status code: ${e.statusCode}');
 
       // Parse the error message
       if (e.message.contains('Error sending confirmation email') ||
@@ -289,8 +290,8 @@ class SupabaseConfig {
         throw Exception('NETWORK_ERROR: ${e.message}');
       }
     } catch (e) {
-      print('❌ Resend confirmation error: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Resend confirmation error: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
 
       // Check for email sending errors in the error string
       final errorString = e.toString();
@@ -306,19 +307,19 @@ class SupabaseConfig {
   /// Verify the 6-digit email OTP sent after signup (use after signUp when email confirmation is required).
   static Future<AuthResponse> verifyEmailOtp(String email, String token) async {
     try {
-      print('📧 Verifying email OTP for: $email');
+      appLog('📧 Verifying email OTP for: $email');
       final response = await client.auth.verifyOTP(
         email: email,
         token: token.trim(),
         type: OtpType.signup,
       );
-      print('✅ Email OTP verified successfully');
+      appLog('✅ Email OTP verified successfully');
       return response;
     } on AuthApiException catch (e) {
-      print('❌ Verify OTP AuthApiException: $e');
+      appLog('❌ Verify OTP AuthApiException: $e');
       throw Exception('OTP_INVALID: ${e.message}');
     } catch (e) {
-      print('❌ Verify OTP error: $e');
+      appLog('❌ Verify OTP error: $e');
       rethrow;
     }
   }
@@ -356,8 +357,8 @@ class SupabaseConfig {
     try {
       var query = client.from('errands').select('''
         *,
-        customer:customer_id(full_name, phone),
-        runner:runner_id(full_name, phone)
+        customer:users!errands_customer_id_fkey(full_name, phone),
+        runner:users!errands_runner_id_fkey(full_name, phone)
       ''');
 
       if (status != null) {
@@ -373,17 +374,55 @@ class SupabaseConfig {
 
   static Future<List<Map<String, dynamic>>> getMyErrands(String userId) async {
     try {
+      // Step 1: Fetch errands without join
       final result = await client
           .from('errands')
-          .select('''
-        *,
-        customer:customer_id(full_name, phone),
-        runner:runner_id(full_name, phone),
-        paytoday_transactions(amount, status, payment_type)
-      ''')
+          .select('*, paytoday_transactions(amount, status, payment_type)')
           .or('customer_id.eq.$userId,runner_id.eq.$userId')
           .order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(result);
+
+      final errands = List<Map<String, dynamic>>.from(result);
+      if (errands.isEmpty) return errands;
+
+      // Step 2: Collect all unique user IDs
+      final allUserIds = {
+        ...errands.map((e) => e['customer_id']).whereType<String>(),
+        ...errands.map((e) => e['runner_id']).whereType<String>(),
+      }.toList();
+
+      // Step 3: Batch fetch user profiles via RPC (bypasses RLS)
+      Map<String, Map<String, dynamic>> userMap = {};
+      if (allUserIds.isNotEmpty) {
+        try {
+          final users = await client.rpc(
+            'get_user_profiles',
+            params: {'user_ids': allUserIds},
+          );
+          for (final u in (users as List)) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u as Map);
+          }
+        } catch (rpcError) {
+          // Fallback to direct query
+          final users = await client
+              .from('users')
+              .select('id, full_name, phone')
+              .inFilter('id', allUserIds);
+          for (final u in users) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u);
+          }
+        }
+      }
+
+      // Step 4: Merge user data into errands
+      return errands.map((errand) {
+        final customerId = errand['customer_id'] as String?;
+        final runnerId = errand['runner_id'] as String?;
+        return {
+          ...errand,
+          'customer': customerId != null ? userMap[customerId] : null,
+          'runner': runnerId != null ? userMap[runnerId] : null,
+        };
+      }).toList();
     } catch (e) {
       throw Exception('Failed to fetch my errands: $e');
     }
@@ -395,33 +434,33 @@ class SupabaseConfig {
       // Check authentication
       final user = currentUser;
       if (user == null) {
-        print('❌ [DEBUG] createErrand - User not authenticated');
+        appLog('❌ [DEBUG] createErrand - User not authenticated');
         throw Exception('User must be authenticated to create errands');
       }
-      print('✅ [DEBUG] createErrand - User authenticated: ${user.id}');
+      appLog('✅ [DEBUG] createErrand - User authenticated: ${user.id}');
 
       // Remove customer_id if present - trigger will set it
       final cleanData = Map<String, dynamic>.from(errandData);
       if (cleanData.containsKey('customer_id')) {
-        print(
+        appLog(
             '⚠️ [DEBUG] createErrand - Removing customer_id from payload (trigger will set it)');
         cleanData.remove('customer_id');
       }
 
-      print(
+      appLog(
           '📤 [DEBUG] createErrand - Inserting errand with category: ${cleanData['category']}');
       final response =
           await client.from('errands').insert(cleanData).select().single();
-      print(
+      appLog(
           '✅ [DEBUG] createErrand - Errand created successfully: ${response['id']}');
       return response;
     } catch (e) {
-      print('❌ [DEBUG] createErrand - Error: $e');
+      appLog('❌ [DEBUG] createErrand - Error: $e');
       if (e.toString().contains('RLS') ||
           e.toString().contains('row-level security')) {
-        print('❌ [DEBUG] createErrand - RLS policy violation detected');
-        print('❌ [DEBUG] createErrand - Current user: ${currentUser?.id}');
-        print(
+        appLog('❌ [DEBUG] createErrand - RLS policy violation detected');
+        appLog('❌ [DEBUG] createErrand - Current user: ${currentUser?.id}');
+        appLog(
             '❌ [DEBUG] createErrand - Run fix_errand_insert_rls_for_trigger.sql to fix RLS policy');
       }
       throw Exception('Failed to create errand: $e');
@@ -461,7 +500,7 @@ class SupabaseConfig {
 
   static Future<void> updateErrandStatus(String errandId, String status) async {
     try {
-      print('🔄 Updating errand status: $errandId to $status');
+      appLog('🔄 Updating errand status: $errandId to $status');
 
       // Get errand details before updating
       final errandResponse = await client
@@ -479,9 +518,9 @@ class SupabaseConfig {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', errandId);
 
-      print('✅ Errand status updated successfully: $response');
+      appLog('✅ Errand status updated successfully: $response');
     } catch (e) {
-      print('❌ Error updating errand status: $e');
+      appLog('❌ Error updating errand status: $e');
       throw Exception('Failed to update errand status: $e');
     }
   }
@@ -539,9 +578,9 @@ class SupabaseConfig {
 
   static Future<void> acceptErrand(String errandId, String runnerId) async {
     try {
-      print('🔄 Starting errand acceptance process...');
-      print('🔄 Errand ID: $errandId');
-      print('🔄 Runner ID: $runnerId');
+      appLog('🔄 Starting errand acceptance process...');
+      appLog('🔄 Errand ID: $errandId');
+      appLog('🔄 Runner ID: $runnerId');
 
       // Check if runner is verified first
       final canAccept = await canRunnerAcceptErrands(runnerId);
@@ -551,9 +590,9 @@ class SupabaseConfig {
       }
 
       // Check runner limits first
-      print('🚦 DEBUG: [ERRAND] Checking runner limits before acceptance...');
+      appLog('🚦 DEBUG: [ERRAND] Checking runner limits before acceptance...');
       final limits = await checkRunnerLimits(runnerId);
-      print('🚦 DEBUG: [ERRAND] Runner limits: $limits');
+      appLog('🚦 DEBUG: [ERRAND] Runner limits: $limits');
 
       if (!limits['can_accept_errands']) {
         final totalCount = limits['total_active_count'] ?? 0;
@@ -569,7 +608,7 @@ class SupabaseConfig {
           .eq('id', errandId)
           .single();
 
-      print('📋 Current errand details: $errandResponse');
+      appLog('📋 Current errand details: $errandResponse');
 
       final customerId = errandResponse['customer_id'];
       final errandTitle = errandResponse['title'];
@@ -578,7 +617,7 @@ class SupabaseConfig {
 
       // Check if errand is already accepted
       if (currentStatus == 'accepted' && currentRunnerId == runnerId) {
-        print('⚠️ Errand already accepted by this runner');
+        appLog('⚠️ Errand already accepted by this runner');
         return;
       }
 
@@ -587,7 +626,7 @@ class SupabaseConfig {
         throw Exception('Cannot accept errand with status: $currentStatus');
       }
 
-      print('🔄 Updating errand status to accepted...');
+      appLog('🔄 Updating errand status to accepted...');
 
       // Update errand status
       // Use select() to ensure the row is returned, confirming update success (and RLS permission)
@@ -608,16 +647,16 @@ class SupabaseConfig {
             'Failed to accept errand: Errand update returned no data. This usually means the errand is no longer available or you do not have permission to update it.');
       }
 
-      print('✅ Errand acceptance update result: $updateResult');
-      print('🔍 Verification - Updated errand: $updateResult');
+      appLog('✅ Errand acceptance update result: $updateResult');
+      appLog('🔍 Verification - Updated errand: $updateResult');
 
       // Create chat conversation
       await _createErrandChat(errandId, customerId, runnerId, errandTitle);
 
-      print('✅ Errand acceptance process completed successfully');
+      appLog('✅ Errand acceptance process completed successfully');
     } catch (e) {
-      print('❌ Error in acceptErrand: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Error in acceptErrand: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       throw Exception('Failed to accept errand: $e');
     }
   }
@@ -649,17 +688,17 @@ class SupabaseConfig {
         'message_type': 'text',
       });
 
-      print('✅ Chat conversation created for errand: $errandId');
+      appLog('✅ Chat conversation created for errand: $errandId');
     } catch (e) {
       // Handle unique constraint violation (duplicate key)
       // This happens if the chat was already created (e.g. from a previous attempt)
       if (e is PostgrestException && e.code == '23505') {
-        print(
+        appLog(
             '⚠️ Chat conversation already exists (duplicate key error handled).');
         return;
       }
 
-      print('❌ Error creating chat conversation: $e');
+      appLog('❌ Error creating chat conversation: $e');
       // Don't throw here as the errand was accepted successfully
     }
   }
@@ -671,10 +710,8 @@ class SupabaseConfig {
       String? vehicleType,
       String? runnerVehicleType}) async {
     try {
-      var query = client.from('errands').select('''
-        *,
-        customer:customer_id(full_name, phone)
-      ''').inFilter('status', [
+      // Step 1: Fetch errands without join
+      var query = client.from('errands').select('*').inFilter('status', [
         'posted',
         'pending'
       ]).filter('runner_id', 'is', null);
@@ -686,23 +723,56 @@ class SupabaseConfig {
         query = query.eq('category', category);
       }
 
-      // Note: needs_vehicle field removed from database, filtering now based on vehicle_type only
-
       if (vehicleType != null) {
         query = query.eq('vehicle_type', vehicleType);
       }
 
-      // Filter by runner's vehicle type: show errands with matching vehicle type OR errands with no vehicle requirement
       if (runnerVehicleType != null && runnerVehicleType.isNotEmpty) {
-        // Show errands that either:
-        // 1. Have no vehicle type requirement (null or empty vehicle_type)
-        // 2. Match the runner's vehicle type
         query =
             query.or('vehicle_type.is.null,vehicle_type.eq.$runnerVehicleType');
       }
 
       final result = await query.order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(result);
+      final errands = List<Map<String, dynamic>>.from(result);
+      if (errands.isEmpty) return errands;
+
+      // Step 2: Collect customer IDs
+      final customerIds = errands
+          .map((e) => e['customer_id'])
+          .whereType<String>()
+          .toSet()
+          .toList();
+
+      // Step 3: Fetch profiles via RPC
+      Map<String, Map<String, dynamic>> userMap = {};
+      if (customerIds.isNotEmpty) {
+        try {
+          final users = await client.rpc(
+            'get_user_profiles',
+            params: {'user_ids': customerIds},
+          );
+          for (final u in (users as List)) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u as Map);
+          }
+        } catch (_) {
+          final users = await client
+              .from('users')
+              .select('id, full_name, phone')
+              .inFilter('id', customerIds);
+          for (final u in users) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u);
+          }
+        }
+      }
+
+      // Step 4: Merge
+      return errands.map((errand) {
+        final customerId = errand['customer_id'] as String?;
+        return {
+          ...errand,
+          'customer': customerId != null ? userMap[customerId] : null,
+        };
+      }).toList();
     } catch (e) {
       throw Exception('Failed to fetch available errands: $e');
     }
@@ -712,37 +782,84 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getRunnerErrands(String runnerId,
       {String? status}) async {
     try {
-      print('🔍 getRunnerErrands called with runnerId: $runnerId');
-      print('🔍 Current user: ${currentUser?.id}');
-      print('🔍 Current user email: ${currentUser?.email}');
+      appLog('🔍 getRunnerErrands called with runnerId: $runnerId');
 
-      var query = client.from('errands').select('''
-        *,
-        customer:customer_id(full_name, phone)
-      ''').eq('runner_id', runnerId);
-
-      // Only return errands that have been properly accepted (not just posted)
-      // This prevents errands from showing as "available" when they shouldn't
-      query =
-          query.inFilter('status', ['accepted', 'in_progress', 'completed']);
+      // Step 1: Fetch errands without join
+      var query = client
+          .from('errands')
+          .select('*')
+          .eq('runner_id', runnerId)
+          .inFilter('status', ['accepted', 'in_progress', 'completed']);
 
       if (status != null) {
         query = query.eq('status', status);
-        print('🔍 Filtering by status: $status');
       }
 
-      print('🔍 Executing query...');
       final result = await query.order('updated_at', ascending: false);
-      print('🔍 Query result: $result');
-      print('🔍 Result length: ${result.length}');
-
       final errands = List<Map<String, dynamic>>.from(result);
-      print('🔍 Converted errands: $errands');
+      appLog('🔍 Fetched ${errands.length} errands');
 
-      return errands;
+      if (errands.isEmpty) return errands;
+
+      // Step 2: Collect all user IDs (customers and runners)
+      final customerIds = errands
+          .map((e) => e['customer_id'])
+          .whereType<String>()
+          .toSet()
+          .toList();
+      final runnerIds = errands
+          .map((e) => e['runner_id'])
+          .whereType<String>()
+          .toSet()
+          .toList();
+      final allUserIds = {...customerIds, ...runnerIds}.toList();
+
+      // Step 3: Fetch user profiles via RPC (bypasses RLS)
+      Map<String, Map<String, dynamic>> userMap = {};
+      if (allUserIds.isNotEmpty) {
+        appLog('🔍 Calling get_user_profiles RPC with ${allUserIds.length} IDs...');
+        try {
+          final users = await client.rpc(
+            'get_user_profiles',
+            params: {'user_ids': allUserIds},
+          );
+          for (final u in (users as List)) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u as Map);
+          }
+          appLog('🔍 userMap has ${userMap.length} profiles: ${userMap.values.map((v) => v['full_name']).toList()}');
+        } catch (rpcError) {
+          appLog('⚠️ RPC failed ($rpcError), falling back to direct query...');
+          final users = await client
+              .from('users')
+              .select('id, full_name, phone')
+              .inFilter('id', allUserIds);
+          for (final u in users) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u);
+          }
+          appLog('🔍 Fallback fetched ${userMap.length} profiles');
+        }
+      }
+
+      // Step 4: Merge user data into each errand
+      appLog('🔍 userMap keys: ${userMap.keys.toList()}');
+      final merged = errands.map((errand) {
+        final customerId = errand['customer_id'] as String?;
+        final runnerId2 = errand['runner_id'] as String?;
+        final customerProfile = customerId != null ? userMap[customerId] : null;
+        final runnerProfile = runnerId2 != null ? userMap[runnerId2] : null;
+        appLog('👤 Errand ${errand['id']}: customer_id=$customerId → customer=$customerProfile');
+        return {
+          ...errand,
+          'customer': customerProfile,
+          'runner': runnerProfile,
+        };
+      }).toList();
+      appLog('✅ getRunnerErrands: returning ${merged.length} errands');
+      return merged;
     } catch (e) {
-      print('❌ Error in getRunnerErrands: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Error in getRunnerErrands: $e');
+
+      appLog('❌ Error type: ${e.runtimeType}');
       throw Exception('Failed to fetch runner errands: $e');
     }
   }
@@ -750,7 +867,7 @@ class SupabaseConfig {
   // Start an errand (change status from accepted to in_progress)
   static Future<void> startErrand(String errandId) async {
     try {
-      print('🔧 startErrand called with ID: $errandId');
+      appLog('🔧 startErrand called with ID: $errandId');
 
       // Get errand details first, including price for payment checks
       final errandResponse = await client
@@ -776,7 +893,7 @@ class SupabaseConfig {
           final pendingAmount =
               (pendingResponse as num?)?.toDouble() ?? 0.0;
 
-          print(
+          appLog(
               '🔍 Pending payment for errand $errandId: $pendingAmount (price: $priceAmount)');
 
           // Block starting the errand if any amount is still pending
@@ -787,7 +904,7 @@ class SupabaseConfig {
           }
         } catch (paymentError) {
           // If the payment RPC itself fails, surface a clear message to the runner
-          print(
+          appLog(
               '❌ Error verifying payment status for errand $errandId: $paymentError');
           throw Exception(
             'PAYMENT_REQUIRED: Could not verify customer payment for this order. Please ask the customer to complete payment and try again.',
@@ -801,13 +918,13 @@ class SupabaseConfig {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      print('📝 Update data: $updateData');
+      appLog('📝 Update data: $updateData');
 
       final result =
           await client.from('errands').update(updateData).eq('id', errandId);
 
-      print('✅ Database update result: $result');
-      print('✅ Errand status updated successfully to in_progress');
+      appLog('✅ Database update result: $result');
+      appLog('✅ Errand status updated successfully to in_progress');
 
       // Send status update message to chat
       await _sendStatusUpdateMessage(errandId, runnerId, 'started');
@@ -815,8 +932,8 @@ class SupabaseConfig {
       // Notify customer that runner has started
       await _notifyCustomerRunnerStarted(customerId, runnerId, errandTitle);
     } catch (e) {
-      print('❌ Database error in startErrand: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Database error in startErrand: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       throw Exception('Failed to start errand: $e');
     }
   }
@@ -942,7 +1059,7 @@ class SupabaseConfig {
         }
       }
     } catch (e) {
-      print('❌ Error sending status update message: $e');
+      appLog('❌ Error sending status update message: $e');
     }
   }
 
@@ -955,7 +1072,7 @@ class SupabaseConfig {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('errand_id', errandId);
     } catch (e) {
-      print('❌ Error closing errand chat: $e');
+      appLog('❌ Error closing errand chat: $e');
     }
   }
 
@@ -965,10 +1082,10 @@ class SupabaseConfig {
     try {
       // Import notification service dynamically to avoid circular dependencies
       // This will be handled by the notification service when called
-      print(
+      appLog(
           '📱 Notifying customer $customerId that runner $runnerId started errand: $errandTitle');
     } catch (e) {
-      print('❌ Error notifying customer: $e');
+      appLog('❌ Error notifying customer: $e');
     }
   }
 
@@ -976,10 +1093,10 @@ class SupabaseConfig {
   static Future<void> _notifyCustomerErrandCompleted(
       String customerId, String runnerId, String errandTitle) async {
     try {
-      print(
+      appLog(
           '📱 Notifying customer $customerId that errand is completed: $errandTitle');
     } catch (e) {
-      print('❌ Error notifying customer: $e');
+      appLog('❌ Error notifying customer: $e');
     }
   }
 
@@ -987,12 +1104,12 @@ class SupabaseConfig {
   static Future<void> _notifyRunnerErrandCancelled(
       String runnerId, String customerId, String errandTitle) async {
     try {
-      print(
+      appLog(
           '📱 Notifying runner $runnerId that customer $customerId cancelled errand: $errandTitle');
 
       // Get customer name for notification
       final customerResponse = await client
-          .from('profiles')
+          .from('users')
           .select('full_name')
           .eq('id', customerId)
           .single();
@@ -1006,7 +1123,7 @@ class SupabaseConfig {
             errandTitle, customerName);
       }
     } catch (e) {
-      print('❌ Error notifying runner: $e');
+      appLog('❌ Error notifying runner: $e');
     }
   }
 
@@ -1014,12 +1131,12 @@ class SupabaseConfig {
   static Future<void> _notifyCustomerRunnerCancelled(
       String customerId, String runnerId, String errandTitle) async {
     try {
-      print(
+      appLog(
           '📱 Notifying customer $customerId that runner $runnerId cancelled errand: $errandTitle');
 
       // Get runner name for notification
       final runnerResponse = await client
-          .from('profiles')
+          .from('users')
           .select('full_name')
           .eq('id', runnerId)
           .single();
@@ -1033,7 +1150,7 @@ class SupabaseConfig {
             errandTitle, runnerName);
       }
     } catch (e) {
-      print('❌ Error notifying customer: $e');
+      appLog('❌ Error notifying customer: $e');
     }
   }
 
@@ -1041,12 +1158,12 @@ class SupabaseConfig {
   static Future<void> _notifyRunnerTransportationCancelled(
       String runnerId, String customerId, String serviceName) async {
     try {
-      print(
+      appLog(
           '📱 Notifying runner $runnerId that customer $customerId cancelled transportation: $serviceName');
 
       // Get customer name for notification
       final customerResponse = await client
-          .from('profiles')
+          .from('users')
           .select('full_name')
           .eq('id', customerId)
           .single();
@@ -1060,7 +1177,7 @@ class SupabaseConfig {
             serviceName, customerName);
       }
     } catch (e) {
-      print('❌ Error notifying runner: $e');
+      appLog('❌ Error notifying runner: $e');
     }
   }
 
@@ -1068,12 +1185,12 @@ class SupabaseConfig {
   static Future<void> _notifyCustomerTransportationCancelled(
       String customerId, String runnerId, String serviceName) async {
     try {
-      print(
+      appLog(
           '📱 Notifying customer $customerId that runner $runnerId cancelled transportation: $serviceName');
 
       // Get runner name for notification
       final runnerResponse = await client
-          .from('profiles')
+          .from('users')
           .select('full_name')
           .eq('id', runnerId)
           .single();
@@ -1087,7 +1204,7 @@ class SupabaseConfig {
             serviceName, runnerName);
       }
     } catch (e) {
-      print('❌ Error notifying customer: $e');
+      appLog('❌ Error notifying customer: $e');
     }
   }
 
@@ -1103,7 +1220,7 @@ class SupabaseConfig {
 
       return response;
     } catch (e) {
-      print('❌ Error fetching errand chat: $e');
+      appLog('❌ Error fetching errand chat: $e');
       return null;
     }
   }
@@ -1123,7 +1240,7 @@ class SupabaseConfig {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('❌ Error fetching chat messages: $e');
+      appLog('❌ Error fetching chat messages: $e');
       return [];
     }
   }
@@ -1179,7 +1296,7 @@ class SupabaseConfig {
 
       // If profile doesn't exist, create a default one
       if (profile == null) {
-        print('User profile not found, creating default profile...');
+        appLog('User profile not found, creating default profile...');
         final defaultProfile = {
           'id': currentUser!.id,
           'email': currentUser!.email ?? '',
@@ -1197,7 +1314,7 @@ class SupabaseConfig {
 
       return profile;
     } catch (e) {
-      print('Error getting current user profile: $e');
+      appLog('Error getting current user profile: $e');
       return null;
     }
   }
@@ -1219,7 +1336,7 @@ class SupabaseConfig {
         await client.from('users').insert(userData);
       }
     } catch (e) {
-      print('Error creating user profile: $e');
+      appLog('Error creating user profile: $e');
       throw Exception('Failed to create user profile: $e');
     }
   }
@@ -1236,8 +1353,31 @@ class SupabaseConfig {
       }).eq('id', currentUser!.id);
       return true;
     } catch (e) {
-      print('Error accepting terms: $e');
+      appLog('Error accepting terms: $e');
       return false;
+    }
+  }
+
+  /// Permanently deletes the signed-in user's data and auth account (Edge Function).
+  static Future<void> deleteMyAccount() async {
+    if (currentUser == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      final response = await client.functions.invoke('delete-account');
+      if (response.status != 200) {
+        final detail = response.data?.toString() ?? 'Unknown error';
+        throw Exception('delete-account failed: $detail');
+      }
+      try {
+        await signOut();
+      } catch (signOutError) {
+        appLog('Sign out after account deletion: $signOutError');
+      }
+    } catch (e) {
+      appLog('Error deleting account: $e');
+      rethrow;
     }
   }
 
@@ -1248,7 +1388,7 @@ class SupabaseConfig {
       await client.from('users').update(updates).eq('id', currentUser!.id);
       return true;
     } catch (e) {
-      print('Error updating profile: $e');
+      appLog('Error updating profile: $e');
       return false;
     }
   }
@@ -1384,7 +1524,7 @@ class SupabaseConfig {
 
       return imageUrl;
     } catch (e) {
-      print('Error uploading profile image: $e');
+      appLog('Error uploading profile image: $e');
       return null;
     }
   }
@@ -1459,12 +1599,12 @@ class SupabaseConfig {
         });
 
         if (rpcResponse == true) {
-          print(
+          appLog(
               '✅ Runner application $status and user verification status synced via RPC');
           return;
         }
       } catch (rpcError) {
-        print('⚠️ RPC failed, trying direct update: $rpcError');
+        appLog('⚠️ RPC failed, trying direct update: $rpcError');
       }
 
       // Fallback to direct update
@@ -1493,7 +1633,7 @@ class SupabaseConfig {
           'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', application['user_id']);
 
-        print(
+        appLog(
             '✅ Runner application $status and user verification status synced');
       }
     } catch (e) {
@@ -1512,7 +1652,7 @@ class SupabaseConfig {
 
       return user['user_type'] == 'runner' && user['is_verified'] == true;
     } catch (e) {
-      print('❌ SupabaseConfig: Error checking runner verification: $e');
+      appLog('❌ SupabaseConfig: Error checking runner verification: $e');
       return false;
     }
   }
@@ -1528,7 +1668,7 @@ class SupabaseConfig {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('❌ SupabaseConfig: Error getting verified runners: $e');
+      appLog('❌ SupabaseConfig: Error getting verified runners: $e');
       return [];
     }
   }
@@ -1542,7 +1682,7 @@ class SupabaseConfig {
     String? licenseNumber,
   }) async {
     try {
-      print(
+      appLog(
           '🔄 SupabaseConfig: Updating vehicle info for verified runner $userId');
 
       // Try using RPC function first
@@ -1557,11 +1697,11 @@ class SupabaseConfig {
         });
 
         if (rpcResponse == true) {
-          print('✅ SupabaseConfig: Vehicle info updated successfully via RPC');
+          appLog('✅ SupabaseConfig: Vehicle info updated successfully via RPC');
           return true;
         }
       } catch (rpcError) {
-        print('⚠️ SupabaseConfig: RPC failed, trying direct update: $rpcError');
+        appLog('⚠️ SupabaseConfig: RPC failed, trying direct update: $rpcError');
       }
 
       // Fallback to direct update
@@ -1587,11 +1727,11 @@ class SupabaseConfig {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', userId);
 
-      print(
+      appLog(
           '✅ SupabaseConfig: Vehicle info updated successfully via direct update');
       return true;
     } catch (e) {
-      print('❌ SupabaseConfig: Failed to update vehicle info: $e');
+      appLog('❌ SupabaseConfig: Failed to update vehicle info: $e');
       throw Exception('Failed to update vehicle information: $e');
     }
   }
@@ -1600,7 +1740,7 @@ class SupabaseConfig {
   static Future<Map<String, dynamic>?> getVerifiedRunnerVehicleInfo(
       String userId) async {
     try {
-      print(
+      appLog(
           '🔄 SupabaseConfig: Getting vehicle info for verified runner $userId');
 
       // Try using RPC function first
@@ -1611,12 +1751,12 @@ class SupabaseConfig {
         });
 
         if (rpcResponse != null && rpcResponse.isNotEmpty) {
-          print(
+          appLog(
               '✅ SupabaseConfig: Vehicle info retrieved successfully via RPC');
           return Map<String, dynamic>.from(rpcResponse.first);
         }
       } catch (rpcError) {
-        print('⚠️ SupabaseConfig: RPC failed, trying direct query: $rpcError');
+        appLog('⚠️ SupabaseConfig: RPC failed, trying direct query: $rpcError');
       }
 
       // Fallback to direct query
@@ -1628,14 +1768,14 @@ class SupabaseConfig {
           .maybeSingle();
 
       if (response != null) {
-        print(
+        appLog(
             '✅ SupabaseConfig: Vehicle info retrieved successfully via direct query');
         return Map<String, dynamic>.from(response);
       }
 
       return null;
     } catch (e) {
-      print('❌ SupabaseConfig: Failed to get vehicle info: $e');
+      appLog('❌ SupabaseConfig: Failed to get vehicle info: $e');
       throw Exception('Failed to get vehicle information: $e');
     }
   }
@@ -1668,7 +1808,7 @@ class SupabaseConfig {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', bookingId);
 
-      print(
+      appLog(
           '✅ Payment approved and released to runner for $bookingType: $bookingId');
     } catch (e) {
       throw Exception('Failed to approve payment: $e');
@@ -1684,7 +1824,7 @@ class SupabaseConfig {
       );
       return (response as num?)?.toDouble() ?? 0.0;
     } catch (e) {
-      print('❌ Error fetching wallet balance: $e');
+      appLog('❌ Error fetching wallet balance: $e');
       return 0.0;
     }
   }
@@ -1928,8 +2068,8 @@ class SupabaseConfig {
           ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
 
-      print('📧 Creating admin user: ${adminData['email']}');
-      print('🔗 Email confirmation redirect URL: $redirectUrl');
+      appLog('📧 Creating admin user: ${adminData['email']}');
+      appLog('🔗 Email confirmation redirect URL: $redirectUrl');
 
       final authResponse = await client.auth.signUp(
         email: adminData['email'],
@@ -1956,19 +2096,19 @@ class SupabaseConfig {
           'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', userId);
       } catch (updateError) {
-        print('⚠️  Warning: Could not update user profile: $updateError');
-        print('ℹ️  User profile may have been created with default values');
+        appLog('⚠️  Warning: Could not update user profile: $updateError');
+        appLog('ℹ️  User profile may have been created with default values');
       }
 
       // Sign out the newly created user to prevent session conflicts
       await client.auth.signOut();
 
-      print('✅ Admin user created successfully: ${adminData['email']}');
-      print('ℹ️  User ID: $userId');
-      print(
+      appLog('✅ Admin user created successfully: ${adminData['email']}');
+      appLog('ℹ️  User ID: $userId');
+      appLog(
           'ℹ️  User will receive a confirmation email and can sign in after confirming their email');
     } catch (e) {
-      print('❌ Error creating admin user: $e');
+      appLog('❌ Error creating admin user: $e');
 
       // Check if it's a duplicate email error
       if (e.toString().contains('duplicate key') ||
@@ -1991,9 +2131,9 @@ class SupabaseConfig {
       // Then delete the user profile
       await client.from('users').delete().eq('id', userId);
 
-      print('✅ User deleted successfully: $userId');
+      appLog('✅ User deleted successfully: $userId');
     } catch (e) {
-      print('❌ Error deleting user: $e');
+      appLog('❌ Error deleting user: $e');
       throw Exception('Failed to delete user: $e');
     }
   }
@@ -2007,8 +2147,8 @@ class SupabaseConfig {
           ? 'https://app.lottoerunners.com/confirm-email'
           : 'io.supabase.lottorunners://confirm-email';
 
-      print('📧 Creating user: ${userData['email']}');
-      print('🔗 Email confirmation redirect URL: $redirectUrl');
+      appLog('📧 Creating user: ${userData['email']}');
+      appLog('🔗 Email confirmation redirect URL: $redirectUrl');
 
       final authResponse = await client.auth.signUp(
         email: userData['email'],
@@ -2034,20 +2174,20 @@ class SupabaseConfig {
           'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', userId);
       } catch (updateError) {
-        print('⚠️  Warning: Could not update user profile: $updateError');
-        print('ℹ️  User profile may have been created with default values');
+        appLog('⚠️  Warning: Could not update user profile: $updateError');
+        appLog('ℹ️  User profile may have been created with default values');
       }
 
       // Sign out the newly created user to prevent session conflicts
       await client.auth.signOut();
 
-      print('✅ User created successfully: ${userData['email']}');
-      print('ℹ️  User ID: $userId');
-      print('ℹ️  User type: ${userData['user_type']}');
-      print(
+      appLog('✅ User created successfully: ${userData['email']}');
+      appLog('ℹ️  User ID: $userId');
+      appLog('ℹ️  User type: ${userData['user_type']}');
+      appLog(
           'ℹ️  User will receive a confirmation email and can sign in after confirming their email');
     } catch (e) {
-      print('❌ Error creating user: $e');
+      appLog('❌ Error creating user: $e');
 
       // Check if it's a duplicate email error
       if (e.toString().contains('duplicate key') ||
@@ -2169,26 +2309,26 @@ class SupabaseConfig {
       await client.from('services').update(updates).eq('id', serviceId);
       return true;
     } catch (e) {
-      print('Error updating service: $e');
+      appLog('Error updating service: $e');
       return false;
     }
   }
 
   static Future<bool> deleteService(String serviceId) async {
     try {
-      print('🗑️ Starting deletion of service: $serviceId');
+      appLog('🗑️ Starting deletion of service: $serviceId');
 
       // Delete the service completely
-      print('🗑️ Deleting service: $serviceId');
+      appLog('🗑️ Deleting service: $serviceId');
       final serviceResult =
           await client.from('services').delete().eq('id', serviceId);
-      print('🗑️ Service deletion result: $serviceResult');
+      appLog('🗑️ Service deletion result: $serviceResult');
 
-      print('✅ Service deleted successfully: $serviceId');
+      appLog('✅ Service deleted successfully: $serviceId');
       return true;
     } catch (e) {
-      print('❌ Error deleting service $serviceId: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Error deleting service $serviceId: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       return false;
     }
   }
@@ -2200,7 +2340,7 @@ class SupabaseConfig {
           .update({'is_active': false}).eq('id', serviceId);
       return true;
     } catch (e) {
-      print('Error deactivating service: $e');
+      appLog('Error deactivating service: $e');
       return false;
     }
   }
@@ -2216,7 +2356,7 @@ class SupabaseConfig {
           {'discount_percentage': discountPercentage}).eq('id', serviceId);
       return true;
     } catch (e) {
-      print('Error updating service discount: $e');
+      appLog('Error updating service discount: $e');
       return false;
     }
   }
@@ -2232,7 +2372,7 @@ class SupabaseConfig {
           {'discount_percentage': discountPercentage}).eq('id', vehicleTypeId);
       return true;
     } catch (e) {
-      print('Error updating vehicle type discount: $e');
+      appLog('Error updating vehicle type discount: $e');
       return false;
     }
   }
@@ -2316,11 +2456,11 @@ class SupabaseConfig {
 
   static Future<void> verifyUser(String userId) async {
     try {
-      print('🔧 SupabaseConfig: Verifying user $userId');
+      appLog('🔧 SupabaseConfig: Verifying user $userId');
 
       // Check current user and admin status
       final currentUser = client.auth.currentUser;
-      print('🔧 SupabaseConfig: Current auth user: ${currentUser?.id}');
+      appLog('🔧 SupabaseConfig: Current auth user: ${currentUser?.id}');
 
       if (currentUser == null) {
         throw Exception('No authenticated user found. Please log in as admin.');
@@ -2332,7 +2472,7 @@ class SupabaseConfig {
           .select('id, user_type, full_name')
           .eq('id', currentUser.id)
           .maybeSingle();
-      print('🔧 SupabaseConfig: Current user profile: $currentUserProfile');
+      appLog('🔧 SupabaseConfig: Current user profile: $currentUserProfile');
 
       if (currentUserProfile == null) {
         throw Exception('Current user profile not found in database');
@@ -2349,38 +2489,38 @@ class SupabaseConfig {
           .select('id, full_name, email, user_type, is_verified')
           .eq('id', userId)
           .maybeSingle();
-      print('🔧 SupabaseConfig: Target user check result: $userCheck');
+      appLog('🔧 SupabaseConfig: Target user check result: $userCheck');
 
       if (userCheck == null) {
         throw Exception('Target user not found with ID: $userId');
       }
 
-      print(
+      appLog(
           '🔧 SupabaseConfig: Target user current verification status: ${userCheck['is_verified']}');
 
       // Try using RPC to bypass RLS issues
       String? rpcError;
       try {
-        print('🔧 SupabaseConfig: Attempting RPC call...');
+        appLog('🔧 SupabaseConfig: Attempting RPC call...');
         final rpcResponse =
             await client.rpc('update_user_verification', params: {
           'user_id': userId,
           'is_verified': true,
         });
-        print('🔧 SupabaseConfig: RPC response: $rpcResponse');
+        appLog('🔧 SupabaseConfig: RPC response: $rpcResponse');
 
         if (rpcResponse == true) {
           // Also update runner applications if user is a runner
           await _syncRunnerApplicationStatus(userId, 'approved');
-          print('✅ SupabaseConfig: User verified successfully via RPC');
+          appLog('✅ SupabaseConfig: User verified successfully via RPC');
           return;
         } else {
-          print('⚠️ SupabaseConfig: RPC returned false, trying direct update');
+          appLog('⚠️ SupabaseConfig: RPC returned false, trying direct update');
         }
       } catch (e) {
         rpcError = e.toString();
-        print('⚠️ SupabaseConfig: RPC failed with error: $rpcError');
-        print('🔧 SupabaseConfig: Attempting direct update as fallback...');
+        appLog('⚠️ SupabaseConfig: RPC failed with error: $rpcError');
+        appLog('🔧 SupabaseConfig: Attempting direct update as fallback...');
       }
 
       // Fallback to direct update with better error handling
@@ -2394,7 +2534,7 @@ class SupabaseConfig {
             .eq('id', userId)
             .select();
 
-        print('🔧 SupabaseConfig: Direct update response: $response');
+        appLog('🔧 SupabaseConfig: Direct update response: $response');
 
         if (response.isEmpty) {
           // Check if user still exists
@@ -2415,26 +2555,26 @@ class SupabaseConfig {
         // Also update runner applications if user is a runner
         await _syncRunnerApplicationStatus(userId, 'approved');
 
-        print('✅ SupabaseConfig: User verified successfully via direct update');
+        appLog('✅ SupabaseConfig: User verified successfully via direct update');
       } catch (directUpdateError) {
-        print(
+        appLog(
             '❌ SupabaseConfig: Direct update also failed: $directUpdateError');
         throw Exception(
             'Both RPC and direct update failed. RPC error: ${rpcError ?? 'Unknown'}. Direct update error: $directUpdateError');
       }
     } catch (e) {
-      print('❌ SupabaseConfig: Failed to verify user: $e');
+      appLog('❌ SupabaseConfig: Failed to verify user: $e');
       throw Exception('Failed to verify user: $e');
     }
   }
 
   static Future<void> unverifyUser(String userId) async {
     try {
-      print('🔧 SupabaseConfig: Unverifying user $userId');
+      appLog('🔧 SupabaseConfig: Unverifying user $userId');
 
       // Check current user and admin status
       final currentUser = client.auth.currentUser;
-      print('🔧 SupabaseConfig: Current auth user: ${currentUser?.id}');
+      appLog('🔧 SupabaseConfig: Current auth user: ${currentUser?.id}');
 
       if (currentUser == null) {
         throw Exception('No authenticated user found. Please log in as admin.');
@@ -2446,7 +2586,7 @@ class SupabaseConfig {
           .select('id, user_type, full_name')
           .eq('id', currentUser.id)
           .maybeSingle();
-      print('🔧 SupabaseConfig: Current user profile: $currentUserProfile');
+      appLog('🔧 SupabaseConfig: Current user profile: $currentUserProfile');
 
       if (currentUserProfile == null) {
         throw Exception('Current user profile not found in database');
@@ -2463,38 +2603,38 @@ class SupabaseConfig {
           .select('id, full_name, email, user_type, is_verified')
           .eq('id', userId)
           .maybeSingle();
-      print('🔧 SupabaseConfig: Target user check result: $userCheck');
+      appLog('🔧 SupabaseConfig: Target user check result: $userCheck');
 
       if (userCheck == null) {
         throw Exception('Target user not found with ID: $userId');
       }
 
-      print(
+      appLog(
           '🔧 SupabaseConfig: Target user current verification status: ${userCheck['is_verified']}');
 
       // Try using RPC to bypass RLS issues
       String? rpcError;
       try {
-        print('🔧 SupabaseConfig: Attempting RPC call...');
+        appLog('🔧 SupabaseConfig: Attempting RPC call...');
         final rpcResponse =
             await client.rpc('update_user_verification', params: {
           'user_id': userId,
           'is_verified': false,
         });
-        print('🔧 SupabaseConfig: RPC response: $rpcResponse');
+        appLog('🔧 SupabaseConfig: RPC response: $rpcResponse');
 
         if (rpcResponse == true) {
           // Also update runner applications if user is a runner
           await _syncRunnerApplicationStatus(userId, 'rejected');
-          print('✅ SupabaseConfig: User unverified successfully via RPC');
+          appLog('✅ SupabaseConfig: User unverified successfully via RPC');
           return;
         } else {
-          print('⚠️ SupabaseConfig: RPC returned false, trying direct update');
+          appLog('⚠️ SupabaseConfig: RPC returned false, trying direct update');
         }
       } catch (e) {
         rpcError = e.toString();
-        print('⚠️ SupabaseConfig: RPC failed with error: $rpcError');
-        print('🔧 SupabaseConfig: Attempting direct update as fallback...');
+        appLog('⚠️ SupabaseConfig: RPC failed with error: $rpcError');
+        appLog('🔧 SupabaseConfig: Attempting direct update as fallback...');
       }
 
       // Fallback to direct update with better error handling
@@ -2508,7 +2648,7 @@ class SupabaseConfig {
             .eq('id', userId)
             .select();
 
-        print('🔧 SupabaseConfig: Direct update response: $response');
+        appLog('🔧 SupabaseConfig: Direct update response: $response');
 
         if (response.isEmpty) {
           // Check if user still exists
@@ -2529,16 +2669,16 @@ class SupabaseConfig {
         // Also update runner applications if user is a runner
         await _syncRunnerApplicationStatus(userId, 'rejected');
 
-        print(
+        appLog(
             '✅ SupabaseConfig: User unverified successfully via direct update');
       } catch (directUpdateError) {
-        print(
+        appLog(
             '❌ SupabaseConfig: Direct update also failed: $directUpdateError');
         throw Exception(
             'Both RPC and direct update failed. RPC error: ${rpcError ?? 'Unknown'}. Direct update error: $directUpdateError');
       }
     } catch (e) {
-      print('❌ SupabaseConfig: Failed to unverify user: $e');
+      appLog('❌ SupabaseConfig: Failed to unverify user: $e');
       throw Exception('Failed to unverify user: $e');
     }
   }
@@ -2563,11 +2703,11 @@ class SupabaseConfig {
           'reviewed_by': client.auth.currentUser?.id,
         }).eq('user_id', userId);
 
-        print(
+        appLog(
             '✅ SupabaseConfig: Runner applications synced with status: $status');
       }
     } catch (e) {
-      print('⚠️ SupabaseConfig: Failed to sync runner applications: $e');
+      appLog('⚠️ SupabaseConfig: Failed to sync runner applications: $e');
       // Don't throw error here as this is a secondary operation
     }
   }
@@ -2634,7 +2774,7 @@ class SupabaseConfig {
 
       return response;
     } catch (e) {
-      print('Error creating vehicle type: $e');
+      appLog('Error creating vehicle type: $e');
       return null;
     }
   }
@@ -2642,7 +2782,7 @@ class SupabaseConfig {
   static Future<bool> updateVehicleType(
       String vehicleTypeId, Map<String, dynamic> updateData) async {
     try {
-      print(
+      appLog(
           'Attempting to update vehicle type $vehicleTypeId with data: $updateData');
 
       // Extract service subcategory IDs
@@ -2660,7 +2800,7 @@ class SupabaseConfig {
           .eq('id', vehicleTypeId)
           .select();
 
-      print('Update response: $response');
+      appLog('Update response: $response');
 
       // If subcategories were provided, update the relationships
       if (subcategoryIds != null) {
@@ -2672,8 +2812,8 @@ class SupabaseConfig {
 
       return true;
     } catch (e) {
-      print('Error updating vehicle type: $e');
-      print('Error details: ${e.toString()}');
+      appLog('Error updating vehicle type: $e');
+      appLog('Error details: ${e.toString()}');
       return false;
     }
   }
@@ -2688,7 +2828,7 @@ class SupabaseConfig {
       final hasPricing = allDependencies['pricing']?.isNotEmpty ?? false;
 
       if (hasServices || hasPricing) {
-        print(
+        appLog(
             'Cannot delete vehicle type: ${allDependencies['services']?.length ?? 0} services and ${allDependencies['pricing']?.length ?? 0} pricing tiers depend on it');
         return false;
       }
@@ -2696,7 +2836,7 @@ class SupabaseConfig {
       await client.from('vehicle_types').delete().eq('id', vehicleTypeId);
       return true;
     } catch (e) {
-      print('Error deleting vehicle type: $e');
+      appLog('Error deleting vehicle type: $e');
       return false;
     }
   }
@@ -2721,7 +2861,7 @@ class SupabaseConfig {
     try {
       // transportation_services.vehicle_type_id was removed from the schema.
       // Reassignment is no longer applicable; treat as a no-op success.
-      print(
+      appLog(
           'Skipping transportation service reassignment: vehicle_type_id column no longer exists.');
       return true; // No action needed
     } catch (e) {
@@ -2745,7 +2885,7 @@ class SupabaseConfig {
 
       return dependencies;
     } catch (e) {
-      print('Error checking all vehicle type dependencies: $e');
+      appLog('Error checking all vehicle type dependencies: $e');
       return {};
     }
   }
@@ -2767,7 +2907,7 @@ class SupabaseConfig {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error fetching service routes: $e');
+      appLog('Error fetching service routes: $e');
       return [];
     }
   }
@@ -2782,7 +2922,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating route: $e');
+      appLog('Error creating route: $e');
       return null;
     }
   }
@@ -2793,7 +2933,7 @@ class SupabaseConfig {
       await client.from('service_routes').update(updateData).eq('id', routeId);
       return true;
     } catch (e) {
-      print('Error updating route: $e');
+      appLog('Error updating route: $e');
       return false;
     }
   }
@@ -2803,7 +2943,7 @@ class SupabaseConfig {
       await client.from('service_routes').delete().eq('id', routeId);
       return true;
     } catch (e) {
-      print('Error deleting route: $e');
+      appLog('Error deleting route: $e');
       return false;
     }
   }
@@ -2817,7 +2957,7 @@ class SupabaseConfig {
 
   static Future<Map<String, dynamic>> createRoutePricing(
       Map<String, dynamic> pricingData) async {
-    // Pricing table removed; no-op with dummy response
+    // Route pricing is not stored in the current schema; callers should treat this as unsupported.
     return <String, dynamic>{};
   }
 
@@ -2858,7 +2998,7 @@ class SupabaseConfig {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error searching transportation: $e');
+      appLog('Error searching transportation: $e');
       return [];
     }
   }
@@ -2877,7 +3017,7 @@ class SupabaseConfig {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error fetching available routes: $e');
+      appLog('Error fetching available routes: $e');
       return [];
     }
   }
@@ -2951,7 +3091,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating service category: $e');
+      appLog('Error creating service category: $e');
       return null;
     }
   }
@@ -2965,7 +3105,7 @@ class SupabaseConfig {
           .eq('id', categoryId);
       return true;
     } catch (e) {
-      print('Error updating service category: $e');
+      appLog('Error updating service category: $e');
       return false;
     }
   }
@@ -2975,7 +3115,7 @@ class SupabaseConfig {
       await client.from('service_categories').delete().eq('id', categoryId);
       return true;
     } catch (e) {
-      print('Error deleting service category: $e');
+      appLog('Error deleting service category: $e');
       return false;
     }
   }
@@ -3025,7 +3165,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating service subcategory: $e');
+      appLog('Error creating service subcategory: $e');
       return null;
     }
   }
@@ -3039,7 +3179,7 @@ class SupabaseConfig {
           .eq('id', subcategoryId);
       return true;
     } catch (e) {
-      print('Error updating service subcategory: $e');
+      appLog('Error updating service subcategory: $e');
       return false;
     }
   }
@@ -3052,7 +3192,7 @@ class SupabaseConfig {
           .eq('id', subcategoryId);
       return true;
     } catch (e) {
-      print('Error deleting service subcategory: $e');
+      appLog('Error deleting service subcategory: $e');
       return false;
     }
   }
@@ -3079,7 +3219,7 @@ class SupabaseConfig {
               'capacity');
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error fetching vehicle types by subcategory: $e');
+      appLog('Error fetching vehicle types by subcategory: $e');
       return [];
     }
   }
@@ -3104,7 +3244,7 @@ class SupabaseConfig {
           await client.from('towns').insert(townData).select().single();
       return response;
     } catch (e) {
-      print('Error creating town: $e');
+      appLog('Error creating town: $e');
       return null;
     }
   }
@@ -3115,7 +3255,7 @@ class SupabaseConfig {
       await client.from('towns').update(updateData).eq('id', townId);
       return true;
     } catch (e) {
-      print('Error updating town: $e');
+      appLog('Error updating town: $e');
       return false;
     }
   }
@@ -3125,7 +3265,7 @@ class SupabaseConfig {
       await client.from('towns').delete().eq('id', townId);
       return true;
     } catch (e) {
-      print('Error deleting town: $e');
+      appLog('Error deleting town: $e');
       return false;
     }
   }
@@ -3173,7 +3313,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating provider: $e');
+      appLog('Error creating provider: $e');
       return null;
     }
   }
@@ -3187,7 +3327,7 @@ class SupabaseConfig {
           .eq('id', providerId);
       return true;
     } catch (e) {
-      print('Error updating provider: $e');
+      appLog('Error updating provider: $e');
       return false;
     }
   }
@@ -3197,7 +3337,7 @@ class SupabaseConfig {
       await client.from('service_providers').delete().eq('id', providerId);
       return true;
     } catch (e) {
-      print('Error deleting provider: $e');
+      appLog('Error deleting provider: $e');
       return false;
     }
   }
@@ -3229,7 +3369,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating service provider: $e');
+      appLog('Error creating service provider: $e');
       return null;
     }
   }
@@ -3243,7 +3383,7 @@ class SupabaseConfig {
           .eq('id', providerId);
       return true;
     } catch (e) {
-      print('Error updating service provider: $e');
+      appLog('Error updating service provider: $e');
       return false;
     }
   }
@@ -3253,7 +3393,7 @@ class SupabaseConfig {
       await client.from('service_providers').delete().eq('id', providerId);
       return true;
     } catch (e) {
-      print('Error deleting service provider: $e');
+      appLog('Error deleting service provider: $e');
       return false;
     }
   }
@@ -3316,7 +3456,7 @@ class SupabaseConfig {
                   .single();
               providerName = providerResponse['name'] ?? 'Unknown Provider';
             } catch (e) {
-              print(
+              appLog(
                   'Could not fetch provider name for ${provider['provider_id']}: $e');
             }
           }
@@ -3417,7 +3557,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating transportation service: $e');
+      appLog('Error creating transportation service: $e');
       return null;
     }
   }
@@ -3493,10 +3633,10 @@ class SupabaseConfig {
             }
           }
         } else {
-          print('Info: features_array column not found in database response');
+          appLog('Info: features_array column not found in database response');
         }
       } catch (e) {
-        print('Warning: Could not parse features_array, using empty array: $e');
+        appLog('Warning: Could not parse features_array, using empty array: $e');
         featuresArray = <List<String>>[];
       }
 
@@ -3559,8 +3699,8 @@ class SupabaseConfig {
 
       // Try to update with features_array, fallback to without if column doesn't exist
       try {
-        print('🔄 Adding provider to service with features...');
-        print('📊 Features array: $featuresArray');
+        appLog('🔄 Adding provider to service with features...');
+        appLog('📊 Features array: $featuresArray');
 
         // Ensure all arrays are properly formatted
         final updateData = {
@@ -3574,15 +3714,15 @@ class SupabaseConfig {
           'features_array': featuresArray,
         };
 
-        print('📤 Sending add provider data: $updateData');
+        appLog('📤 Sending add provider data: $updateData');
 
         await client
             .from('transportation_services')
             .update(updateData)
             .eq('id', serviceId);
-        print('✅ Provider added successfully with features');
+        appLog('✅ Provider added successfully with features');
       } catch (e) {
-        print(
+        appLog(
             'Warning: Could not update features_array, updating without it: $e');
         // Fallback: update without features_array
         final fallbackData = {
@@ -3595,17 +3735,17 @@ class SupabaseConfig {
           'cancellation_hours_array': cancellationHours,
         };
 
-        print('📤 Sending fallback add provider data: $fallbackData');
+        appLog('📤 Sending fallback add provider data: $fallbackData');
 
         await client
             .from('transportation_services')
             .update(fallbackData)
             .eq('id', serviceId);
-        print('✅ Provider added successfully without features');
+        appLog('✅ Provider added successfully without features');
       }
       return true;
     } catch (e) {
-      print('Error adding provider to service: $e');
+      appLog('Error adding provider to service: $e');
       return false;
     }
   }
@@ -3622,7 +3762,7 @@ class SupabaseConfig {
         });
         return true;
       } catch (e) {
-        print('RPC failed, using client-side removal: $e');
+        appLog('RPC failed, using client-side removal: $e');
         // Fallback to client-side removal
         final current = await client
             .from('transportation_services')
@@ -3637,7 +3777,7 @@ class SupabaseConfig {
             <String>[];
         final int idx = providerIds.indexOf(providerId);
         if (idx < 0) {
-          print('Provider not found in service');
+          appLog('Provider not found in service');
           return false;
         }
 
@@ -3698,7 +3838,7 @@ class SupabaseConfig {
         return true;
       }
     } catch (e) {
-      print('Error removing provider from service: $e');
+      appLog('Error removing provider from service: $e');
       return false;
     }
   }
@@ -3737,7 +3877,7 @@ class SupabaseConfig {
             .eq('id', serviceId)
             .single();
       } catch (e) {
-        print(
+        appLog(
             'Warning: Could not select features_array, trying without it: $e');
         current = await client
             .from('transportation_services')
@@ -3797,10 +3937,10 @@ class SupabaseConfig {
             }
           }
         } else {
-          print('Info: features_array column not found in database response');
+          appLog('Info: features_array column not found in database response');
         }
       } catch (e) {
-        print('Warning: Could not parse features_array, using empty array: $e');
+        appLog('Warning: Could not parse features_array, using empty array: $e');
         featuresArray = <List<String>>[];
       }
 
@@ -3886,8 +4026,8 @@ class SupabaseConfig {
 
       // Try to update with features_array, fallback to without if column doesn't exist
       try {
-        print('🔄 Updating service provider data with features...');
-        print('📊 Features array: $featuresArray');
+        appLog('🔄 Updating service provider data with features...');
+        appLog('📊 Features array: $featuresArray');
 
         // Ensure all arrays are properly formatted
         final updateData = {
@@ -3900,15 +4040,15 @@ class SupabaseConfig {
           'features_array': featuresArray,
         };
 
-        print('📤 Sending update data: $updateData');
+        appLog('📤 Sending update data: $updateData');
 
         await client
             .from('transportation_services')
             .update(updateData)
             .eq('id', serviceId);
-        print('✅ Service provider updated successfully with features');
+        appLog('✅ Service provider updated successfully with features');
       } catch (e) {
-        print(
+        appLog(
             'Warning: Could not update features_array, updating without it: $e');
         // Fallback: update without features_array
         final fallbackData = {
@@ -3920,13 +4060,13 @@ class SupabaseConfig {
           'cancellation_hours_array': cancellationHours,
         };
 
-        print('📤 Sending fallback data: $fallbackData');
+        appLog('📤 Sending fallback data: $fallbackData');
 
         await client
             .from('transportation_services')
             .update(fallbackData)
             .eq('id', serviceId);
-        print('✅ Service provider updated successfully without features');
+        appLog('✅ Service provider updated successfully without features');
       }
 
       // Verify the update by reading back the data
@@ -3936,15 +4076,15 @@ class SupabaseConfig {
             .select('features_array')
             .eq('id', serviceId)
             .single();
-        print(
+        appLog(
             '🔍 Verification - Current features_array in DB: ${verifyResponse['features_array']}');
       } catch (e) {
-        print('⚠️ Could not verify update: $e');
+        appLog('⚠️ Could not verify update: $e');
       }
 
       return true;
     } catch (e) {
-      print('Error updating service provider: $e');
+      appLog('Error updating service provider: $e');
       return false;
     }
   }
@@ -3976,12 +4116,12 @@ class SupabaseConfig {
         List<dynamic>? featuresArray = service['features_array'];
 
         // Debug logging
-        print('🔍 Service: ${service['name']}');
-        print('🔍 Provider IDs: $providerIds');
-        print('🔍 Provider IDs type: ${providerIds.runtimeType}');
-        print('🔍 Provider IDs length: ${providerIds?.length ?? 0}');
-        print('🔍 Raw service data: ${service.keys.toList()}');
-        print('🔍 All service data: $service');
+        appLog('🔍 Service: ${service['name']}');
+        appLog('🔍 Provider IDs: $providerIds');
+        appLog('🔍 Provider IDs type: ${providerIds.runtimeType}');
+        appLog('🔍 Provider IDs length: ${providerIds?.length ?? 0}');
+        appLog('🔍 Raw service data: ${service.keys.toList()}');
+        appLog('🔍 All service data: $service');
 
         if (providerIds != null && providerIds.isNotEmpty) {
           // Get provider information for all provider IDs
@@ -4053,7 +4193,7 @@ class SupabaseConfig {
 
       return services;
     } catch (e) {
-      print('Error getting all transportation services: $e');
+      appLog('Error getting all transportation services: $e');
       return [];
     }
   }
@@ -4068,7 +4208,7 @@ class SupabaseConfig {
           .order('service_name');
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting transportation services with providers: $e');
+      appLog('Error getting transportation services with providers: $e');
       return [];
     }
   }
@@ -4126,7 +4266,7 @@ class SupabaseConfig {
           .eq('id', serviceId);
       return true;
     } catch (e) {
-      print('Error updating transportation service: $e');
+      appLog('Error updating transportation service: $e');
       return false;
     }
   }
@@ -4136,7 +4276,7 @@ class SupabaseConfig {
       await client.from('transportation_services').delete().eq('id', serviceId);
       return true;
     } catch (e) {
-      print('Error deleting transportation service: $e');
+      appLog('Error deleting transportation service: $e');
       return false;
     }
   }
@@ -4167,168 +4307,110 @@ class SupabaseConfig {
   // Transportation Bookings Management
   static Future<List<Map<String, dynamic>>> getUserBookings(
       [String? userId]) async {
-    print('🚀 DEBUG: [GET USER BOOKINGS] Starting getUserBookings...');
-
     final user = client.auth.currentUser;
     final targetUserId = userId ?? user?.id;
 
-    print('👤 DEBUG: [GET USER BOOKINGS] Current user: ${user?.id}');
-    print('👤 DEBUG: [GET USER BOOKINGS] Target user ID: $targetUserId');
-
-    if (targetUserId == null) {
-      print(
-          '❌ DEBUG: [GET USER BOOKINGS] No user ID found - returning empty list');
-      return [];
-    }
+    if (targetUserId == null) return [];
 
     try {
-      print('📡 DEBUG: [GET USER BOOKINGS] Executing parallel queries...');
-
-      // Execute all queries in parallel for better performance
+      // Step 1: Fetch all bookings without driver joins
       final futures = await Future.wait([
-        // Get transportation bookings with driver info and vehicle type
-        // Note: service join is optional since shuttle bookings might not have service_id
         client
             .from('transportation_bookings')
             .select('''
               *,
-              service:transportation_services(
-                name
-              ),
-              driver:users!transportation_bookings_driver_id_fkey(full_name, avatar_url),
-              vehicle_type:vehicle_types(
-                name,
-                description
-              )
+              service:transportation_services(name),
+              vehicle_type:vehicle_types(name, description)
             ''')
             .eq('user_id', targetUserId)
             .order('created_at', ascending: false),
 
-        // Get contract bookings with driver info
         client
             .from('contract_bookings')
-            .select('''
-              *,
-              driver:users!contract_bookings_driver_id_fkey(full_name, avatar_url)
-            ''')
+            .select('*')
             .eq('user_id', targetUserId)
             .order('created_at', ascending: false),
 
-        // Get bus service bookings
         client
             .from('bus_service_bookings')
-            .select('''
-              *,
-              service:transportation_services(
-                name
-              )
-            ''')
+            .select('*, service:transportation_services(name)')
             .eq('user_id', targetUserId)
             .order('created_at', ascending: false),
       ]);
 
-      print('✅ DEBUG: [GET USER BOOKINGS] All queries completed');
+      final transportationBookings =
+          List<Map<String, dynamic>>.from(futures[0] as List);
+      final contractBookings =
+          List<Map<String, dynamic>>.from(futures[1] as List);
+      final busBookings = List<Map<String, dynamic>>.from(futures[2] as List);
 
-      final transportationBookings = futures[0] as List;
-      final contractBookings = futures[1] as List;
-      final busBookings = futures[2] as List;
+      // Step 2: Collect all unique driver IDs for profile lookup
+      final driverIds = {
+        ...transportationBookings.map((b) => b['driver_id']).whereType<String>(),
+        ...contractBookings.map((b) => b['driver_id']).whereType<String>(),
+      }.toList();
 
-      print('📊 DEBUG: [GET USER BOOKINGS] Query results:');
-      print('   - Transportation bookings: ${transportationBookings.length}');
-      print('   - Contract bookings: ${contractBookings.length}');
-      print('   - Bus bookings: ${busBookings.length}');
-
-      // Log each transportation booking for debugging
-      for (var i = 0; i < transportationBookings.length; i++) {
-        final booking = transportationBookings[i];
-        print(
-            '📋 DEBUG: [GET USER BOOKINGS] Transportation booking #${i + 1}:');
-        print('   - ID: ${booking['id']}');
-        print('   - Status: ${booking['status']}');
-        print('   - Pickup: ${booking['pickup_location']}');
-        print('   - Dropoff: ${booking['dropoff_location']}');
-        print('   - Vehicle type ID: ${booking['vehicle_type_id']}');
-        print('   - Service ID: ${booking['service_id']}');
-        print('   - Service name: ${booking['service']?['name']}');
-        print('   - Vehicle type: ${booking['vehicle_type']?['name']}');
-        print('   - Driver ID: ${booking['driver_id']}');
-        print('   - Is immediate: ${booking['is_immediate']}');
-        print('   - Created at: ${booking['created_at']}');
+      // Step 3: Fetch profiles via RPC (bypasses RLS)
+      Map<String, Map<String, dynamic>> driverMap = {};
+      if (driverIds.isNotEmpty) {
+        try {
+          final users = await client.rpc(
+            'get_user_profiles',
+            params: {'user_ids': driverIds},
+          );
+          for (final u in (users as List)) {
+            driverMap[u['id'] as String] = Map<String, dynamic>.from(u as Map);
+          }
+        } catch (_) {
+          // Fallback to direct query if RPC fails
+          final users = await client
+              .from('users')
+              .select('id, full_name, phone, avatar_url')
+              .inFilter('id', driverIds);
+          for (final u in users) {
+            driverMap[u['id'] as String] = Map<String, dynamic>.from(u);
+          }
+        }
       }
 
-      // Combine all bookings efficiently
+      // Step 4: Merge profiles and combine all bookings
       List<Map<String, dynamic>> allBookings = [];
 
-      // Add transportation bookings with type identifier
       for (var booking in transportationBookings) {
+        final dId = booking['driver_id'] as String?;
         allBookings.add({
           ...booking,
+          'driver': dId != null ? driverMap[dId] : null,
           'booking_type': 'transportation',
           'title': 'Shuttle Services',
         });
-        print(
-            '✅ DEBUG: [GET USER BOOKINGS] Added transportation booking: ${booking['id']}');
       }
 
-      // Add contract bookings with type identifier
       for (var booking in contractBookings) {
+        final dId = booking['driver_id'] as String?;
         allBookings.add({
           ...booking,
+          'driver': dId != null ? driverMap[dId] : null,
           'booking_type': 'contract',
           'title': 'Contract Booking',
-          'pickup_location': booking['pickup_location'],
-          'dropoff_location': booking['dropoff_location'],
         });
-        print(
-            '✅ DEBUG: [GET USER BOOKINGS] Added contract booking: ${booking['id']}');
       }
 
-      // Add bus service bookings with type identifier
       for (var booking in busBookings) {
         allBookings.add({
           ...booking,
           'booking_type': 'bus',
-          'title': 'Bus Service',
-          'pickup_location': booking['pickup_location'],
-          'dropoff_location': booking['dropoff_location'],
+          'title': 'Bus Service Booking',
         });
-        print(
-            '✅ DEBUG: [GET USER BOOKINGS] Added bus booking: ${booking['id']}');
       }
 
-      // Sort combined bookings by created_at
+      // Sort by recency
       allBookings.sort((a, b) => DateTime.parse(b['created_at'])
           .compareTo(DateTime.parse(a['created_at'])));
 
-      print(
-          '✅ DEBUG: [GET USER BOOKINGS] Total bookings after combining: ${allBookings.length}');
-      print(
-          '✅ DEBUG: [GET USER BOOKINGS] Returning ${allBookings.length} bookings');
-
       return allBookings;
-    } catch (e, stackTrace) {
-      print('❌ DEBUG: [GET USER BOOKINGS] Error fetching user bookings');
-      print('❌ DEBUG: [GET USER BOOKINGS] Error type: ${e.runtimeType}');
-      print('❌ DEBUG: [GET USER BOOKINGS] Error message: $e');
-      print('❌ DEBUG: [GET USER BOOKINGS] Stack trace: $stackTrace');
-
-      // Check for specific error types
-      if (e.toString().contains('foreign key') ||
-          e.toString().contains('relation')) {
-        print('🚨 DEBUG: [GET USER BOOKINGS] FOREIGN KEY OR RELATION ERROR!');
-        print(
-            '🚨 DEBUG: [GET USER BOOKINGS] This might be a database relationship issue');
-      }
-      if (e.toString().contains('null')) {
-        print('🚨 DEBUG: [GET USER BOOKINGS] NULL VALUE ERROR!');
-      }
-      if (e.toString().contains('permission') ||
-          e.toString().contains('policy')) {
-        print('🚨 DEBUG: [GET USER BOOKINGS] PERMISSION/RLS POLICY ERROR!');
-        print(
-            '🚨 DEBUG: [GET USER BOOKINGS] Check Row Level Security policies');
-      }
-
+    } catch (e) {
+      appLog('❌ ERROR in getUserBookings: $e');
       return [];
     }
   }
@@ -4337,13 +4419,13 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getOtherUsersBookings() async {
     try {
       final user = client.auth.currentUser;
-      print('🔍 Current user: ${user?.id}');
+      appLog('🔍 Current user: ${user?.id}');
       if (user == null) {
-        print('❌ No authenticated user found');
+        appLog('❌ No authenticated user found');
         return [];
       }
 
-      print('📡 Querying transportation_bookings table...');
+      appLog('📡 Querying transportation_bookings table...');
 
       // Use a more targeted query that should work with RLS policies
       final response = await client.from('transportation_bookings').select('''
@@ -4351,20 +4433,20 @@ class SupabaseConfig {
             user:users!transportation_bookings_user_id_fkey(full_name, email, phone)
           ''').neq('user_id', user.id).order('created_at', ascending: false);
 
-      print('✅ Raw response length: ${response.length}');
+      appLog('✅ Raw response length: ${response.length}');
 
       final bookings = List<Map<String, dynamic>>.from(response);
 
       // Log each booking for debugging
       for (var booking in bookings) {
-        print(
+        appLog(
             '📋 Booking ID: ${booking['id']}, Status: ${booking['status']}, Driver: ${booking['driver_id']}, User: ${booking['user']?['full_name']}');
       }
 
       return bookings;
     } catch (e) {
-      print('❌ Error fetching other users bookings: $e');
-      print('❌ Error stack trace: ${StackTrace.current}');
+      appLog('❌ Error fetching other users bookings: $e');
+      appLog('❌ Error stack trace: ${StackTrace.current}');
       throw Exception('Failed to fetch other users bookings: $e');
     }
   }
@@ -4373,8 +4455,8 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getAvailableTransportationBookings(
       {String? vehicleTypeId}) async {
     try {
-      print('🚌 Getting available transportation bookings...');
-      print('🚗 Filtering by vehicle type: $vehicleTypeId');
+      appLog('🚌 Getting available transportation bookings...');
+      appLog('🚗 Filtering by vehicle type: $vehicleTypeId');
 
       // Query for pending bookings with no driver assigned
       var query = client.from('transportation_bookings').select('''
@@ -4388,19 +4470,19 @@ class SupabaseConfig {
 
       final response = await query.order('created_at', ascending: false);
 
-      print('✅ Available transportation bookings: ${response.length}');
+      appLog('✅ Available transportation bookings: ${response.length}');
 
       final bookings = List<Map<String, dynamic>>.from(response);
 
       // Log each available booking
       for (var booking in bookings) {
-        print(
+        appLog(
             '🎯 Available: ${booking['id']} - ${booking['user']?['full_name']} - ${booking['vehicle_type']?['name'] ?? 'No vehicle required'} - ${booking['pickup_location']} to ${booking['dropoff_location']}');
       }
 
       return bookings;
     } catch (e) {
-      print('❌ Error fetching available transportation bookings: $e');
+      appLog('❌ Error fetching available transportation bookings: $e');
       throw Exception('Failed to fetch available transportation bookings: $e');
     }
   }
@@ -4409,16 +4491,16 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getAvailableAllBookings(
       {String? vehicleTypeId}) async {
     try {
-      print(
+      appLog(
           '🚌 Getting all available bookings (transportation + contracts)...');
-      print('🚗 Filtering by vehicle type: $vehicleTypeId');
+      appLog('🚗 Filtering by vehicle type: $vehicleTypeId');
 
       // Get available transportation bookings
       final transportationBookings = await getAvailableTransportationBookings(
           vehicleTypeId: vehicleTypeId);
 
       // Get available contract bookings
-      print('🔍 Querying contract_bookings table...');
+      appLog('🔍 Querying contract_bookings table...');
       final contractBookings = await client
           .from('contract_bookings')
           .select('''
@@ -4430,10 +4512,10 @@ class SupabaseConfig {
           .filter('driver_id', 'is', null)
           .order('created_at', ascending: false);
 
-      print(
+      appLog(
           '📋 Contract bookings query result: ${contractBookings.length} bookings');
       for (var booking in contractBookings) {
-        print(
+        appLog(
             '📋 Contract: ${booking['id']} - Status: ${booking['status']} - Driver: ${booking['driver_id']}');
       }
 
@@ -4462,18 +4544,18 @@ class SupabaseConfig {
       allBookings.sort((a, b) => DateTime.parse(b['created_at'])
           .compareTo(DateTime.parse(a['created_at'])));
 
-      print(
+      appLog(
           '✅ Available all bookings: ${allBookings.length} (${transportationBookings.length} transportation, ${contractBookings.length} contracts)');
 
       // Debug: Log each booking type
       for (var booking in allBookings) {
-        print(
+        appLog(
             '📋 Booking: ${booking['id']} - Type: ${booking['booking_type']} - Title: ${booking['title']} - Status: ${booking['status']}');
       }
 
       return allBookings;
     } catch (e) {
-      print('❌ Error fetching available all bookings: $e');
+      appLog('❌ Error fetching available all bookings: $e');
       throw Exception('Failed to fetch available all bookings: $e');
     }
   }
@@ -4481,49 +4563,49 @@ class SupabaseConfig {
   static Future<Map<String, dynamic>?> createTransportationBooking(
       Map<String, dynamic> bookingData) async {
     try {
-      print(
+      appLog(
           '🚀 DEBUG: [CREATE TRANSPORTATION BOOKING] Starting booking creation...');
-      print(
+      appLog(
           '📋 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking data received: $bookingData');
 
       final user = client.auth.currentUser;
-      print(
+      appLog(
           '👤 DEBUG: [CREATE TRANSPORTATION BOOKING] Current user: ${user?.id}');
-      print(
+      appLog(
           '👤 DEBUG: [CREATE TRANSPORTATION BOOKING] User email: ${user?.email}');
 
       if (user == null) {
-        print(
+        appLog(
             '❌ DEBUG: [CREATE TRANSPORTATION BOOKING] User not authenticated');
         throw Exception('User not authenticated');
       }
 
       // Ensure user_id is set
       bookingData['user_id'] = user.id;
-      print(
+      appLog(
           '✅ DEBUG: [CREATE TRANSPORTATION BOOKING] User ID set: ${bookingData['user_id']}');
 
       // Log all booking data fields
-      print('📝 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking details:');
-      print('   - user_id: ${bookingData['user_id']}');
-      print('   - vehicle_type_id: ${bookingData['vehicle_type_id']}');
-      print('   - pickup_location: ${bookingData['pickup_location']}');
-      print('   - dropoff_location: ${bookingData['dropoff_location']}');
-      print('   - pickup_lat: ${bookingData['pickup_lat']}');
-      print('   - pickup_lng: ${bookingData['pickup_lng']}');
-      print('   - dropoff_lat: ${bookingData['dropoff_lat']}');
-      print('   - dropoff_lng: ${bookingData['dropoff_lng']}');
-      print('   - passenger_count: ${bookingData['passenger_count']}');
-      print('   - booking_date: ${bookingData['booking_date']}');
-      print('   - booking_time: ${bookingData['booking_time']}');
-      print('   - is_immediate: ${bookingData['is_immediate']}');
-      print('   - status: ${bookingData['status']}');
-      print('   - payment_status: ${bookingData['payment_status']}');
-      print('   - estimated_price: ${bookingData['estimated_price']}');
-      print('   - final_price: ${bookingData['final_price']}');
-      print('   - special_requests: ${bookingData['special_requests']}');
+      appLog('📝 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking details:');
+      appLog('   - user_id: ${bookingData['user_id']}');
+      appLog('   - vehicle_type_id: ${bookingData['vehicle_type_id']}');
+      appLog('   - pickup_location: ${bookingData['pickup_location']}');
+      appLog('   - dropoff_location: ${bookingData['dropoff_location']}');
+      appLog('   - pickup_lat: ${bookingData['pickup_lat']}');
+      appLog('   - pickup_lng: ${bookingData['pickup_lng']}');
+      appLog('   - dropoff_lat: ${bookingData['dropoff_lat']}');
+      appLog('   - dropoff_lng: ${bookingData['dropoff_lng']}');
+      appLog('   - passenger_count: ${bookingData['passenger_count']}');
+      appLog('   - booking_date: ${bookingData['booking_date']}');
+      appLog('   - booking_time: ${bookingData['booking_time']}');
+      appLog('   - is_immediate: ${bookingData['is_immediate']}');
+      appLog('   - status: ${bookingData['status']}');
+      appLog('   - payment_status: ${bookingData['payment_status']}');
+      appLog('   - estimated_price: ${bookingData['estimated_price']}');
+      appLog('   - final_price: ${bookingData['final_price']}');
+      appLog('   - special_requests: ${bookingData['special_requests']}');
 
-      print(
+      appLog(
           '💾 DEBUG: [CREATE TRANSPORTATION BOOKING] Inserting into database...');
       final response = await client
           .from('transportation_bookings')
@@ -4531,58 +4613,58 @@ class SupabaseConfig {
           .select()
           .single();
 
-      print(
+      appLog(
           '✅ DEBUG: [CREATE TRANSPORTATION BOOKING] Booking created successfully!');
-      print(
+      appLog(
           '🆔 DEBUG: [CREATE TRANSPORTATION BOOKING] Booking ID: ${response['id']}');
-      print(
+      appLog(
           '📊 DEBUG: [CREATE TRANSPORTATION BOOKING] Full response: $response');
 
       // If this is an immediate booking, notify runners with matching vehicle types
       if (bookingData['is_immediate'] == true) {
-        print(
+        appLog(
             '🔔 DEBUG: [CREATE TRANSPORTATION BOOKING] This is an immediate booking - notifying runners...');
         try {
           await _notifyRunnersOfNewTransportationBooking(response);
-          print(
+          appLog(
               '✅ DEBUG: [CREATE TRANSPORTATION BOOKING] Runners notified successfully');
         } catch (notifyError) {
-          print(
+          appLog(
               '⚠️ DEBUG: [CREATE TRANSPORTATION BOOKING] Error notifying runners: $notifyError');
           // Don't fail the booking if notification fails
         }
       } else {
-        print(
+        appLog(
             '📅 DEBUG: [CREATE TRANSPORTATION BOOKING] This is a scheduled booking - no immediate notification needed');
       }
 
       return response;
     } catch (e, stackTrace) {
-      print(
+      appLog(
           '❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error creating transportation booking');
-      print(
+      appLog(
           '❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error type: ${e.runtimeType}');
-      print('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error message: $e');
-      print(
+      appLog('❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Error message: $e');
+      appLog(
           '❌ DEBUG: [CREATE TRANSPORTATION BOOKING] Stack trace: $stackTrace');
 
       // Check for specific error types
       if (e.toString().contains('constraint')) {
-        print(
+        appLog(
             '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] CONSTRAINT VIOLATION DETECTED!');
-        print(
+        appLog(
             '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] This might be a database constraint issue');
       }
       if (e.toString().contains('null')) {
-        print(
+        appLog(
             '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] NULL VALUE ERROR DETECTED!');
-        print(
+        appLog(
             '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] A required field might be null');
       }
       if (e.toString().contains('foreign key')) {
-        print(
+        appLog(
             '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] FOREIGN KEY ERROR DETECTED!');
-        print(
+        appLog(
             '🚨 DEBUG: [CREATE TRANSPORTATION BOOKING] A referenced ID might not exist');
       }
 
@@ -4593,15 +4675,15 @@ class SupabaseConfig {
   static Future<bool> updateTransportationBooking(
       String bookingId, Map<String, dynamic> updates) async {
     try {
-      print('🔄 DEBUG: updateTransportationBooking called');
-      print('📋 DEBUG: Booking ID: $bookingId');
-      print('📋 DEBUG: Booking ID type: ${bookingId.runtimeType}');
-      print('📋 DEBUG: Booking ID length: ${bookingId.length}');
-      print('📋 DEBUG: Updates: $updates');
+      appLog('🔄 DEBUG: updateTransportationBooking called');
+      appLog('📋 DEBUG: Booking ID: $bookingId');
+      appLog('📋 DEBUG: Booking ID type: ${bookingId.runtimeType}');
+      appLog('📋 DEBUG: Booking ID length: ${bookingId.length}');
+      appLog('📋 DEBUG: Updates: $updates');
 
       // Check if this is a cancellation update
       final isCancellation = updates['status'] == 'cancelled';
-      print('🚫 DEBUG: Is cancellation: $isCancellation');
+      appLog('🚫 DEBUG: Is cancellation: $isCancellation');
 
       // Check if this is an acceptance update and verify runner
       final isAcceptance =
@@ -4616,7 +4698,7 @@ class SupabaseConfig {
       }
 
       // First, let's check if the booking exists
-      print('🔍 DEBUG: Checking if booking exists before update...');
+      appLog('🔍 DEBUG: Checking if booking exists before update...');
       try {
         final existingBooking = await client
             .from('transportation_bookings')
@@ -4624,52 +4706,52 @@ class SupabaseConfig {
             .eq('id', bookingId)
             .maybeSingle();
 
-        print('🔍 DEBUG: Existing booking: $existingBooking');
+        appLog('🔍 DEBUG: Existing booking: $existingBooking');
 
         if (existingBooking == null) {
-          print('❌ DEBUG: Booking does not exist with ID: $bookingId');
-          print(
+          appLog('❌ DEBUG: Booking does not exist with ID: $bookingId');
+          appLog(
               '❌ DEBUG: This suggests the booking was deleted/expired or never existed');
-          print(
+          appLog(
               '❌ DEBUG: The UI may be showing stale data - try refreshing the page');
           return false;
         }
 
         // Check if the booking is still available for acceptance
         if (existingBooking['status'] != 'pending') {
-          print(
+          appLog(
               '❌ DEBUG: Booking is not pending - current status: ${existingBooking['status']}');
-          print('❌ DEBUG: This booking cannot be accepted');
+          appLog('❌ DEBUG: This booking cannot be accepted');
           return false;
         }
 
         if (existingBooking['driver_id'] != null) {
-          print(
+          appLog(
               '❌ DEBUG: Booking already has a driver assigned: ${existingBooking['driver_id']}');
-          print('❌ DEBUG: This booking cannot be accepted');
+          appLog('❌ DEBUG: This booking cannot be accepted');
           return false;
         }
 
-        print(
+        appLog(
             '✅ DEBUG: Booking exists and is available for acceptance, proceeding with update...');
 
         // Check runner limits if this is an acceptance (not cancellation)
         if (!isCancellation && updates['driver_id'] != null) {
-          print('🚦 DEBUG: Checking runner limits before acceptance...');
+          appLog('🚦 DEBUG: Checking runner limits before acceptance...');
           final limits = await checkRunnerLimits(updates['driver_id']);
-          print('🚦 DEBUG: Runner limits: $limits');
+          appLog('🚦 DEBUG: Runner limits: $limits');
 
           if (!limits['can_accept_transportation']) {
             final totalCount = limits['total_active_count'] ?? 0;
             final totalLimit = limits['total_limit'] ?? 2;
-            print(
+            appLog(
                 '❌ DEBUG: Runner has reached limit - cannot accept transportation booking');
             throw Exception(
                 'Cannot accept transportation booking. You have reached your limit of $totalLimit active jobs (currently have $totalCount). Please complete existing jobs before accepting new ones.');
           }
         }
       } catch (e) {
-        print('❌ DEBUG: Error checking if booking exists: $e');
+        appLog('❌ DEBUG: Error checking if booking exists: $e');
         // Re-throw limit-related exceptions so they can be handled properly
         if (e.toString().contains('limit') ||
             e.toString().contains('maximum')) {
@@ -4679,10 +4761,10 @@ class SupabaseConfig {
       }
 
       if (isCancellation) {
-        print('🚫 DEBUG: Processing cancellation...');
+        appLog('🚫 DEBUG: Processing cancellation...');
 
         // Get current booking details
-        print('📋 DEBUG: Fetching current booking details...');
+        appLog('📋 DEBUG: Fetching current booking details...');
         final bookingResponse = await client
             .from('transportation_bookings')
             .select(
@@ -4696,24 +4778,24 @@ class SupabaseConfig {
         final serviceName =
             bookingResponse['service']?['name'] ?? 'Transportation Service';
 
-        print('📊 DEBUG: Current status: $currentStatus');
-        print('👤 DEBUG: User ID: $userId');
-        print('🚗 DEBUG: Driver ID: $driverId');
-        print('🏢 DEBUG: Service name: $serviceName');
+        appLog('📊 DEBUG: Current status: $currentStatus');
+        appLog('👤 DEBUG: User ID: $userId');
+        appLog('🚗 DEBUG: Driver ID: $driverId');
+        appLog('🏢 DEBUG: Service name: $serviceName');
 
         // Check if cancellation is allowed - only allow cancellation of accepted bookings
         if (currentStatus == 'completed' || currentStatus == 'cancelled') {
-          print('❌ DEBUG: Cannot cancel $currentStatus booking');
+          appLog('❌ DEBUG: Cannot cancel $currentStatus booking');
           throw Exception('Cannot cancel $currentStatus booking');
         }
 
         if (currentStatus == 'in_progress') {
-          print('❌ DEBUG: Cannot cancel booking that is in progress');
+          appLog('❌ DEBUG: Cannot cancel booking that is in progress');
           throw Exception('Cannot cancel booking that is in progress');
         }
 
         // Update the booking
-        print('🔄 DEBUG: Updating booking to cancelled...');
+        appLog('🔄 DEBUG: Updating booking to cancelled...');
         await client
             .from('transportation_bookings')
             .update(updates)
@@ -4721,67 +4803,67 @@ class SupabaseConfig {
 
         // Send cancellation notifications
         final currentUserId = SupabaseConfig.currentUser?.id;
-        print('👤 DEBUG: Current user ID: $currentUserId');
+        appLog('👤 DEBUG: Current user ID: $currentUserId');
 
         if (currentUserId == userId && driverId != null) {
           // Customer cancelled - notify runner
-          print('🔔 DEBUG: Customer cancelled - notifying runner');
+          appLog('🔔 DEBUG: Customer cancelled - notifying runner');
           await _notifyRunnerTransportationCancelled(
               driverId, userId, serviceName);
         } else if (currentUserId == driverId) {
           // Runner cancelled - notify customer
-          print('🔔 DEBUG: Runner cancelled - notifying customer');
+          appLog('🔔 DEBUG: Runner cancelled - notifying customer');
           await _notifyCustomerTransportationCancelled(
               userId, driverId, serviceName);
         }
 
-        print('✅ DEBUG: Cancellation update successful');
+        appLog('✅ DEBUG: Cancellation update successful');
         return true;
       } else {
         // For non-cancellation updates, proceed normally
-        print('🔄 DEBUG: Processing non-cancellation update...');
+        appLog('🔄 DEBUG: Processing non-cancellation update...');
 
         // First, let's check the current booking status
         try {
-          print('📋 DEBUG: Checking current booking status...');
+          appLog('📋 DEBUG: Checking current booking status...');
           final currentBooking = await client
               .from('transportation_bookings')
               .select('status, driver_id, user_id')
               .eq('id', bookingId)
               .single();
 
-          print('📊 DEBUG: Current booking: $currentBooking');
-          print(
+          appLog('📊 DEBUG: Current booking: $currentBooking');
+          appLog(
               '📊 DEBUG: Current booking status: ${currentBooking['status']}');
-          print('🚗 DEBUG: Current driver ID: ${currentBooking['driver_id']}');
-          print('👤 DEBUG: Current user ID: ${currentBooking['user_id']}');
-          print('🆔 DEBUG: Booking ID: ${currentBooking['id']}');
+          appLog('🚗 DEBUG: Current driver ID: ${currentBooking['driver_id']}');
+          appLog('👤 DEBUG: Current user ID: ${currentBooking['user_id']}');
+          appLog('🆔 DEBUG: Booking ID: ${currentBooking['id']}');
 
           // Check if this is an acceptance (setting driver_id from null)
           final isAcceptance = updates['driver_id'] != null &&
               currentBooking['driver_id'] == null &&
               updates['status'] == 'accepted';
-          print('✅ DEBUG: Is acceptance: $isAcceptance');
+          appLog('✅ DEBUG: Is acceptance: $isAcceptance');
 
           // Check if the booking exists and is in a valid state for acceptance
           if (currentBooking['status'] != 'pending') {
-            print(
+            appLog(
                 '⚠️ DEBUG: WARNING - Booking is not in pending status, current status: ${currentBooking['status']}');
           }
 
           if (currentBooking['driver_id'] != null) {
-            print(
+            appLog(
                 '⚠️ DEBUG: WARNING - Booking already has a driver assigned: ${currentBooking['driver_id']}');
           }
         } catch (e) {
-          print('❌ DEBUG: Could not fetch current booking: $e');
-          print(
+          appLog('❌ DEBUG: Could not fetch current booking: $e');
+          appLog(
               '❌ DEBUG: This might mean the booking does not exist or there is a permission issue');
           // Don't return false here, let the update attempt proceed to see what happens
         }
 
-        print('🔄 DEBUG: Executing update...');
-        print(
+        appLog('🔄 DEBUG: Executing update...');
+        appLog(
             '🔄 DEBUG: Update query: UPDATE transportation_bookings SET $updates WHERE id = $bookingId');
 
         dynamic response;
@@ -4790,20 +4872,20 @@ class SupabaseConfig {
               .from('transportation_bookings')
               .update(updates)
               .eq('id', bookingId);
-          print('✅ DEBUG: Update query executed without exception');
+          appLog('✅ DEBUG: Update query executed without exception');
         } catch (updateError) {
-          print('❌ DEBUG: Update query failed with exception: $updateError');
-          print('❌ DEBUG: This is likely the root cause of the silent failure');
+          appLog('❌ DEBUG: Update query failed with exception: $updateError');
+          appLog('❌ DEBUG: This is likely the root cause of the silent failure');
           rethrow; // Re-throw to be caught by outer catch
         }
 
-        print('📊 DEBUG: Update response: $response');
-        print('📊 DEBUG: Response type: ${response.runtimeType}');
-        print('📊 DEBUG: Response length: ${response?.length ?? "null"}');
+        appLog('📊 DEBUG: Update response: $response');
+        appLog('📊 DEBUG: Response type: ${response.runtimeType}');
+        appLog('📊 DEBUG: Response length: ${response?.length ?? "null"}');
 
         // Check if the update actually worked by querying the record
-        print('🔍 DEBUG: Verifying update by querying the record...');
-        print('🔍 DEBUG: Looking for booking ID: $bookingId');
+        appLog('🔍 DEBUG: Verifying update by querying the record...');
+        appLog('🔍 DEBUG: Looking for booking ID: $bookingId');
         try {
           // First, let's try to find the record without .single() to see what we get
           final allRecords = await client
@@ -4811,26 +4893,26 @@ class SupabaseConfig {
               .select('id, status, driver_id, updated_at')
               .eq('id', bookingId);
 
-          print(
+          appLog(
               '🔍 DEBUG: Found ${allRecords.length} records with ID $bookingId');
-          print('🔍 DEBUG: Records: $allRecords');
+          appLog('🔍 DEBUG: Records: $allRecords');
 
           if (allRecords.isEmpty) {
-            print('❌ DEBUG: No records found with ID $bookingId');
-            print(
+            appLog('❌ DEBUG: No records found with ID $bookingId');
+            appLog(
                 '❌ DEBUG: This suggests the booking ID is invalid or the record was deleted');
             return false;
           }
 
           if (allRecords.length > 1) {
-            print(
+            appLog(
                 '❌ DEBUG: Multiple records found with ID $bookingId - this should not happen');
             return false;
           }
 
           final updatedRecord = allRecords.first;
 
-          print('🔍 DEBUG: Updated record: $updatedRecord');
+          appLog('🔍 DEBUG: Updated record: $updatedRecord');
 
           // Check if the status was actually updated
           final actualStatus = updatedRecord['status'];
@@ -4838,52 +4920,52 @@ class SupabaseConfig {
           final expectedStatus = updates['status'];
           final expectedDriverId = updates['driver_id'];
 
-          print(
+          appLog(
               '🔍 DEBUG: Expected status: $expectedStatus, Actual status: $actualStatus');
-          print(
+          appLog(
               '🔍 DEBUG: Expected driver_id: $expectedDriverId, Actual driver_id: $actualDriverId');
 
           if (actualStatus == expectedStatus &&
               actualDriverId == expectedDriverId) {
-            print(
+            appLog(
                 '✅ DEBUG: Update verification successful - database was updated correctly');
             return true;
           } else {
-            print(
+            appLog(
                 '❌ DEBUG: Update verification failed - database was NOT updated correctly');
-            print('❌ DEBUG: This suggests a silent database failure');
+            appLog('❌ DEBUG: This suggests a silent database failure');
             return false;
           }
         } catch (e) {
-          print('❌ DEBUG: Error verifying update: $e');
-          print('❌ DEBUG: This suggests the update may have failed');
+          appLog('❌ DEBUG: Error verifying update: $e');
+          appLog('❌ DEBUG: This suggests the update may have failed');
           return false;
         }
       }
     } catch (e, stackTrace) {
-      print('💥 DEBUG: Exception in updateTransportationBooking');
-      print('💥 DEBUG: Error: $e');
-      print('💥 DEBUG: Stack trace: $stackTrace');
+      appLog('💥 DEBUG: Exception in updateTransportationBooking');
+      appLog('💥 DEBUG: Error: $e');
+      appLog('💥 DEBUG: Stack trace: $stackTrace');
 
       // Check if it's a constraint violation
       if (e.toString().contains('violates check constraint')) {
-        print('🚨 DEBUG: CONSTRAINT VIOLATION DETECTED!');
-        print('🚨 DEBUG: This is likely a status constraint issue');
-        print(
+        appLog('🚨 DEBUG: CONSTRAINT VIOLATION DETECTED!');
+        appLog('🚨 DEBUG: This is likely a status constraint issue');
+        appLog(
             '🚨 DEBUG: Check if "accepted" status is allowed in the constraint');
       }
 
       // Check if it's an RLS policy violation
       if (e.toString().contains('row-level security')) {
-        print('🚨 DEBUG: RLS POLICY VIOLATION DETECTED!');
-        print('🚨 DEBUG: This is likely a Row Level Security policy issue');
-        print(
+        appLog('🚨 DEBUG: RLS POLICY VIOLATION DETECTED!');
+        appLog('🚨 DEBUG: This is likely a Row Level Security policy issue');
+        appLog(
             '🚨 DEBUG: Check if the user has permission to update this booking');
       }
 
       // Re-throw limit-related exceptions so they can be handled properly
       if (e.toString().contains('limit') || e.toString().contains('maximum')) {
-        print('🚫 DEBUG: Re-throwing limit exception');
+        appLog('🚫 DEBUG: Re-throwing limit exception');
         rethrow;
       }
 
@@ -4959,7 +5041,7 @@ class SupabaseConfig {
         }
       };
     } catch (e) {
-      print('Error calculating transportation price: $e');
+      appLog('Error calculating transportation price: $e');
       return null;
     }
   }
@@ -4974,7 +5056,7 @@ class SupabaseConfig {
     required String userType,
   }) async {
     try {
-      print(
+      appLog(
           'SupabaseConfig: Using vehicle declared price for $vehicleTypeId, user type $userType');
 
       final response =
@@ -4984,42 +5066,42 @@ class SupabaseConfig {
         'p_user_type': userType,
       });
 
-      print('SupabaseConfig: RPC response: $response');
-      print('SupabaseConfig: Response type: ${response.runtimeType}');
+      appLog('SupabaseConfig: RPC response: $response');
+      appLog('SupabaseConfig: Response type: ${response.runtimeType}');
 
       if (response == null) {
-        print('SupabaseConfig: Response is null');
+        appLog('SupabaseConfig: Response is null');
         return null;
       }
 
       // Handle the response based on its type
       if (response is List && response.isNotEmpty) {
-        print(
+        appLog(
             'SupabaseConfig: Response is a list with ${response.length} elements');
 
         // Get the first element
         final firstElement = response[0];
-        print('SupabaseConfig: First element: $firstElement');
-        print(
+        appLog('SupabaseConfig: First element: $firstElement');
+        appLog(
             'SupabaseConfig: First element type: ${firstElement.runtimeType}');
 
         if (firstElement is Map<String, dynamic>) {
-          print('SupabaseConfig: Successfully parsed pricing data');
+          appLog('SupabaseConfig: Successfully parsed pricing data');
           return firstElement;
         } else {
-          print('SupabaseConfig: First element is not a Map<String, dynamic>');
+          appLog('SupabaseConfig: First element is not a Map<String, dynamic>');
           return null;
         }
       } else if (response is Map<String, dynamic>) {
-        print('SupabaseConfig: Response is a Map');
+        appLog('SupabaseConfig: Response is a Map');
         return response;
       } else {
-        print(
+        appLog(
             'SupabaseConfig: Unexpected response format: ${response.runtimeType}');
         return null;
       }
     } catch (e) {
-      print('SupabaseConfig: Error calculating transportation price: $e');
+      appLog('SupabaseConfig: Error calculating transportation price: $e');
       return null;
     }
   }
@@ -5055,7 +5137,7 @@ class SupabaseConfig {
         service['pricing'] = pricingResponse;
       }
     } catch (e) {
-      print('service_pricing table not found, skipping pricing data');
+      appLog('service_pricing table not found, skipping pricing data');
       // Add empty pricing data
       for (var service in services) {
         service['pricing'] = [];
@@ -5137,7 +5219,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating service review: $e');
+      appLog('Error creating service review: $e');
       return null;
     }
   }
@@ -5151,7 +5233,7 @@ class SupabaseConfig {
           .update({'is_active': isActive}).eq('id', categoryId);
       return true;
     } catch (e) {
-      print('Error updating category status: $e');
+      appLog('Error updating category status: $e');
       return false;
     }
   }
@@ -5164,7 +5246,7 @@ class SupabaseConfig {
           .update({'is_active': isActive}).eq('id', serviceId);
       return true;
     } catch (e) {
-      print('Error updating service status: $e');
+      appLog('Error updating service status: $e');
       return false;
     }
   }
@@ -5172,7 +5254,7 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getAllBookings(
       {String? status}) async {
     try {
-      print('🔄 Loading all bookings (transportation + bus + contracts)...');
+      appLog('🔄 Loading all bookings (transportation + bus + contracts)...');
 
       // Get transportation bookings
       var transportationQuery =
@@ -5267,11 +5349,11 @@ class SupabaseConfig {
       allBookings.sort((a, b) => DateTime.parse(b['created_at'])
           .compareTo(DateTime.parse(a['created_at'])));
 
-      print('✅ Loaded ${transportationBookings.length} transportation, '
+      appLog('✅ Loaded ${transportationBookings.length} transportation, '
           '${busBookings.length} bus, ${contractBookings.length} contract bookings');
       return allBookings;
     } catch (e) {
-      print('❌ Error loading all bookings: $e');
+      appLog('❌ Error loading all bookings: $e');
       return [];
     }
   }
@@ -5353,26 +5435,45 @@ class SupabaseConfig {
   // Start a transportation booking (change status from accepted to in_progress)
   static Future<void> startTransportationBooking(String bookingId) async {
     try {
-      print('🔧 startTransportationBooking called with ID: $bookingId');
+      appLog('🔧 startTransportationBooking called with ID: $bookingId');
+
+      // Payment check
+      appLog('🚦 Checking payment for transportation booking: $bookingId');
+      final bookingResponse = await client
+          .from('transportation_bookings')
+          .select('payment_status')
+          .eq('id', bookingId)
+          .single();
+
+      final paymentStatus = bookingResponse['payment_status'];
+      appLog('🚦 Payment status: $paymentStatus');
+
+      if (paymentStatus != 'in_escrow' && paymentStatus != 'released_to_runner') {
+        appLog('❌ Payment required for transportation booking: $bookingId');
+        throw Exception('PAYMENT_REQUIRED');
+      }
 
       final updateData = {
         'status': 'in_progress',
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      print('📝 Update data: $updateData');
+      appLog('📝 Update data: $updateData');
 
       final result = await client
           .from('transportation_bookings')
           .update(updateData)
           .eq('id', bookingId);
 
-      print('✅ Database update result: $result');
-      print(
+      appLog('✅ Database update result: $result');
+      appLog(
           '✅ Transportation booking status updated successfully to in_progress');
     } catch (e) {
-      print('❌ Database error in startTransportationBooking: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      if (e.toString().contains('PAYMENT_REQUIRED')) {
+        rethrow;
+      }
+      appLog('❌ Database error in startTransportationBooking: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       throw Exception('Failed to start transportation booking: $e');
     }
   }
@@ -5380,26 +5481,26 @@ class SupabaseConfig {
   // Complete a transportation booking (change status from in_progress to completed)
   static Future<void> completeTransportationBooking(String bookingId) async {
     try {
-      print('🔧 completeTransportationBooking called with ID: $bookingId');
+      appLog('🔧 completeTransportationBooking called with ID: $bookingId');
 
       final updateData = {
         'status': 'completed',
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      print('📝 Update data: $updateData');
+      appLog('📝 Update data: $updateData');
 
       final result = await client
           .from('transportation_bookings')
           .update(updateData)
           .eq('id', bookingId);
 
-      print('✅ Database update result: $result');
-      print(
+      appLog('✅ Database update result: $result');
+      appLog(
           '✅ Transportation booking status updated successfully to completed');
     } catch (e) {
-      print('❌ Database error in completeTransportationBooking: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Database error in completeTransportationBooking: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       throw Exception('Failed to complete transportation booking: $e');
     }
   }
@@ -5407,25 +5508,44 @@ class SupabaseConfig {
   // Start a contract booking (change status from accepted to in_progress)
   static Future<void> startContractBooking(String bookingId) async {
     try {
-      print('🔧 startContractBooking called with ID: $bookingId');
+      appLog('🔧 startContractBooking called with ID: $bookingId');
+
+      // Payment check
+      appLog('🚦 Checking payment for contract booking: $bookingId');
+      final bookingResponse = await client
+          .from('contract_bookings')
+          .select('payment_status')
+          .eq('id', bookingId)
+          .single();
+
+      final paymentStatus = bookingResponse['payment_status'];
+      appLog('🚦 Payment status: $paymentStatus');
+
+      if (paymentStatus != 'in_escrow' && paymentStatus != 'released_to_runner') {
+        appLog('❌ Payment required for contract booking: $bookingId');
+        throw Exception('PAYMENT_REQUIRED');
+      }
 
       final updateData = {
         'status': 'in_progress',
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      print('📝 Update data: $updateData');
+      appLog('📝 Update data: $updateData');
 
       final result = await client
           .from('contract_bookings')
           .update(updateData)
           .eq('id', bookingId);
 
-      print('✅ Database update result: $result');
-      print('✅ Contract booking status updated successfully to in_progress');
+      appLog('✅ Database update result: $result');
+      appLog('✅ Contract booking status updated successfully to in_progress');
     } catch (e) {
-      print('❌ Database error in startContractBooking: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      if (e.toString().contains('PAYMENT_REQUIRED')) {
+        rethrow;
+      }
+      appLog('❌ Database error in startContractBooking: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       throw Exception('Failed to start contract booking: $e');
     }
   }
@@ -5433,25 +5553,25 @@ class SupabaseConfig {
   // Complete a contract booking (change status from in_progress to completed)
   static Future<void> completeContractBooking(String bookingId) async {
     try {
-      print('🔧 completeContractBooking called with ID: $bookingId');
+      appLog('🔧 completeContractBooking called with ID: $bookingId');
 
       final updateData = {
         'status': 'completed',
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      print('📝 Update data: $updateData');
+      appLog('📝 Update data: $updateData');
 
       final result = await client
           .from('contract_bookings')
           .update(updateData)
           .eq('id', bookingId);
 
-      print('✅ Database update result: $result');
-      print('✅ Contract booking status updated successfully to completed');
+      appLog('✅ Database update result: $result');
+      appLog('✅ Contract booking status updated successfully to completed');
     } catch (e) {
-      print('❌ Database error in completeContractBooking: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Database error in completeContractBooking: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       throw Exception('Failed to complete contract booking: $e');
     }
   }
@@ -5460,16 +5580,55 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getRunnerTransportationBookings(
       String runnerId) async {
     try {
-      final response = await client.from('transportation_bookings').select('''
-          *,
-          user:users!transportation_bookings_user_id_fkey(full_name, email, phone),
-          service:transportation_services(
-            name
-          )
-        ''').eq('driver_id', runnerId).order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      // Step 1: Fetch bookings without user join
+      final response = await client
+          .from('transportation_bookings')
+          .select('*, service:transportation_services(name)')
+          .eq('driver_id', runnerId)
+          .order('created_at', ascending: false);
+
+      final bookings = List<Map<String, dynamic>>.from(response);
+      if (bookings.isEmpty) return bookings;
+
+      // Step 2: Collect unique user IDs
+      final userIds = bookings
+          .map((b) => b['user_id'])
+          .whereType<String>()
+          .toSet()
+          .toList();
+
+      // Step 3: Fetch profiles via RPC (bypasses RLS)
+      Map<String, Map<String, dynamic>> userMap = {};
+      if (userIds.isNotEmpty) {
+        try {
+          final users = await client.rpc(
+            'get_user_profiles',
+            params: {'user_ids': userIds},
+          );
+          for (final u in (users as List)) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u as Map);
+          }
+        } catch (_) {
+          final users = await client
+              .from('users')
+              .select('id, full_name, phone')
+              .inFilter('id', userIds);
+          for (final u in users) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u);
+          }
+        }
+      }
+
+      // Step 4: Merge user data into bookings
+      return bookings.map((booking) {
+        final userId = booking['user_id'] as String?;
+        return {
+          ...booking,
+          'user': userId != null ? userMap[userId] : null,
+        };
+      }).toList();
     } catch (e) {
-      print('Error fetching runner transportation bookings: $e');
+      appLog('Error fetching runner transportation bookings: $e');
       return [];
     }
   }
@@ -5478,50 +5637,84 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getRunnerAllBookings(
       String runnerId) async {
     try {
-      // Get transportation bookings
+      // Step 1: Fetch transportation bookings without user join
+      final transportationResponse = await client
+          .from('transportation_bookings')
+          .select('*, service:transportation_services(name)')
+          .eq('driver_id', runnerId)
+          .order('created_at', ascending: false);
+
+      // Step 1b: Fetch contract bookings without user join
+      final contractResponse = await client
+          .from('contract_bookings')
+          .select('*')
+          .eq('driver_id', runnerId)
+          .order('created_at', ascending: false);
+
       final transportationBookings =
-          await client.from('transportation_bookings').select('''
-          *,
-          user:users!transportation_bookings_user_id_fkey(full_name, email, phone),
-          service:transportation_services(
-            name
-          )
-        ''').eq('driver_id', runnerId).order('created_at', ascending: false);
+          List<Map<String, dynamic>>.from(transportationResponse);
+      final contractBookings =
+          List<Map<String, dynamic>>.from(contractResponse);
 
-      // Get contract bookings
-      final contractBookings = await client.from('contract_bookings').select('''
-          *,
-          user:users!contract_bookings_user_id_fkey(full_name, email, phone)
-        ''').eq('driver_id', runnerId).order('created_at', ascending: false);
+      // Step 2: Collect all unique user IDs from both lists
+      final allUserIds = {
+        ...transportationBookings
+            .map((b) => b['user_id'])
+            .whereType<String>(),
+        ...contractBookings.map((b) => b['user_id']).whereType<String>(),
+      }.toList();
 
-      // Combine both types of bookings
+      // Step 3: Fetch profiles via RPC (bypasses RLS)
+      Map<String, Map<String, dynamic>> userMap = {};
+      if (allUserIds.isNotEmpty) {
+        try {
+          final users = await client.rpc(
+            'get_user_profiles',
+            params: {'user_ids': allUserIds},
+          );
+          for (final u in (users as List)) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u as Map);
+          }
+        } catch (_) {
+          final users = await client
+              .from('users')
+              .select('id, full_name, phone')
+              .inFilter('id', allUserIds);
+          for (final u in users) {
+            userMap[u['id'] as String] = Map<String, dynamic>.from(u);
+          }
+        }
+      }
+
+      // Step 4: Merge user data and combine
       List<Map<String, dynamic>> allBookings = [];
 
-      // Add transportation bookings with type identifier
       for (var booking in transportationBookings) {
+        final userId = booking['user_id'] as String?;
         allBookings.add({
           ...booking,
+          'user': userId != null ? userMap[userId] : null,
           'booking_type': 'transportation',
           'title': 'Shuttle Services',
         });
       }
 
-      // Add contract bookings with type identifier
       for (var booking in contractBookings) {
+        final userId = booking['user_id'] as String?;
         allBookings.add({
           ...booking,
+          'user': userId != null ? userMap[userId] : null,
           'booking_type': 'contract',
           'title': 'Contract Booking',
         });
       }
 
-      // Sort combined bookings by created_at
       allBookings.sort((a, b) => DateTime.parse(b['created_at'])
           .compareTo(DateTime.parse(a['created_at'])));
 
       return allBookings;
     } catch (e) {
-      print('Error fetching runner all bookings: $e');
+      appLog('Error fetching all runner bookings: $e');
       return [];
     }
   }
@@ -5530,14 +5723,14 @@ class SupabaseConfig {
   static Future<void> acceptContractBooking(
       String bookingId, String driverId) async {
     try {
-      print('🔄 Starting contract booking acceptance process...');
-      print('🔄 Booking ID: $bookingId');
-      print('🔄 Driver ID: $driverId');
+      appLog('🔄 Starting contract booking acceptance process...');
+      appLog('🔄 Booking ID: $bookingId');
+      appLog('🔄 Driver ID: $driverId');
 
       // Check runner limits first
-      print('🚦 DEBUG: [CONTRACT] Checking runner limits before acceptance...');
+      appLog('🚦 DEBUG: [CONTRACT] Checking runner limits before acceptance...');
       final limits = await checkRunnerLimits(driverId);
-      print('🚦 DEBUG: [CONTRACT] Runner limits: $limits');
+      appLog('🚦 DEBUG: [CONTRACT] Runner limits: $limits');
 
       if (!limits['can_accept_contract']) {
         final totalCount = limits['total_active_count'] ?? 0;
@@ -5547,7 +5740,7 @@ class SupabaseConfig {
       }
 
       // Get contract booking details first
-      print(
+      appLog(
           '🔍 DEBUG: [CONTRACT] Checking if contract booking exists with ID: $bookingId');
       final bookingResponse = await client
           .from('contract_bookings')
@@ -5555,15 +5748,15 @@ class SupabaseConfig {
           .eq('id', bookingId)
           .maybeSingle();
 
-      print('🔍 DEBUG: [CONTRACT] Contract booking response: $bookingResponse');
+      appLog('🔍 DEBUG: [CONTRACT] Contract booking response: $bookingResponse');
 
       if (bookingResponse == null) {
-        print(
+        appLog(
             '❌ DEBUG: [CONTRACT] Contract booking does not exist with ID: $bookingId');
         throw Exception('Contract booking does not exist with ID: $bookingId');
       }
 
-      print('📋 Current contract booking details: $bookingResponse');
+      appLog('📋 Current contract booking details: $bookingResponse');
 
       final customerId = bookingResponse['user_id'];
       final description = bookingResponse['description'];
@@ -5572,7 +5765,7 @@ class SupabaseConfig {
 
       // Check if booking is already accepted
       if (currentStatus == 'accepted' && currentDriverId == driverId) {
-        print('⚠️ Contract booking already accepted by this driver');
+        appLog('⚠️ Contract booking already accepted by this driver');
         return;
       }
 
@@ -5582,7 +5775,7 @@ class SupabaseConfig {
             'Cannot accept contract booking with status: $currentStatus');
       }
 
-      print('🔄 Updating contract booking status to accepted...');
+      appLog('🔄 Updating contract booking status to accepted...');
 
       // Update booking status
       final updateResult = await client.from('contract_bookings').update({
@@ -5591,7 +5784,7 @@ class SupabaseConfig {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', bookingId);
 
-      print('✅ Contract booking acceptance update result: $updateResult');
+      appLog('✅ Contract booking acceptance update result: $updateResult');
 
       // Verify the update was successful
       final verifyResponse = await client
@@ -5600,14 +5793,14 @@ class SupabaseConfig {
           .eq('id', bookingId)
           .single();
 
-      print('🔍 Verification - Updated contract booking: $verifyResponse');
+      appLog('🔍 Verification - Updated contract booking: $verifyResponse');
 
       // Create chat conversation
       await _createContractBookingChat(
           bookingId, customerId, driverId, description);
     } catch (e) {
-      print('❌ Error in acceptContractBooking: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Error in acceptContractBooking: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       throw Exception('Failed to accept contract booking: $e');
     }
   }
@@ -5639,9 +5832,9 @@ class SupabaseConfig {
         'message_type': 'text',
       });
 
-      print('✅ Chat conversation created for contract booking: $bookingId');
+      appLog('✅ Chat conversation created for contract booking: $bookingId');
     } catch (e) {
-      print('❌ Error creating chat conversation: $e');
+      appLog('❌ Error creating chat conversation: $e');
       // Don't throw here as the booking was accepted successfully
     }
   }
@@ -5660,7 +5853,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error fetching vehicle pricing: $e');
+      appLog('Error fetching vehicle pricing: $e');
       return null;
     }
   }
@@ -5676,7 +5869,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating vehicle pricing: $e');
+      appLog('Error creating vehicle pricing: $e');
       return null;
     }
   }
@@ -5688,7 +5881,7 @@ class SupabaseConfig {
       await client.from('vehicle_pricing').update(updates).eq('id', pricingId);
       return true;
     } catch (e) {
-      print('Error updating vehicle pricing: $e');
+      appLog('Error updating vehicle pricing: $e');
       return false;
     }
   }
@@ -5705,7 +5898,7 @@ class SupabaseConfig {
           .order('min_distance_km');
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error fetching vehicle pricing tiers: $e');
+      appLog('Error fetching vehicle pricing tiers: $e');
       return [];
     }
   }
@@ -5721,7 +5914,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error creating vehicle pricing tier: $e');
+      appLog('Error creating vehicle pricing tier: $e');
       return null;
     }
   }
@@ -5736,7 +5929,7 @@ class SupabaseConfig {
           .eq('id', tierId);
       return true;
     } catch (e) {
-      print('Error updating vehicle pricing tier: $e');
+      appLog('Error updating vehicle pricing tier: $e');
       return false;
     }
   }
@@ -5747,7 +5940,7 @@ class SupabaseConfig {
       await client.from('vehicle_pricing_tiers').delete().eq('id', tierId);
       return true;
     } catch (e) {
-      print('Error deleting vehicle pricing tier: $e');
+      appLog('Error deleting vehicle pricing tier: $e');
       return false;
     }
   }
@@ -5766,7 +5959,7 @@ class SupabaseConfig {
       }
       return 'individual';
     } catch (e) {
-      print('Error getting user type: $e');
+      appLog('Error getting user type: $e');
       return 'individual';
     }
   }
@@ -5790,7 +5983,7 @@ class SupabaseConfig {
 
       return null;
     } catch (e) {
-      print('Error creating transportation booking with pricing: $e');
+      appLog('Error creating transportation booking with pricing: $e');
       return null;
     }
   }
@@ -5806,7 +5999,7 @@ class SupabaseConfig {
           .single();
       return response;
     } catch (e) {
-      print('Error fetching transportation booking pricing: $e');
+      appLog('Error fetching transportation booking pricing: $e');
       return null;
     }
   }
@@ -5832,7 +6025,7 @@ class SupabaseConfig {
 
       return true;
     } catch (e) {
-      print('Error updating vehicle type with pricing: $e');
+      appLog('Error updating vehicle type with pricing: $e');
       return false;
     }
   }
@@ -5840,29 +6033,29 @@ class SupabaseConfig {
   // Debug function to check current user profile
   static Future<Map<String, dynamic>?> getCurrentUserProfileDebug() async {
     if (currentUser == null) {
-      print('❌ No current user found');
+      appLog('❌ No current user found');
       return null;
     }
 
     try {
-      print('🔍 Getting profile for user: ${currentUser!.id}');
-      print('🔍 User email: ${currentUser!.email}');
-      print('🔍 User metadata: ${currentUser!.userMetadata}');
+      appLog('🔍 Getting profile for user: ${currentUser!.id}');
+      appLog('🔍 User email: ${currentUser!.email}');
+      appLog('🔍 User metadata: ${currentUser!.userMetadata}');
 
       final profile = await getUserProfile(currentUser!.id);
-      print('🔍 User profile: $profile');
+      appLog('🔍 User profile: $profile');
 
       if (profile != null) {
-        print('🔍 User type: ${profile['user_type']}');
-        print('🔍 Full name: ${profile['full_name']}');
-        print('🔍 Is verified: ${profile['is_verified']}');
+        appLog('🔍 User type: ${profile['user_type']}');
+        appLog('🔍 Full name: ${profile['full_name']}');
+        appLog('🔍 Is verified: ${profile['is_verified']}');
       } else {
-        print('❌ No profile found for user');
+        appLog('❌ No profile found for user');
       }
 
       return profile;
     } catch (e) {
-      print('❌ Error getting user profile: $e');
+      appLog('❌ Error getting user profile: $e');
       return null;
     }
   }
@@ -5870,38 +6063,38 @@ class SupabaseConfig {
   // Check runner limits for ALL job types (transportation, contract, errands, immediate jobs)
   static Future<Map<String, dynamic>> checkRunnerLimits(String runnerId) async {
     try {
-      print('🚦 DEBUG: Checking runner limits for: $runnerId');
+      appLog('🚦 DEBUG: Checking runner limits for: $runnerId');
 
       // Get active transportation bookings (accepted, in_progress) - includes immediate bookings
-      print('🚦 DEBUG: Querying active transportation bookings...');
+      appLog('🚦 DEBUG: Querying active transportation bookings...');
       final activeTransportationBookings = await client
           .from('transportation_bookings')
           .select('id, status, is_immediate')
           .eq('driver_id', runnerId)
           .or('status.eq.accepted,status.eq.in_progress');
 
-      print(
+      appLog(
           '🚦 DEBUG: Active transportation bookings: $activeTransportationBookings');
 
       // Get active contract bookings (accepted, in_progress)
-      print('🚦 DEBUG: Querying active contract bookings...');
+      appLog('🚦 DEBUG: Querying active contract bookings...');
       final activeContractBookings = await client
           .from('contract_bookings')
           .select('id, status')
           .eq('driver_id', runnerId)
           .or('status.eq.accepted,status.eq.in_progress');
 
-      print('🚦 DEBUG: Active contract bookings: $activeContractBookings');
+      appLog('🚦 DEBUG: Active contract bookings: $activeContractBookings');
 
       // Get active errands (accepted, in_progress) - includes immediate errands
-      print('🚦 DEBUG: Querying active errands...');
+      appLog('🚦 DEBUG: Querying active errands...');
       final activeErrands = await client
           .from('errands')
           .select('id, status, is_immediate')
           .eq('runner_id', runnerId)
           .or('status.eq.accepted,status.eq.in_progress');
 
-      print('🚦 DEBUG: Active errands: $activeErrands');
+      appLog('🚦 DEBUG: Active errands: $activeErrands');
 
       final transportationCount = activeTransportationBookings.length;
       final contractCount = activeContractBookings.length;
@@ -5910,7 +6103,7 @@ class SupabaseConfig {
           transportationCount + contractCount + errandsCount;
       final totalLimit = 2; // Maximum 2 active jobs total across all types
 
-      print(
+      appLog(
           '🚦 DEBUG: Counts - Transportation: $transportationCount, Contract: $contractCount, Errands: $errandsCount, Total: $totalActiveCount, Limit: $totalLimit');
 
       final limits = {
@@ -5927,16 +6120,16 @@ class SupabaseConfig {
         'total_limit': totalLimit,
       };
 
-      print('🚦 DEBUG: Final runner limits: $limits');
-      print(
+      appLog('🚦 DEBUG: Final runner limits: $limits');
+      appLog(
           '🚦 DEBUG: Can accept transportation: ${limits['can_accept_transportation']}');
-      print('🚦 DEBUG: Can accept contract: ${limits['can_accept_contract']}');
-      print('🚦 DEBUG: Can accept errands: ${limits['can_accept_errands']}');
+      appLog('🚦 DEBUG: Can accept contract: ${limits['can_accept_contract']}');
+      appLog('🚦 DEBUG: Can accept errands: ${limits['can_accept_errands']}');
 
       return limits;
     } catch (e, stackTrace) {
-      print('❌ DEBUG: Error checking runner limits: $e');
-      print('❌ DEBUG: Stack trace: $stackTrace');
+      appLog('❌ DEBUG: Error checking runner limits: $e');
+      appLog('❌ DEBUG: Stack trace: $stackTrace');
 
       // Return safe defaults that block acceptance on error
       final safeLimits = {
@@ -5953,7 +6146,7 @@ class SupabaseConfig {
         'total_limit': 2,
       };
 
-      print('🚦 DEBUG: Returning safe limits due to error: $safeLimits');
+      appLog('🚦 DEBUG: Returning safe limits due to error: $safeLimits');
       return safeLimits;
     }
   }
@@ -5977,7 +6170,7 @@ class SupabaseConfig {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('❌ Error getting runner active transportation bookings: $e');
+      appLog('❌ Error getting runner active transportation bookings: $e');
       return [];
     }
   }
@@ -5985,7 +6178,7 @@ class SupabaseConfig {
   // Cancel transportation booking (runner cancels)
   static Future<bool> cancelTransportationBooking(String bookingId) async {
     try {
-      print('🚫 Cancelling transportation booking: $bookingId');
+      appLog('🚫 Cancelling transportation booking: $bookingId');
 
       // Get current booking details first
       final bookingResponse = await client
@@ -6019,10 +6212,10 @@ class SupabaseConfig {
       await _notifyCustomerTransportationCancelled(
           userId, driverId, serviceName);
 
-      print('✅ Transportation booking cancelled successfully');
+      appLog('✅ Transportation booking cancelled successfully');
       return true;
     } catch (e) {
-      print('❌ Error cancelling transportation booking: $e');
+      appLog('❌ Error cancelling transportation booking: $e');
       return false;
     }
   }
@@ -6031,15 +6224,15 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>>
       getBusServicesWithProviders() async {
     try {
-      print('🚌 Fetching bus services with all providers...');
+      appLog('🚌 Fetching bus services with all providers...');
 
       // Test if transportation_services table exists
       try {
         await client.from('transportation_services').select('count').limit(1);
-        print('✅ transportation_services table exists');
+        appLog('✅ transportation_services table exists');
       } catch (e) {
-        print('❌ transportation_services table does not exist: $e');
-        print('💡 Please run the transportation system setup scripts first');
+        appLog('❌ transportation_services table does not exist: $e');
+        appLog('💡 Please run the transportation system setup scripts first');
         return [];
       }
 
@@ -6050,7 +6243,7 @@ class SupabaseConfig {
             route:service_routes(route_name, from_location, to_location)
           ''').eq('is_active', true).order('name');
 
-      print('✅ Found ${servicesResponse.length} transportation services');
+      appLog('✅ Found ${servicesResponse.length} transportation services');
 
       // Process each service to extract provider information from arrays
       List<Map<String, dynamic>> servicesWithProviders = [];
@@ -6113,7 +6306,7 @@ class SupabaseConfig {
                 serviceProviders.add(providerWithDetails);
               }
             } catch (e) {
-              print('⚠️ Error fetching provider $providerId: $e');
+              appLog('⚠️ Error fetching provider $providerId: $e');
             }
           }
         } else {
@@ -6143,7 +6336,7 @@ class SupabaseConfig {
                 serviceProviders.add(providerWithDetails);
               }
             } catch (e) {
-              print('⚠️ Error fetching legacy provider $legacyProviderId: $e');
+              appLog('⚠️ Error fetching legacy provider $legacyProviderId: $e');
             }
           }
         }
@@ -6154,39 +6347,39 @@ class SupabaseConfig {
         serviceWithProviders['providers'] = serviceProviders;
         servicesWithProviders.add(serviceWithProviders);
 
-        print(
+        appLog(
             '📋 Service "${service['name']}" has ${serviceProviders.length} provider(s)');
       }
 
       return servicesWithProviders;
     } catch (e) {
-      print('❌ Error getting bus services with providers: $e');
-      print('❌ Error stack trace: ${StackTrace.current}');
+      appLog('❌ Error getting bus services with providers: $e');
+      appLog('❌ Error stack trace: ${StackTrace.current}');
       return [];
     }
   }
 
   static Future<List<Map<String, dynamic>>> getBusServices() async {
     try {
-      print('🚌 Fetching bus services...');
+      appLog('🚌 Fetching bus services...');
 
       // Test if transportation_services table exists
       try {
         await client.from('transportation_services').select('count').limit(1);
-        print('✅ transportation_services table exists');
+        appLog('✅ transportation_services table exists');
       } catch (e) {
-        print('❌ transportation_services table does not exist: $e');
-        print('💡 Please run the transportation system setup scripts first');
+        appLog('❌ transportation_services table does not exist: $e');
+        appLog('💡 Please run the transportation system setup scripts first');
         return [];
       }
 
       // Test if service_routes table exists
       try {
         await client.from('service_routes').select('count').limit(1);
-        print('✅ service_routes table exists');
+        appLog('✅ service_routes table exists');
       } catch (e) {
-        print('❌ service_routes table does not exist: $e');
-        print('💡 Please run the transportation system setup scripts first');
+        appLog('❌ service_routes table does not exist: $e');
+        appLog('💡 Please run the transportation system setup scripts first');
         return [];
       }
 
@@ -6196,19 +6389,19 @@ class SupabaseConfig {
             route:service_routes(route_name, from_location, to_location)
           ''').eq('is_active', true).order('name');
 
-      print('✅ Found ${response.length} transportation services');
+      appLog('✅ Found ${response.length} transportation services');
 
       // Debug: Print the first service if any found
       if (response.isNotEmpty) {
-        print('🔍 First service: ${response.first}');
+        appLog('🔍 First service: ${response.first}');
       } else {
-        print('⚠️ No transportation services found');
+        appLog('⚠️ No transportation services found');
       }
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('❌ Error getting bus services: $e');
-      print('❌ Error stack trace: ${StackTrace.current}');
+      appLog('❌ Error getting bus services: $e');
+      appLog('❌ Error stack trace: ${StackTrace.current}');
       return [];
     }
   }
@@ -6216,7 +6409,7 @@ class SupabaseConfig {
   static Future<Map<String, dynamic>?> createBusServiceBooking(
       Map<String, dynamic> bookingData) async {
     try {
-      print('🚌 Creating bus service booking: $bookingData');
+      appLog('🚌 Creating bus service booking: $bookingData');
 
       final response = await client
           .from('bus_service_bookings')
@@ -6224,10 +6417,10 @@ class SupabaseConfig {
           .select()
           .single();
 
-      print('✅ Bus service booking created successfully');
+      appLog('✅ Bus service booking created successfully');
       return response;
     } catch (e) {
-      print('❌ Error creating bus service booking: $e');
+      appLog('❌ Error creating bus service booking: $e');
       return null;
     }
   }
@@ -6236,7 +6429,7 @@ class SupabaseConfig {
   static Future<Map<String, dynamic>?> createContractBooking(
       Map<String, dynamic> contractData) async {
     try {
-      print('📋 Creating contract booking: $contractData');
+      appLog('📋 Creating contract booking: $contractData');
 
       final response = await client
           .from('contract_bookings')
@@ -6244,10 +6437,10 @@ class SupabaseConfig {
           .select()
           .single();
 
-      print('✅ Contract booking created successfully');
+      appLog('✅ Contract booking created successfully');
       return response;
     } catch (e) {
-      print('❌ Error creating contract booking: $e');
+      appLog('❌ Error creating contract booking: $e');
       return null;
     }
   }
@@ -6255,7 +6448,7 @@ class SupabaseConfig {
   // Admin Bus Management Methods
   static Future<List<Map<String, dynamic>>> getBusServiceBookings() async {
     try {
-      print('🚌 Getting all bus service bookings for admin');
+      appLog('🚌 Getting all bus service bookings for admin');
 
       final response = await client.from('bus_service_bookings').select('''
             *,
@@ -6297,7 +6490,7 @@ class SupabaseConfig {
         };
       }).toList();
     } catch (e) {
-      print('❌ Error getting bus service bookings: $e');
+      appLog('❌ Error getting bus service bookings: $e');
       return [];
     }
   }
@@ -6305,7 +6498,7 @@ class SupabaseConfig {
   static Future<bool> updateBusBookingStatus(
       String bookingId, String status) async {
     try {
-      print('🔄 Updating bus booking status: $bookingId to $status');
+      appLog('🔄 Updating bus booking status: $bookingId to $status');
 
       // Get booking details before updating
       final bookingResponse = await client
@@ -6322,7 +6515,7 @@ class SupabaseConfig {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', bookingId);
 
-      print('✅ Bus booking status updated successfully: $response');
+      appLog('✅ Bus booking status updated successfully: $response');
 
       // If admin is accepting the booking, notify the customer
       if (status == 'accepted') {
@@ -6335,7 +6528,7 @@ class SupabaseConfig {
 
       return true;
     } catch (e) {
-      print('❌ Error updating bus booking status: $e');
+      appLog('❌ Error updating bus booking status: $e');
       return false;
     }
   }
@@ -6420,7 +6613,7 @@ class SupabaseConfig {
 
       return uniqueProviders.values.toList();
     } catch (e) {
-      print('Error getting providers for route: $e');
+      appLog('Error getting providers for route: $e');
       return [];
     }
   }
@@ -6506,7 +6699,7 @@ class SupabaseConfig {
 
       return uniqueProviders.values.toList();
     } catch (e) {
-      print('Error getting providers for route by name: $e');
+      appLog('Error getting providers for route by name: $e');
       return [];
     }
   }
@@ -6515,15 +6708,15 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>>
       getBusServicesWithProviderNames() async {
     try {
-      print('🚌 Fetching bus services with provider_names...');
+      appLog('🚌 Fetching bus services with provider_names...');
 
       // Test if transportation_services table exists
       try {
         await client.from('transportation_services').select('count').limit(1);
-        print('✅ transportation_services table exists');
+        appLog('✅ transportation_services table exists');
       } catch (e) {
-        print('❌ transportation_services table does not exist: $e');
-        print('💡 Please run the transportation system setup scripts first');
+        appLog('❌ transportation_services table does not exist: $e');
+        appLog('💡 Please run the transportation system setup scripts first');
         return [];
       }
 
@@ -6540,12 +6733,12 @@ class SupabaseConfig {
             route:service_routes(route_name, from_location, to_location)
           ''').eq('is_active', true).order('name');
 
-      print('✅ Found ${servicesResponse.length} transportation services');
+      appLog('✅ Found ${servicesResponse.length} transportation services');
 
       return List<Map<String, dynamic>>.from(servicesResponse);
     } catch (e) {
-      print('❌ Error getting bus services with provider_names: $e');
-      print('❌ Error stack trace: ${StackTrace.current}');
+      appLog('❌ Error getting bus services with provider_names: $e');
+      appLog('❌ Error stack trace: ${StackTrace.current}');
       return [];
     }
   }
@@ -6562,7 +6755,7 @@ class SupabaseConfig {
 
       return response['vehicle_type'] as String?;
     } catch (e) {
-      print('Error fetching runner vehicle type: $e');
+      appLog('Error fetching runner vehicle type: $e');
       return null;
     }
   }
@@ -6571,7 +6764,7 @@ class SupabaseConfig {
   static Future<void> _notifyRunnersOfNewTransportationBooking(
       Map<String, dynamic> booking) async {
     try {
-      print(
+      appLog(
           '🔔 Notifying runners of new transportation booking: ${booking['id']}');
 
       // Get booking details
@@ -6591,7 +6784,7 @@ class SupabaseConfig {
               .single();
           vehicleTypeName = vehicleResponse['name'] ?? 'Vehicle';
         } catch (e) {
-          print('Error fetching vehicle type name: $e');
+          appLog('Error fetching vehicle type name: $e');
         }
       }
 
@@ -6603,7 +6796,7 @@ class SupabaseConfig {
           .eq('verification_status', 'approved');
 
       final runners = List<Map<String, dynamic>>.from(runnersResponse);
-      print(
+      appLog(
           '🎯 Found ${runners.length} runners with vehicle type: $vehicleTypeName');
 
       // Send notifications to each runner
@@ -6622,11 +6815,11 @@ class SupabaseConfig {
             'created_at': DateTime.now().toIso8601String(),
           });
 
-          print('📱 Notification sent to runner: $runnerId');
+          appLog('📱 Notification sent to runner: $runnerId');
         }
       }
     } catch (e) {
-      print('❌ Error notifying runners: $e');
+      appLog('❌ Error notifying runners: $e');
     }
   }
 
@@ -6662,7 +6855,7 @@ class SupabaseConfig {
         });
       }
     } catch (e) {
-      print('Error notifying admins of shopping request: $e');
+      appLog('Error notifying admins of shopping request: $e');
     }
   }
 
@@ -6694,7 +6887,7 @@ class SupabaseConfig {
         });
       }
     } catch (e) {
-      print('Error notifying admins of shopping acceptance: $e');
+      appLog('Error notifying admins of shopping acceptance: $e');
     }
   }
 
@@ -6710,7 +6903,7 @@ class SupabaseConfig {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error fetching user notifications: $e');
+      appLog('Error fetching user notifications: $e');
       return [];
     }
   }
@@ -6724,7 +6917,7 @@ class SupabaseConfig {
       }).eq('id', notificationId);
       return true;
     } catch (e) {
-      print('Error marking notification as read: $e');
+      appLog('Error marking notification as read: $e');
       return false;
     }
   }
@@ -6738,7 +6931,7 @@ class SupabaseConfig {
       }).eq('user_id', userId);
       return true;
     } catch (e) {
-      print('Error marking all notifications as read: $e');
+      appLog('Error marking all notifications as read: $e');
       return false;
     }
   }
@@ -6754,7 +6947,7 @@ class SupabaseConfig {
 
       return response.length;
     } catch (e) {
-      print('Error fetching unread notification count: $e');
+      appLog('Error fetching unread notification count: $e');
       return 0;
     }
   }
@@ -6765,7 +6958,7 @@ class SupabaseConfig {
       await client.from('notifications').delete().eq('id', notificationId);
       return true;
     } catch (e) {
-      print('Error deleting notification: $e');
+      appLog('Error deleting notification: $e');
       return false;
     }
   }
@@ -6774,7 +6967,7 @@ class SupabaseConfig {
   static Future<void> _notifyCustomerBusBookingAcceptedByAdmin(
       String customerId, String adminId, String serviceName) async {
     try {
-      print(
+      appLog(
           '📱 Notifying customer $customerId that admin $adminId accepted bus booking: $serviceName');
 
       // Only notify if current user is the customer
@@ -6794,7 +6987,7 @@ class SupabaseConfig {
         'created_at': DateTime.now().toIso8601String(),
       });
     } catch (e) {
-      print('❌ Error notifying customer about bus booking acceptance: $e');
+      appLog('❌ Error notifying customer about bus booking acceptance: $e');
     }
   }
 
@@ -6806,16 +6999,16 @@ class SupabaseConfig {
   /// Returns summary of all runners with their earnings and commission data
   static Future<List<Map<String, dynamic>>> getRunnerEarningsSummary() async {
     try {
-      print('💰 Getting runner earnings summary');
+      appLog('💰 Getting runner earnings summary');
 
       // RLS: use RPC so only admins get all rows
       final response = await client.rpc('get_runner_earnings_summary');
       final data = List<Map<String, dynamic>>.from(response ?? []);
 
-      print('✅ Loaded earnings for ${data.length} runners');
+      appLog('✅ Loaded earnings for ${data.length} runners');
       return data;
     } catch (e) {
-      print('❌ Error getting runner earnings summary: $e');
+      appLog('❌ Error getting runner earnings summary: $e');
       return [];
     }
   }
@@ -6824,17 +7017,17 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getRunnerDetailedBookings(
       String runnerId) async {
     try {
-      print('📋 Getting detailed bookings for runner: $runnerId');
+      appLog('📋 Getting detailed bookings for runner: $runnerId');
 
       final response = await client.rpc('get_runner_detailed_bookings',
           params: {'p_runner_id': runnerId});
 
       final data = List<Map<String, dynamic>>.from(response);
 
-      print('✅ Loaded ${data.length} bookings for runner');
+      appLog('✅ Loaded ${data.length} bookings for runner');
       return data;
     } catch (e) {
-      print('❌ Error getting runner detailed bookings: $e');
+      appLog('❌ Error getting runner detailed bookings: $e');
       return [];
     }
   }
@@ -6842,7 +7035,7 @@ class SupabaseConfig {
   /// Get all runners (verified users)
   static Future<List<Map<String, dynamic>>> getAllRunners() async {
     try {
-      print('👥 Getting all runners');
+      appLog('👥 Getting all runners');
 
       final response = await client
           .from('users')
@@ -6861,10 +7054,10 @@ class SupabaseConfig {
 
       final data = List<Map<String, dynamic>>.from(response);
 
-      print('✅ Loaded ${data.length} runners');
+      appLog('✅ Loaded ${data.length} runners');
       return data;
     } catch (e) {
-      print('❌ Error getting all runners: $e');
+      appLog('❌ Error getting all runners: $e');
       return [];
     }
   }
@@ -6872,7 +7065,7 @@ class SupabaseConfig {
   /// Get company commission totals
   static Future<Map<String, dynamic>> getCompanyCommissionTotals() async {
     try {
-      print('💵 Getting company commission totals');
+      appLog('💵 Getting company commission totals');
 
       final summary = await getRunnerEarningsSummary();
 
@@ -6901,7 +7094,7 @@ class SupabaseConfig {
         'runner_rate': 66.67,
       };
     } catch (e) {
-      print('❌ Error getting company commission totals: $e');
+      appLog('❌ Error getting company commission totals: $e');
       return {
         'total_revenue': 0.0,
         'total_commission': 0.0,
@@ -6942,7 +7135,7 @@ class SupabaseConfig {
     bool allowReply = true,
   }) async {
     try {
-      print('📨 Sending message to runner: $runnerId');
+      appLog('📨 Sending message to runner: $runnerId');
 
       final response =
           await client.rpc('send_admin_message_to_runner', params: {
@@ -6954,10 +7147,10 @@ class SupabaseConfig {
         'p_allow_reply': allowReply,
       });
 
-      print('✅ Message sent successfully. ID: $response');
+      appLog('✅ Message sent successfully. ID: $response');
       return response.toString();
     } catch (e) {
-      print('❌ Error sending message to runner: $e');
+      appLog('❌ Error sending message to runner: $e');
       rethrow;
     }
   }
@@ -6971,7 +7164,7 @@ class SupabaseConfig {
     bool allowReply = true,
   }) async {
     try {
-      print('📢 Broadcasting message to all runners');
+      appLog('📢 Broadcasting message to all runners');
 
       final response =
           await client.rpc('broadcast_admin_message_to_all_runners', params: {
@@ -6983,10 +7176,10 @@ class SupabaseConfig {
       });
 
       final count = response as int;
-      print('✅ Message broadcast to $count runners');
+      appLog('✅ Message broadcast to $count runners');
       return count;
     } catch (e) {
-      print('❌ Error broadcasting message: $e');
+      appLog('❌ Error broadcasting message: $e');
       rethrow;
     }
   }
@@ -6994,8 +7187,8 @@ class SupabaseConfig {
   /// Get all admin messages (for admin view)
   static Future<List<Map<String, dynamic>>> getAdminMessages() async {
     try {
-      print('📨 Fetching admin messages...');
-      print('📨 Current user: ${currentUser?.id}');
+      appLog('📨 Fetching admin messages...');
+      appLog('📨 Current user: ${currentUser?.id}');
 
       final response = await client.from('admin_messages').select('''
             *,
@@ -7004,12 +7197,12 @@ class SupabaseConfig {
           ''').order('created_at', ascending: false);
 
       final data = List<Map<String, dynamic>>.from(response);
-      print('✅ Got ${data.length} admin messages');
+      appLog('✅ Got ${data.length} admin messages');
 
       return data;
     } catch (e) {
-      print('❌ Error getting admin messages: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      appLog('❌ Error getting admin messages: $e');
+      appLog('❌ Error type: ${e.runtimeType}');
       return [];
     }
   }
@@ -7020,7 +7213,7 @@ class SupabaseConfig {
       final userId = currentUser?.id;
       if (userId == null) return [];
 
-      print('📨 Fetching messages for runner: $userId');
+      appLog('📨 Fetching messages for runner: $userId');
 
       // Query for messages - works with both old and new structure
       final response = await client
@@ -7032,7 +7225,7 @@ class SupabaseConfig {
           .or('recipient_id.eq.$userId,and(sent_to_all_runners.eq.true,recipient_id.is.null)')
           .order('created_at', ascending: false);
 
-      print('✅ Got ${response.length} messages');
+      appLog('✅ Got ${response.length} messages');
 
       // Filter out replies if parent_message_id column exists
       final messages = List<Map<String, dynamic>>.from(response);
@@ -7045,7 +7238,7 @@ class SupabaseConfig {
         return true;
       }).toList();
 
-      print('✅ After filtering replies: ${filtered.length} root messages');
+      appLog('✅ After filtering replies: ${filtered.length} root messages');
 
       // Remove duplicates for broadcast messages (group by subject + message content)
       final uniqueMessages = <String, Map<String, dynamic>>{};
@@ -7064,11 +7257,11 @@ class SupabaseConfig {
       }
 
       final result = uniqueMessages.values.toList();
-      print('✅ After deduplication: ${result.length} unique messages');
+      appLog('✅ After deduplication: ${result.length} unique messages');
 
       return result;
     } catch (e) {
-      print('❌ Error getting runner messages: $e');
+      appLog('❌ Error getting runner messages: $e');
       return [];
     }
   }
@@ -7077,17 +7270,17 @@ class SupabaseConfig {
   static Future<List<Map<String, dynamic>>> getMessageThread(
       String messageId) async {
     try {
-      print('📨 Getting message thread for: $messageId');
+      appLog('📨 Getting message thread for: $messageId');
 
       final response = await client.rpc('get_message_thread', params: {
         'p_message_id': messageId,
       });
 
       final messages = List<Map<String, dynamic>>.from(response);
-      print('✅ Got ${messages.length} messages in thread');
+      appLog('✅ Got ${messages.length} messages in thread');
       return messages;
     } catch (e) {
-      print('❌ Error getting message thread: $e');
+      appLog('❌ Error getting message thread: $e');
       return [];
     }
   }
@@ -7098,17 +7291,17 @@ class SupabaseConfig {
     required String message,
   }) async {
     try {
-      print('📨 Sending runner reply to message: $parentMessageId');
+      appLog('📨 Sending runner reply to message: $parentMessageId');
 
       final response = await client.rpc('send_runner_reply_to_admin', params: {
         'p_parent_message_id': parentMessageId,
         'p_message': message,
       });
 
-      print('✅ Reply sent successfully. ID: $response');
+      appLog('✅ Reply sent successfully. ID: $response');
       return response.toString();
     } catch (e) {
-      print('❌ Error sending runner reply: $e');
+      appLog('❌ Error sending runner reply: $e');
       rethrow;
     }
   }
@@ -7118,9 +7311,9 @@ class SupabaseConfig {
     try {
       await client.rpc('mark_admin_message_as_read',
           params: {'p_message_id': messageId});
-      print('✅ Message marked as read');
+      appLog('✅ Message marked as read');
     } catch (e) {
-      print('❌ Error marking message as read: $e');
+      appLog('❌ Error marking message as read: $e');
     }
   }
 
@@ -7130,7 +7323,7 @@ class SupabaseConfig {
       final userId = currentUser?.id;
       if (userId == null) return 0;
 
-      print('📨 Counting unread messages for runner: $userId');
+      appLog('📨 Counting unread messages for runner: $userId');
 
       final response = await client
           .from('admin_messages')
@@ -7139,7 +7332,7 @@ class SupabaseConfig {
           .eq('is_read', false);
 
       final messages = response as List;
-      print('✅ Got ${messages.length} unread messages (before deduplication)');
+      appLog('✅ Got ${messages.length} unread messages (before deduplication)');
 
       // Filter out replies if parent_message_id column exists
       final filtered = messages.where((msg) {
@@ -7167,10 +7360,10 @@ class SupabaseConfig {
       }
 
       final count = uniqueMessages.length;
-      print('✅ Unique unread messages: $count');
+      appLog('✅ Unique unread messages: $count');
       return count;
     } catch (e) {
-      print('❌ Error getting unread messages count: $e');
+      appLog('❌ Error getting unread messages count: $e');
       return 0;
     }
   }
@@ -7179,9 +7372,9 @@ class SupabaseConfig {
   static Future<void> deleteAdminMessage(String messageId) async {
     try {
       await client.from('admin_messages').delete().eq('id', messageId);
-      print('✅ Message deleted');
+      appLog('✅ Message deleted');
     } catch (e) {
-      print('❌ Error deleting message: $e');
+      appLog('❌ Error deleting message: $e');
       rethrow;
     }
   }
@@ -7194,7 +7387,7 @@ class SupabaseConfig {
   /// Returns special orders with 'pending_price' or 'price_quoted' status
   static Future<List<Map<String, dynamic>>> getSpecialOrdersForAdmin() async {
     try {
-      print('📦 Getting special orders for admin...');
+      appLog('📦 Getting special orders for admin...');
 
       final response = await client
           .from('errands')
@@ -7207,10 +7400,10 @@ class SupabaseConfig {
           .order('created_at', ascending: false);
 
       final orders = List<Map<String, dynamic>>.from(response);
-      print('✅ Got ${orders.length} special orders');
+      appLog('✅ Got ${orders.length} special orders');
       return orders;
     } catch (e) {
-      print('❌ Error getting special orders for admin: $e');
+      appLog('❌ Error getting special orders for admin: $e');
       rethrow;
     }
   }
@@ -7222,7 +7415,7 @@ class SupabaseConfig {
     double price,
   ) async {
     try {
-      print('💰 Setting price for special order: $errandId = N\$$price');
+      appLog('💰 Setting price for special order: $errandId = N\$$price');
 
       await client.from('errands').update({
         'price_amount': price,
@@ -7231,11 +7424,11 @@ class SupabaseConfig {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', errandId);
 
-      print('✅ Price set successfully');
+      appLog('✅ Price set successfully');
 
       // TODO: Send notification to customer about price quote
     } catch (e) {
-      print('❌ Error setting special order price: $e');
+      appLog('❌ Error setting special order price: $e');
       rethrow;
     }
   }
@@ -7244,16 +7437,16 @@ class SupabaseConfig {
   /// Changes status to 'pending' making it available to runners
   static Future<void> approveSpecialOrderPrice(String errandId) async {
     try {
-      print('✅ Customer approving special order: $errandId');
+      appLog('✅ Customer approving special order: $errandId');
 
       await client.from('errands').update({
         'status': 'pending', // Now available to runners
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', errandId);
 
-      print('✅ Special order approved with status: pending');
+      appLog('✅ Special order approved with status: pending');
     } catch (e) {
-      print('❌ Error approving special order: $e');
+      appLog('❌ Error approving special order: $e');
       rethrow;
     }
   }
@@ -7262,16 +7455,16 @@ class SupabaseConfig {
   /// Changes status to 'cancelled'
   static Future<void> rejectSpecialOrderPrice(String errandId) async {
     try {
-      print('❌ Customer rejecting special order: $errandId');
+      appLog('❌ Customer rejecting special order: $errandId');
 
       await client.from('errands').update({
         'status': 'cancelled',
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', errandId);
 
-      print('✅ Special order rejected and cancelled');
+      appLog('✅ Special order rejected and cancelled');
     } catch (e) {
-      print('❌ Error rejecting special order: $e');
+      appLog('❌ Error rejecting special order: $e');
       rethrow;
     }
   }

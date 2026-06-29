@@ -1,5 +1,6 @@
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class ChatService {
   /// Create a new chat conversation when a runner accepts an errand
@@ -9,7 +10,7 @@ class ChatService {
     required String runnerId,
   }) async {
     try {
-      print('💬 Creating chat conversation for errand: $errandId');
+      appLog('💬 Creating chat conversation for errand: $errandId');
 
       final response = await SupabaseConfig.client
           .from('chat_conversations')
@@ -22,14 +23,14 @@ class ChatService {
           .select()
           .single();
 
-      print('✅ Chat conversation created: ${response['id']}');
+      appLog('✅ Chat conversation created: ${response['id']}');
 
       // Send initial message to notify both parties
       await _sendInitialMessage(response['id'], customerId, runnerId, errandId);
 
       return response['id'];
     } catch (e) {
-      print('❌ Error creating chat conversation: $e');
+      appLog('❌ Error creating chat conversation: $e');
       return null;
     }
   }
@@ -42,7 +43,7 @@ class ChatService {
     required String serviceName,
   }) async {
     try {
-      print(
+      appLog(
           '💬 Creating chat conversation for transportation booking: $bookingId');
 
       final response = await SupabaseConfig.client
@@ -57,7 +58,7 @@ class ChatService {
           .select()
           .single();
 
-      print('✅ Transportation chat conversation created: ${response['id']}');
+      appLog('✅ Transportation chat conversation created: ${response['id']}');
 
       // Send initial message to notify both parties
       await _sendTransportationInitialMessage(
@@ -65,7 +66,7 @@ class ChatService {
 
       return response['id'];
     } catch (e) {
-      print('❌ Error creating transportation chat conversation: $e');
+      appLog('❌ Error creating transportation chat conversation: $e');
       return null;
     }
   }
@@ -78,7 +79,7 @@ class ChatService {
     required String serviceName,
   }) async {
     try {
-      print('💬 Creating chat conversation for bus booking: $bookingId');
+      appLog('💬 Creating chat conversation for bus booking: $bookingId');
 
       final response = await SupabaseConfig.client
           .from('chat_conversations')
@@ -92,7 +93,7 @@ class ChatService {
           .select()
           .single();
 
-      print('✅ Bus booking chat conversation created: ${response['id']}');
+      appLog('✅ Bus booking chat conversation created: ${response['id']}');
 
       // Send initial message to notify both parties
       await _sendBusBookingInitialMessage(
@@ -100,7 +101,7 @@ class ChatService {
 
       return response['id'];
     } catch (e) {
-      print('❌ Error creating bus booking chat conversation: $e');
+      appLog('❌ Error creating bus booking chat conversation: $e');
       return null;
     }
   }
@@ -113,7 +114,7 @@ class ChatService {
     required String serviceName,
   }) async {
     try {
-      print('💬 Creating chat conversation for contract booking: $bookingId');
+      appLog('💬 Creating chat conversation for contract booking: $bookingId');
 
       final response = await SupabaseConfig.client
           .from('chat_conversations')
@@ -127,7 +128,7 @@ class ChatService {
           .select()
           .single();
 
-      print('✅ Contract booking chat conversation created: ${response['id']}');
+      appLog('✅ Contract booking chat conversation created: ${response['id']}');
 
       // Send initial message to notify both parties
       await _sendContractBookingInitialMessage(
@@ -135,7 +136,7 @@ class ChatService {
 
       return response['id'];
     } catch (e) {
-      print('❌ Error creating contract booking chat conversation: $e');
+      appLog('❌ Error creating contract booking chat conversation: $e');
       return null;
     }
   }
@@ -169,7 +170,7 @@ class ChatService {
       // Notify customer that runner has accepted
       await NotificationService.notifyErrandAccepted(errandTitle);
     } catch (e) {
-      print('❌ Error sending initial message: $e');
+      appLog('❌ Error sending initial message: $e');
     }
   }
 
@@ -193,7 +194,7 @@ class ChatService {
       // Notify customer that runner has accepted
       await NotificationService.notifyTransportationAccepted(serviceName);
     } catch (e) {
-      print('❌ Error sending transportation initial message: $e');
+      appLog('❌ Error sending transportation initial message: $e');
     }
   }
 
@@ -217,7 +218,7 @@ class ChatService {
       // Notify customer that runner has accepted
       await NotificationService.notifyTransportationAccepted(serviceName);
     } catch (e) {
-      print('❌ Error sending bus booking initial message: $e');
+      appLog('❌ Error sending bus booking initial message: $e');
     }
   }
 
@@ -240,7 +241,7 @@ class ChatService {
       // Notify customer that runner has accepted
       await NotificationService.notifyTransportationAccepted(serviceName);
     } catch (e) {
-      print('❌ Error sending contract booking initial message: $e');
+      appLog('❌ Error sending contract booking initial message: $e');
     }
   }
 
@@ -252,7 +253,7 @@ class ChatService {
     String messageType = 'text',
   }) async {
     try {
-      print('💬 Sending message in conversation: $conversationId');
+      appLog('💬 Sending message in conversation: $conversationId');
 
       final response = await SupabaseConfig.client
           .from('chat_messages')
@@ -265,14 +266,14 @@ class ChatService {
           .select()
           .single();
 
-      print('✅ Message sent: ${response['id']}');
+      appLog('✅ Message sent: ${response['id']}');
 
       // Notify the other party about the new message
       await _notifyNewMessage(conversationId, senderId);
 
       return true;
     } catch (e) {
-      print('❌ Error sending message: $e');
+      appLog('❌ Error sending message: $e');
       return false;
     }
   }
@@ -319,7 +320,7 @@ class ChatService {
               .single();
           serviceTitle = errandResponse['title'] ?? 'Errand';
         } catch (e) {
-          print('Error fetching errand title: $e');
+          appLog('Error fetching errand title: $e');
         }
       } else if (conversationType == 'transportation' &&
           conversationResponse['transportation_booking_id'] != null) {
@@ -332,7 +333,7 @@ class ChatService {
           serviceTitle =
               bookingResponse['service']?['name'] ?? 'Transportation';
         } catch (e) {
-          print('Error fetching transportation service name: $e');
+          appLog('Error fetching transportation service name: $e');
         }
       }
 
@@ -343,7 +344,7 @@ class ChatService {
         payload: 'chat:$conversationId',
       );
     } catch (e) {
-      print('❌ Error notifying about new message: $e');
+      appLog('❌ Error notifying about new message: $e');
     }
   }
 
@@ -351,7 +352,7 @@ class ChatService {
   static Future<List<Map<String, dynamic>>> getMessages(
       String conversationId) async {
     try {
-      print('💬 Fetching messages for conversation: $conversationId');
+      appLog('💬 Fetching messages for conversation: $conversationId');
 
       final response = await SupabaseConfig.client
           .from('chat_messages')
@@ -362,10 +363,10 @@ class ChatService {
           .eq('conversation_id', conversationId)
           .order('created_at', ascending: true);
 
-      print('✅ Fetched ${response.length} messages');
+      appLog('✅ Fetched ${response.length} messages');
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('❌ Error fetching messages: $e');
+      appLog('❌ Error fetching messages: $e');
       return [];
     }
   }
@@ -384,7 +385,7 @@ class ChatService {
 
       return response;
     } catch (e) {
-      print('❌ Error fetching conversation: $e');
+      appLog('❌ Error fetching conversation: $e');
       return null;
     }
   }
@@ -403,7 +404,7 @@ class ChatService {
 
       return response;
     } catch (e) {
-      print('❌ Error fetching conversation by errand: $e');
+      appLog('❌ Error fetching conversation by errand: $e');
       return null;
     }
   }
@@ -443,7 +444,7 @@ class ChatService {
 
       return response;
     } catch (e) {
-      print('❌ Error fetching conversation by booking: $e');
+      appLog('❌ Error fetching conversation by booking: $e');
       return null;
     }
   }
@@ -451,7 +452,7 @@ class ChatService {
   /// Delete a conversation completely (when errand is completed)
   static Future<bool> deleteConversation(String conversationId) async {
     try {
-      print('💬 Deleting conversation: $conversationId');
+      appLog('💬 Deleting conversation: $conversationId');
 
       // First delete all messages in the conversation
       await SupabaseConfig.client
@@ -465,10 +466,10 @@ class ChatService {
           .delete()
           .eq('id', conversationId);
 
-      print('✅ Conversation deleted successfully');
+      appLog('✅ Conversation deleted successfully');
       return true;
     } catch (e) {
-      print('❌ Error deleting conversation: $e');
+      appLog('❌ Error deleting conversation: $e');
       return false;
     }
   }
@@ -476,7 +477,7 @@ class ChatService {
   /// Close a conversation (when errand is cancelled - keep for history)
   static Future<bool> closeConversation(String conversationId) async {
     try {
-      print('💬 Closing conversation: $conversationId');
+      appLog('💬 Closing conversation: $conversationId');
 
       await SupabaseConfig.client.from('chat_conversations').update({
         'status': 'closed',
@@ -484,10 +485,10 @@ class ChatService {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', conversationId);
 
-      print('✅ Conversation closed successfully');
+      appLog('✅ Conversation closed successfully');
       return true;
     } catch (e) {
-      print('❌ Error closing conversation: $e');
+      appLog('❌ Error closing conversation: $e');
       return false;
     }
   }
@@ -496,7 +497,7 @@ class ChatService {
   static Future<bool> deleteTransportationConversation(
       String conversationId) async {
     try {
-      print('💬 Deleting transportation conversation: $conversationId');
+      appLog('💬 Deleting transportation conversation: $conversationId');
 
       // First delete all messages in the conversation
       await SupabaseConfig.client
@@ -510,10 +511,10 @@ class ChatService {
           .delete()
           .eq('id', conversationId);
 
-      print('✅ Transportation conversation deleted successfully');
+      appLog('✅ Transportation conversation deleted successfully');
       return true;
     } catch (e) {
-      print('❌ Error deleting transportation conversation: $e');
+      appLog('❌ Error deleting transportation conversation: $e');
       return false;
     }
   }
@@ -522,7 +523,7 @@ class ChatService {
   static Future<bool> closeTransportationConversation(
       String conversationId) async {
     try {
-      print('💬 Closing transportation conversation: $conversationId');
+      appLog('💬 Closing transportation conversation: $conversationId');
 
       await SupabaseConfig.client.from('chat_conversations').update({
         'status': 'closed',
@@ -530,10 +531,10 @@ class ChatService {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', conversationId);
 
-      print('✅ Transportation conversation closed successfully');
+      appLog('✅ Transportation conversation closed successfully');
       return true;
     } catch (e) {
-      print('❌ Error closing transportation conversation: $e');
+      appLog('❌ Error closing transportation conversation: $e');
       return false;
     }
   }
@@ -552,7 +553,7 @@ class ChatService {
 
       return response;
     } catch (e) {
-      print('❌ Error fetching transportation conversation by booking: $e');
+      appLog('❌ Error fetching transportation conversation by booking: $e');
       return null;
     }
   }
@@ -569,7 +570,7 @@ class ChatService {
 
       return true;
     } catch (e) {
-      print('❌ Error marking messages as read: $e');
+      appLog('❌ Error marking messages as read: $e');
       return false;
     }
   }
@@ -585,7 +586,7 @@ class ChatService {
 
       return response.length;
     } catch (e) {
-      print('❌ Error getting unread count: $e');
+      appLog('❌ Error getting unread count: $e');
       return 0;
     }
   }
@@ -619,7 +620,7 @@ class ChatService {
                 }
               });
             } catch (e) {
-              print('Error fetching sender details: $e');
+              appLog('Error fetching sender details: $e');
               enhancedMessages.add({
                 ...message,
                 'sender': {

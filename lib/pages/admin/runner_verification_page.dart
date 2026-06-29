@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class RunnerVerificationPage extends StatefulWidget {
   const RunnerVerificationPage({super.key});
@@ -480,7 +481,7 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
             return;
           }
         } catch (e) {
-          print('Downloads directory not available: $e');
+          appLog('Downloads directory not available: $e');
         }
 
         // Fallback: Try to open the document URL directly
@@ -814,8 +815,8 @@ class _RunnerVerificationPageState extends State<RunnerVerificationPage> {
     final theme = Theme.of(context);
 
     // Debug: Print screen size info
-    print('Screen width: $screenWidth');
-    print('Is Mobile: $isMobile');
+    appLog('Screen width: $screenWidth');
+    appLog('Is Mobile: $isMobile');
 
     if (isMobile) {
       // On mobile devices, stack buttons vertically

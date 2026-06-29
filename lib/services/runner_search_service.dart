@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotto_runners/widgets/looking_for_runner_popup.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to manage the "Looking for Runner" popup for immediate errand requests
 class RunnerSearchService {
@@ -46,14 +47,14 @@ class RunnerSearchService {
     // Insert into overlay
     Overlay.of(context).insert(_currentPopup!);
 
-    print('🔍 Runner search popup shown for errand: $errandId');
+    appLog('🔍 Runner search popup shown for errand: $errandId');
   }
 
   /// Hide the current popup
   void hidePopup() {
     _currentPopup?.remove();
     _currentPopup = null;
-    print('🔍 Runner search popup hidden');
+    appLog('🔍 Runner search popup hidden');
   }
 
   /// Check if popup is currently showing

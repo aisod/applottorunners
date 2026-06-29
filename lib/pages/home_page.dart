@@ -12,6 +12,7 @@ import 'package:lotto_runners/pages/admin/user_management_page.dart';
 import 'package:lotto_runners/pages/admin/transportation_management_page.dart';
 import 'package:lotto_runners/pages/admin/vehicle_discount_management_page.dart';
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/widgets/app_loading.dart';
 import 'package:lotto_runners/pages/available_errands_page.dart';
 import 'package:lotto_runners/pages/runner_dashboard_page.dart';
 import 'package:lotto_runners/pages/runner_home_page.dart';
@@ -20,11 +21,15 @@ import 'bus_booking_page.dart';
 import 'contract_booking_page.dart';
 import 'package:lotto_runners/services/errand_acceptance_notification_service.dart';
 import 'package:lotto_runners/services/transportation_acceptance_notification_service.dart';
-import 'package:lotto_runners/widgets/theme_toggle_button.dart';
+
 // Import page transitions for fun customer animations
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:lotto_runners/utils/app_log.dart';
+// Import custom icons
 // Import custom icons
 import 'package:lotto_runners/widgets/terms_acceptance_dialog.dart';
+import 'package:lotto_runners/utils/app_errors.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -49,6 +54,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       TransportationAcceptanceNotificationService.instance.startMonitoring(
         context,
       );
+      TermsAcceptanceDialog.showIfNeeded(context);
     });
   }
 
@@ -77,9 +83,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             _isLoading = false;
           });
           _loadDashboardStats();
-
-          // Check if terms have been accepted
-          _checkTermsAcceptance(profile);
         }
       }
     } catch (e) {
@@ -87,7 +90,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading profile: $e'),
+            content: Text(AppErrors.message(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -95,81 +98,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
-  /// Check if user has accepted terms and show dialog if not
-  void _checkTermsAcceptance(Map<String, dynamic>? profile) {
-    if (profile == null) return;
-
-    final termsAccepted = profile['terms_accepted'] as bool? ?? false;
-    final userType = profile['user_type'] as String? ?? 'individual';
-
-    if (!termsAccepted && mounted) {
-      // Show terms acceptance dialog after a short delay to ensure UI is ready
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _showTermsAcceptanceDialog(userType);
-        }
-      });
-    }
-  }
-
-  /// Show the terms acceptance dialog
-  void _showTermsAcceptanceDialog(String userType) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Cannot dismiss without accepting
-      builder: (context) => TermsAcceptanceDialog(
-        userType: userType,
-        onAccepted: () async {
-          // Mark terms as accepted
-          final success = await SupabaseConfig.acceptTermsAndConditions();
-
-          if (success && mounted) {
-            // Update local profile state
-            setState(() {
-              if (_userProfile != null) {
-                _userProfile!['terms_accepted'] = true;
-                _userProfile!['terms_accepted_at'] =
-                    DateTime.now().toIso8601String();
-              }
-            });
-
-            // Close dialog
-            Navigator.of(context).pop();
-
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Terms & Conditions accepted'),
-                  ],
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          } else {
-            // Show error message
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      const Text('Failed to accept terms. Please try again.'),
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-              );
-            }
-          }
-        },
-      ),
-    );
-  }
 
   Future<void> _loadDashboardStats() async {
     try {
@@ -195,7 +123,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         // Statistics calculated but not displayed
       }
     } catch (e) {
-      print('Error loading dashboard stats: $e');
+      // Stats are optional; avoid noisy logs in production.
+      appLog('Error loading dashboard stats: $e');
     }
   }
 
@@ -207,13 +136,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           : Responsive.isTablet(context)
               ? _buildTabletLayout()
               : _buildMobileLayout(),
-      floatingActionButton: const ThemeToggleButton(),
     );
   }
 
   Widget _buildDesktopLayout() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingIndicator(message: 'Loading your dashboard…');
     }
 
     final userType = _userProfile?['user_type'] ?? 'individual';
@@ -263,12 +191,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildTabletLayout() {
-    return _buildMobileLayout(); // Use mobile layout for tablet
+    if (_isLoading) {
+      return const AppLoadingIndicator(message: 'Loading your dashboard…');
+    }
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: _buildMobileLayout(),
+      ),
+    );
   }
 
   Widget _buildMobileLayout() {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const AppLoadingIndicator(message: 'Loading your dashboard…');
     }
 
     final userType = _userProfile?['user_type'] ?? 'individual';
@@ -918,8 +854,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryYellow
-                                          .withOpacity(0.15),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
@@ -929,13 +864,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   );
                                 },
                                 errorBuilder: (context, error, stackTrace) {
-                                  print('Error loading contract.png: $error');
+                                  appLog('Error loading contract.png: $error');
                                   return Container(
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryYellow
-                                          .withOpacity(0.15),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
@@ -972,8 +906,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryBlue
-                                          .withOpacity(0.1),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
@@ -983,13 +916,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   );
                                 },
                                 errorBuilder: (context, error, stackTrace) {
-                                  print('Error loading bus1.png: $error');
+                                  appLog('Error loading bus1.png: $error');
                                   return Container(
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryBlue
-                                          .withOpacity(0.1),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
@@ -1026,8 +958,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryBlue
-                                          .withOpacity(0.1),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
@@ -1037,13 +968,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   );
                                 },
                                 errorBuilder: (context, error, stackTrace) {
-                                  print('Error loading car.png: $error');
+                                  appLog('Error loading car.png: $error');
                                   return Container(
                                     width: 90,
                                     height: 90,
                                     decoration: BoxDecoration(
-                                      color: LottoRunnersColors.primaryBlue
-                                          .withOpacity(0.1),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
@@ -1210,7 +1140,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               width: isSmallMobile ? 90 : 100,
               height: isSmallMobile ? 90 : 100,
               decoration: BoxDecoration(
-                color: Colors.transparent,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(child: icon),
@@ -1564,7 +1494,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
       return recentItems.take(5).toList();
     } catch (e) {
-      print('Error loading recent transactions: $e');
+      appLog('Error loading recent transactions: $e');
       return [];
     }
   }

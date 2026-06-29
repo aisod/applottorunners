@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Configuration class for PayToday payment gateway integration
 class PayTodayConfig {
@@ -48,15 +49,15 @@ class PayTodayConfig {
   /// Log helper
   static void log(String message) {
     if (debugMode) {
-      print('💳 PayToday: $message');
+      appLog('💳 PayToday: $message');
     }
   }
   
   /// Error log helper
   static void logError(String message, [dynamic error]) {
-    print('❌ PayToday Error: $message');
+    appLog('❌ PayToday Error: $message');
     if (error != null) {
-      print('   Details: $error');
+      appLog('   Details: $error');
     }
   }
 }

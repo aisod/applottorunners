@@ -6,6 +6,7 @@ import 'package:lotto_runners/utils/service_icons.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Type keys and labels for variable-priced services (admin can edit these prices).
 const Map<String, List<Map<String, String>>> _variableServiceTypeKeys = {
@@ -47,7 +48,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
   /// Controllers for type-specific prices (used when editing document_services or license_discs).
   /// Key: type key (e.g. 'application_submission'); value: individual and business controllers.
-  Map<String, Map<String, TextEditingController>> _typePriceControllers = {};
+  final Map<String, Map<String, TextEditingController>> _typePriceControllers = {};
 
   // Available icons for services
 
@@ -1448,7 +1449,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                   );
                 }
 
-                print('Delete service error: $e');
+                appLog('Delete service error: $e');
               }
             },
             style: ElevatedButton.styleFrom(

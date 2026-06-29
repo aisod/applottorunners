@@ -3,6 +3,7 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:intl/intl.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Runner Wallet Page
 /// Shows runner's earnings, commission breakdown, and booking history
@@ -80,7 +81,7 @@ class _RunnerWalletPageState extends State<RunnerWalletPage> {
         });
       }
     } catch (e) {
-      print('Error loading earnings data: $e');
+      appLog('Error loading earnings data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

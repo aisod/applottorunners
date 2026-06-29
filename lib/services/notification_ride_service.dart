@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to handle ride acceptance from notifications
 class NotificationRideService {
   /// Accept a ride from a notification
   static Future<bool> acceptRideFromNotification(String bookingId) async {
     try {
-      print('📱 Accepting ride from notification: $bookingId');
+      appLog('📱 Accepting ride from notification: $bookingId');
 
       final user = SupabaseConfig.currentUser;
       if (user == null) {
-        print('❌ User not authenticated');
+        appLog('❌ User not authenticated');
         return false;
       }
 
@@ -29,7 +30,7 @@ class NotificationRideService {
           .maybeSingle();
 
       if (bookingResponse == null) {
-        print('❌ Booking not available or already taken');
+        appLog('❌ Booking not available or already taken');
         await NotificationService.showNotification(
           title: 'Ride No Longer Available',
           body: 'This ride request has already been taken by another runner.',
@@ -62,10 +63,10 @@ class NotificationRideService {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      print('✅ Ride accepted successfully from notification');
+      appLog('✅ Ride accepted successfully from notification');
       return true;
     } catch (e) {
-      print('❌ Error accepting ride from notification: $e');
+      appLog('❌ Error accepting ride from notification: $e');
 
       await NotificationService.showNotification(
         title: 'Failed to Accept Ride',
@@ -78,7 +79,7 @@ class NotificationRideService {
 
   /// Decline a ride from a notification (just dismiss the notification)
   static Future<void> declineRideFromNotification(String bookingId) async {
-    print('❌ Ride declined from notification: $bookingId');
+    appLog('❌ Ride declined from notification: $bookingId');
 
     await NotificationService.showNotification(
       title: 'Ride Declined',
@@ -98,7 +99,7 @@ class NotificationRideService {
 
       return response;
     } catch (e) {
-      print('❌ Error fetching ride details: $e');
+      appLog('❌ Error fetching ride details: $e');
       return null;
     }
   }

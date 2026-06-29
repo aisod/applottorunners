@@ -7,6 +7,7 @@ import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:lotto_runners/theme.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Queue Sitting Service Form
 /// Streamlined form for queue sitting services with essential fields
@@ -672,7 +673,7 @@ class _QueueSittingFormPageState extends State<QueueSittingFormPage> {
               'errand-images', imagePath, _images[i]);
           imageUrls.add(imageUrl);
         } catch (e) {
-          print('Error uploading image $i: $e');
+          appLog('Error uploading image $i: $e');
         }
       }
 

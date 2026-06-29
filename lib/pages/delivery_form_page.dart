@@ -6,6 +6,7 @@ import 'package:lotto_runners/services/runner_search_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'dart:typed_data';
 import 'package:lotto_runners/theme.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Delivery Service Form
 /// Streamlined form for package and document delivery services
@@ -1129,7 +1130,7 @@ class _DeliveryFormPageState extends State<DeliveryFormPage> {
               'errand-images', imagePath, _images[i]);
           imageUrls.add(imageUrl);
         } catch (e) {
-          print('Error uploading image $i: $e');
+          appLog('Error uploading image $i: $e');
         }
       }
 

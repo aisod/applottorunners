@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Delete your account — Lotto Runners</title>
+  <link rel="canonical" href="https://lottoerunners.com/delete-account">
+  <meta name="description" content="How to delete your Lotto Runners account and associated data.">
+  <style>
+    :root {
+      --lr-blue: #3b82f6;
+      --lr-blue-dark: #1d4ed8;
+      --lr-yellow: #facc15;
+      --lr-text: #1e293b;
+      --lr-muted: #64748b;
+      --lr-bg: #f8fafc;
+      --lr-card: #ffffff;
+      --lr-border: #e2e8f0;
+      --lr-radius: 12px;
+      --lr-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--lr-text);
+      background: var(--lr-bg);
+    }
+
+    .page-header {
+      background: linear-gradient(135deg, var(--lr-blue-dark) 0%, var(--lr-blue) 100%);
+      color: #fff;
+      padding: 2.5rem 1.5rem 2rem;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .page-header .tagline {
+      margin: 0;
+      opacity: 0.92;
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem 1.25rem;
+      margin-top: 1.25rem;
+      font-size: 0.9rem;
+    }
+
+    .meta-bar span {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+    }
+
+    .legal-nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .legal-nav a {
+      color: #fff;
+      opacity: 0.95;
+      text-decoration: none;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      font-weight: 500;
+    }
+
+    .legal-nav a:hover {
+      background: rgba(255, 255, 255, 0.12);
+      text-decoration: none;
+    }
+
+    .legal-nav a.is-active {
+      background: var(--lr-yellow);
+      color: var(--lr-blue-dark);
+      border-color: var(--lr-yellow);
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 42rem;
+      margin: -1.25rem auto 3rem;
+      padding: 0 1rem;
+    }
+
+    .card {
+      background: var(--lr-card);
+      border-radius: var(--lr-radius);
+      box-shadow: var(--lr-shadow);
+      padding: 1.75rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .intro {
+      border-left: 4px solid var(--lr-yellow);
+      padding-left: 1rem;
+      margin: 0 0 1rem;
+    }
+
+    h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--lr-blue-dark);
+    }
+
+    h3 {
+      margin: 1.25rem 0 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--lr-text);
+    }
+
+    p { margin: 0 0 1rem; }
+    p:last-child { margin-bottom: 0; }
+
+    ol.steps {
+      margin: 0 0 1rem;
+      padding-left: 1.35rem;
+    }
+
+    ol.steps li {
+      margin-bottom: 0.65rem;
+      padding-left: 0.25rem;
+    }
+
+    ul {
+      margin: 0 0 1rem;
+      padding-left: 1.35rem;
+    }
+
+    li { margin-bottom: 0.4rem; }
+    li:last-child { margin-bottom: 0; }
+
+    a {
+      color: var(--lr-blue);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .highlight {
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 1rem 1.15rem;
+      margin: 0 0 1rem;
+    }
+
+    .highlight-warn {
+      background: #fffbeb;
+      border-left: 4px solid var(--lr-yellow);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.15rem;
+      margin: 1rem 0 0;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      margin: 0 0 1rem;
+    }
+
+    table.data-table th,
+    table.data-table td {
+      text-align: left;
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--lr-border);
+      vertical-align: top;
+    }
+
+    table.data-table th {
+      color: var(--lr-blue-dark);
+      font-weight: 600;
+      width: 38%;
+    }
+
+    table.data-table tr:last-child th,
+    table.data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .contact-card {
+      text-align: center;
+      background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%);
+    }
+
+    .contact-card a.btn {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      background: var(--lr-blue);
+      color: #fff !important;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .contact-card a.btn:hover {
+      background: var(--lr-blue-dark);
+      text-decoration: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0 1rem 2rem;
+      font-size: 0.85rem;
+      color: var(--lr-muted);
+    }
+
+    footer a {
+      color: var(--lr-blue);
+      font-weight: 500;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --lr-text: #e2e8f0;
+        --lr-muted: #94a3b8;
+        --lr-bg: #0f172a;
+        --lr-card: #1e293b;
+        --lr-border: #334155;
+        --lr-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+      }
+
+      .highlight { background: #1e3a5f; }
+      .highlight-warn { background: #422006; }
+      .contact-card {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      }
+
+      .legal-nav a.is-active {
+        color: #0f172a;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>Delete your account</h1>
+    <p class="tagline">Lotto Runners</p>
+    <div class="meta-bar">
+      <span>Developer: Lotto Runners</span>
+      <span>Last updated: 26 May 2026</span>
+    </div>
+    <nav class="legal-nav" aria-label="Legal documents">
+      <a href="/terms-of-service">Terms of Service</a>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/delete-account" class="is-active">Delete account</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="card">
+      <p class="intro">This page explains how users of the <strong>Lotto Runners</strong> app (Android, iOS, and web) can request deletion of their account and associated personal data.</p>
+      <p>Deletion is <strong>permanent</strong> and cannot be undone. If you only want to stop using the App, you may <strong>sign out</strong> instead of deleting your account.</p>
+    </section>
+
+    <section class="card">
+      <h2>Option 1 — Delete in the app (recommended)</h2>
+      <p>Use this method if you can still sign in to Lotto Runners:</p>
+      <ol class="steps">
+        <li>Open the <strong>Lotto Runners</strong> app and <strong>sign in</strong> with your account.</li>
+        <li>Go to <strong>Profile</strong> (profile icon or profile tab in the main navigation).</li>
+        <li>Scroll down and tap <strong>Delete account</strong>.</li>
+        <li>Read the warning, then <strong>type your email address</strong> exactly as shown to confirm.</li>
+        <li>Tap <strong>Delete permanently</strong> and wait until the process completes (you will be signed out).</li>
+      </ol>
+      <p class="highlight-warn"><strong>Before you delete:</strong> Finish or cancel any active jobs where you are the customer or runner. Deletion may fail or leave incomplete bookings if a job is still in progress.</p>
+    </section>
+
+    <section class="card">
+      <h2>Option 2 — Request deletion by email</h2>
+      <p>If you cannot access the app (for example you lost your device or cannot sign in), email us:</p>
+      <p><strong>Email:</strong> <a href="mailto:info@lottoerunners.com?subject=Lotto%20Runners%20account%20deletion%20request">info@lottoerunners.com</a></p>
+      <p><strong>Subject line:</strong> Lotto Runners account deletion request</p>
+      <p>Include in your message:</p>
+      <ul>
+        <li>The <strong>email address</strong> registered to your Lotto Runners account</li>
+        <li>Your <strong>full name</strong> and <strong>phone number</strong> (if on your profile)</li>
+        <li>A clear statement that you want your account and personal data deleted</li>
+      </ul>
+      <p>We may ask you to verify ownership of the account before processing the request. We aim to complete verified requests within <strong>30 days</strong>.</p>
+      <a class="btn" href="mailto:info@lottoerunners.com?subject=Lotto%20Runners%20account%20deletion%20request&amp;body=Please%20delete%20my%20Lotto%20Runners%20account%20and%20associated%20data.%0A%0ARegistered%20email%3A%20%0AFull%20name%3A%20%0APhone%20(optional)%3A%20">Email deletion request</a>
+    </section>
+
+    <section class="card">
+      <h2>What data is deleted</h2>
+      <p>When your account is deleted successfully, we remove or disable access to personal data tied to your account, including:</p>
+      <ul>
+        <li>Your <strong>login credentials</strong> (Supabase authentication account)</li>
+        <li>Your <strong>profile</strong> (name, email, phone, avatar, addresses, and role settings)</li>
+        <li><strong>Errands</strong> where you are listed as the customer or runner</li>
+        <li><strong>Transportation bookings</strong> linked to your user ID</li>
+        <li><strong>Runner verification applications</strong> linked to your user ID</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>What data may be kept</h2>
+      <p>Some information may be <strong>retained</strong> after account deletion where required by law or for legitimate business purposes, for example:</p>
+      <table class="data-table" aria-label="Data retention after account deletion">
+        <tr>
+          <th>Payment &amp; transaction records</th>
+          <td>Amounts, dates, payment status, and references (e.g. PayToday) for completed or disputed transactions — kept for accounting, tax, and fraud prevention.</td>
+        </tr>
+        <tr>
+          <th>Support &amp; legal records</th>
+          <td>Copies of complaints, safety reports, or correspondence if needed to resolve disputes or comply with law.</td>
+        </tr>
+        <tr>
+          <th>Backups</th>
+          <td>Encrypted backups may retain deleted data for a limited period before automatic purge (typically up to <strong>90 days</strong>).</td>
+        </tr>
+        <tr>
+          <th>Aggregated analytics</th>
+          <td>Non-identifying statistics (e.g. total jobs per month) that cannot reasonably be used to identify you.</td>
+        </tr>
+      </table>
+      <p><strong>Retention period:</strong> Records we must keep are stored only as long as necessary for the purpose above, or as required under the laws of the <strong>Republic of Namibia</strong> (often up to <strong>7 years</strong> for financial records unless a shorter period applies).</p>
+      <p>Other data (for example in-app chat messages, uploaded files in cloud storage, ratings, or bus bookings) may be deleted with your account or removed on request; contact <a href="mailto:info@lottoerunners.com">info@lottoerunners.com</a> if you need confirmation for your account.</p>
+    </section>
+
+    <section class="card contact-card">
+      <h2>Questions</h2>
+      <p>For privacy or deletion questions, contact <strong>Lotto Runners</strong>:</p>
+      <p>Email: <a href="mailto:info@lottoerunners.com">info@lottoerunners.com</a><br>
+      Phone: <a href="tel:+264811284627">+264 81 128 4627</a></p>
+      <p>See also our <a href="/privacy-policy">Privacy Policy</a> and <a href="/terms-of-service">Terms of Service</a>.</p>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; Lotto Runners. All rights reserved. &nbsp;·&nbsp;
+    <a href="/privacy-policy">Privacy Policy</a> &nbsp;·&nbsp;
+    <a href="/terms-of-service">Terms of Service</a>
+  </footer>
+
+</body>
+</html>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotto_runners/widgets/errand_accepted_popup.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to manage errand acceptance notifications for customers
 class ErrandAcceptanceNotificationService {
@@ -17,14 +18,14 @@ class ErrandAcceptanceNotificationService {
   /// Start monitoring for errand acceptances
   void startMonitoring(BuildContext context) {
     _currentContext = context;
-    print('🔔 [Acceptance] Started monitoring for errand acceptances');
+    appLog('🔔 [Acceptance] Started monitoring for errand acceptances');
   }
 
   /// Stop monitoring
   void stopMonitoring() {
     _currentContext = null;
     _hideNotification();
-    print('🔔 [Acceptance] Stopped monitoring for errand acceptances');
+    appLog('🔔 [Acceptance] Stopped monitoring for errand acceptances');
   }
 
   /// Show acceptance notification
@@ -33,14 +34,14 @@ class ErrandAcceptanceNotificationService {
     required String errandTitle,
     required String runnerName,
   }) {
-    print(
+    appLog(
         '🔔 [Acceptance] Attempting to show notification for errand: $errandId');
-    print('🔔 [Acceptance] Errand title: $errandTitle');
-    print('🔔 [Acceptance] Runner name: $runnerName');
+    appLog('🔔 [Acceptance] Errand title: $errandTitle');
+    appLog('🔔 [Acceptance] Runner name: $runnerName');
 
     // Check if we've already shown this notification
     if (_shownNotifications.contains(errandId)) {
-      print(
+      appLog(
           '🔔 [Acceptance] Notification already shown for errand: $errandId, skipping');
       return;
     }
@@ -49,7 +50,7 @@ class ErrandAcceptanceNotificationService {
     _hideNotification();
 
     if (_currentContext == null) {
-      print('❌ [Acceptance] No context available for notification');
+      appLog('❌ [Acceptance] No context available for notification');
       return;
     }
 
@@ -69,7 +70,7 @@ class ErrandAcceptanceNotificationService {
     // Mark this notification as shown
     _shownNotifications.add(errandId);
 
-    print(
+    appLog(
         '🔔 [Acceptance] Showed acceptance notification for errand: $errandId');
   }
 
@@ -85,7 +86,7 @@ class ErrandAcceptanceNotificationService {
   /// Clear shown notifications (for testing or cleanup)
   void clearShownNotifications() {
     _shownNotifications.clear();
-    print('🔔 [Acceptance] Cleared shown notifications');
+    appLog('🔔 [Acceptance] Cleared shown notifications');
   }
 
   /// Dispose resources

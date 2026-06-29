@@ -4,6 +4,7 @@ import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/image_upload.dart';
 import 'package:lotto_runners/widgets/simple_location_picker.dart';
 import 'dart:typed_data';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// License Discs Service Form
 /// Enhanced form for license disc renewals and applications with PDF support
@@ -857,9 +858,9 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
           final imageUrl = await SupabaseConfig.uploadImage(
               'errand-images', imagePath, _images[i]);
           imageUrls.add(imageUrl);
-          print('✅ Image $i uploaded successfully');
+          appLog('✅ Image $i uploaded successfully');
         } catch (e) {
-          print('❌ Error uploading image $i: $e');
+          appLog('❌ Error uploading image $i: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -882,9 +883,9 @@ class _LicenseDiscsFormPageState extends State<LicenseDiscsFormPage> {
           final pdfUrl = await SupabaseConfig.uploadImage(
               'errand-images', pdfPath, _pdfFiles[i]);
           pdfUrls.add(pdfUrl);
-          print('✅ PDF $i uploaded successfully');
+          appLog('✅ PDF $i uploaded successfully');
         } catch (e) {
-          print('❌ Error uploading PDF $i: $e');
+          appLog('❌ Error uploading PDF $i: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

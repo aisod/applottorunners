@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/widgets/new_ride_request_popup.dart';
 import 'package:lotto_runners/services/notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// In-page ride request manager that shows popups within the current page
 /// and guarantees a booking is shown only once per session.
@@ -29,7 +30,7 @@ class GlobalRidePopupService extends ChangeNotifier {
     if (_isInitialized) return;
     _isInitialized = true;
     _startPolling();
-    print('🌍 Ride request service started');
+    appLog('🌍 Ride request service started');
   }
 
   /// Initialize the service with context (for compatibility)
@@ -114,7 +115,7 @@ class GlobalRidePopupService extends ChangeNotifier {
         break;
       }
     } catch (e) {
-      print('❌ [Ride] Error checking for ride requests: $e');
+      appLog('❌ [Ride] Error checking for ride requests: $e');
     }
   }
 
@@ -176,19 +177,6 @@ class GlobalRidePopupService extends ChangeNotifier {
   }
 
   Future<void> manualCheck() => _checkForNewRideRequests();
-
-  void testPopup() {
-    _currentRequest = {
-      'id': 'test-${DateTime.now().millisecondsSinceEpoch}',
-      'user': {'full_name': 'Test Customer'},
-      'pickup_location': 'Test Pickup',
-      'dropoff_location': 'Test Dropoff',
-      'passenger_count': 1,
-      'vehicle_type': {'name': 'SUV'},
-      'is_immediate': true,
-    };
-    notifyListeners();
-  }
 
   void disposeService() {
     _checkTimer?.cancel();

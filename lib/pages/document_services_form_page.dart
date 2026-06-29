@@ -6,6 +6,7 @@ import 'package:lotto_runners/services/runner_search_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'dart:typed_data';
 import 'package:lotto_runners/theme.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Document Services Form
 /// Streamlined form for document processing and printing services
@@ -1093,7 +1094,7 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
               'errand-images', imagePath, _images[i]);
           imageUrls.add(imageUrl);
         } catch (e) {
-          print('Error uploading image $i: $e');
+          appLog('Error uploading image $i: $e');
         }
       }
 
@@ -1107,7 +1108,7 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
               'errand-images', pdfPath, _pdfFiles[i]);
           pdfUrls.add(pdfUrl);
         } catch (e) {
-          print('Error uploading PDF $i: $e');
+          appLog('Error uploading PDF $i: $e');
         }
       }
 
@@ -1174,7 +1175,7 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
 
       if (_isImmediateRequest) {
         // For immediate requests, store in database with pending status
-        print(
+        appLog(
             '🚀 IMMEDIATE REQUEST: Storing errand in database with pending status');
 
         // Add customer information for display
@@ -1188,7 +1189,7 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
 
         final createdErrand =
             await ImmediateErrandService.storePendingErrand(errandData);
-        print(
+        appLog(
             '✅ IMMEDIATE REQUEST: Errand stored in database with pending status');
 
         if (mounted) {
@@ -1221,9 +1222,9 @@ class _DocumentServicesFormPageState extends State<DocumentServicesFormPage> {
         }
       } else {
         // For scheduled requests, create errand immediately
-        print('📅 SCHEDULED REQUEST: Creating errand in database immediately');
+        appLog('📅 SCHEDULED REQUEST: Creating errand in database immediately');
         await SupabaseConfig.createErrand(errandData);
-        print('✅ SCHEDULED REQUEST: Errand created in database');
+        appLog('✅ SCHEDULED REQUEST: Errand created in database');
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

@@ -472,9 +472,7 @@ class _ContractBookingPageState extends State<ContractBookingPage> {
             ),
           ],
         ),
-        actions: const [
-          // ThemeToggleButton(), // Commented out dark mode for now
-        ],
+
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(isSmallMobile ? 16 : 20),

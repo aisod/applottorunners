@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
 import '../supabase/supabase_config.dart';
 import '../utils/responsive.dart';
+import 'service_selection_page.dart';
 
 /// Browse Runners Page
 ///
@@ -756,17 +758,7 @@ class _BrowseRunnersPageState extends State<BrowseRunnersPage>
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                // You can add logic here to contact the runner or create an errand for them
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        'Contact ${runner['full_name']} feature coming soon!'),
-                    backgroundColor: LottoRunnersColors.accent,
-                  ),
-                );
-              },
+              onPressed: () => _contactRunner(runner),
               style: ElevatedButton.styleFrom(
                 backgroundColor: LottoRunnersColors.primaryBlue,
                 foregroundColor: Colors.white,
@@ -853,6 +845,58 @@ class _BrowseRunnersPageState extends State<BrowseRunnersPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Opens phone or email for the runner, or guides the user to request a service.
+  Future<void> _contactRunner(Map<String, dynamic> runner) async {
+    Navigator.pop(context);
+
+    final phone = runner['phone']?.toString().trim();
+    if (phone != null && phone.isNotEmpty) {
+      final normalized = phone.replaceAll(RegExp(r'[\s\-().]'), '');
+      final tel = Uri(scheme: 'tel', path: normalized);
+      try {
+        if (await canLaunchUrl(tel)) {
+          await launchUrl(tel);
+          return;
+        }
+      } catch (_) {
+        // Fall through to email or services flow
+      }
+    }
+
+    final email = runner['email']?.toString().trim();
+    if (email != null && email.isNotEmpty) {
+      final mail = Uri(
+        scheme: 'mailto',
+        path: email,
+        queryParameters: const {
+          'subject': 'Lotto Runners — enquiry',
+        },
+      );
+      try {
+        if (await canLaunchUrl(mail)) {
+          await launchUrl(mail);
+          return;
+        }
+      } catch (_) {
+        // Fall through
+      }
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'No phone or email on file. Start a booking from Services to connect with runners.',
+        ),
+      ),
+    );
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const ServiceSelectionPage(),
       ),
     );
   }

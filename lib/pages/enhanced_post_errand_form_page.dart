@@ -7,6 +7,7 @@ import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:lotto_runners/theme.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Enhanced Post Errand Form
 /// Universal fallback form for any unhandled service categories
@@ -993,7 +994,7 @@ class _EnhancedPostErrandFormPageState
               'errand-images', imagePath, _images[i]);
           imageUrls.add(imageUrl);
         } catch (e) {
-          print('Error uploading image $i: $e');
+          appLog('Error uploading image $i: $e');
         }
       }
 

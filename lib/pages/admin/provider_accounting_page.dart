@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Provider Accounting Page
 ///
@@ -37,29 +38,29 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
       final totals = await SupabaseConfig.getCompanyCommissionTotals();
 
       // DEBUG: Print detailed information
-      print('\n🔍 DEBUG: Provider Accounting Data');
-      print('   Runners loaded: ${earnings.length}');
-      print('   Total bookings (from totals): ${totals['total_bookings']}');
-      print('   Total revenue: ${totals['total_revenue']}');
+      appLog('\n🔍 DEBUG: Provider Accounting Data');
+      appLog('   Runners loaded: ${earnings.length}');
+      appLog('   Total bookings (from totals): ${totals['total_bookings']}');
+      appLog('   Total revenue: ${totals['total_revenue']}');
 
       if (earnings.isNotEmpty) {
-        print('\n   📊 Sample runner data:');
+        appLog('\n   📊 Sample runner data:');
         for (int i = 0; i < (earnings.length > 3 ? 3 : earnings.length); i++) {
           final runner = earnings[i];
-          print('   Runner ${i + 1}:');
-          print('      Name: ${runner['runner_name']}');
-          print('      Email: ${runner['runner_email']}');
-          print('      Total Bookings: ${runner['total_bookings']}');
-          print('      Total Revenue: ${runner['total_revenue']}');
-          print(
+          appLog('   Runner ${i + 1}:');
+          appLog('      Name: ${runner['runner_name']}');
+          appLog('      Email: ${runner['runner_email']}');
+          appLog('      Total Bookings: ${runner['total_bookings']}');
+          appLog('      Total Revenue: ${runner['total_revenue']}');
+          appLog(
               '      Company Commission: ${runner['total_company_commission']}');
-          print('      Runner Earnings: ${runner['total_runner_earnings']}');
-          print(
+          appLog('      Runner Earnings: ${runner['total_runner_earnings']}');
+          appLog(
               '      Transportation Count: ${runner['transportation_count']}');
-          print('      Bus Count: ${runner['bus_count']}');
+          appLog('      Bus Count: ${runner['bus_count']}');
         }
       } else {
-        print('   ⚠️  No runners found in earnings summary!');
+        appLog('   ⚠️  No runners found in earnings summary!');
       }
 
       setState(() {
@@ -68,7 +69,7 @@ class _ProviderAccountingPageState extends State<ProviderAccountingPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ ERROR loading accounting data: $e');
+      appLog('❌ ERROR loading accounting data: $e');
       setState(() => _isLoading = false);
       _showErrorSnackBar('Error loading accounting data: $e');
     }

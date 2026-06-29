@@ -3,6 +3,7 @@ import '../supabase/supabase_config.dart';
 import '../utils/responsive.dart';
 import '../theme.dart';
 import '../widgets/location_input_field.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class ServiceSelector extends StatefulWidget {
   final Function(Map<String, dynamic>) onServiceSelected;
@@ -101,7 +102,7 @@ class _ServiceSelectorState extends State<ServiceSelector>
 
       await Future.wait(futures);
     } catch (e) {
-      print('Error loading initial data: $e');
+      appLog('Error loading initial data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
@@ -176,7 +177,7 @@ class _ServiceSelectorState extends State<ServiceSelector>
         _priceEstimate = estimate;
       });
     } catch (e) {
-      print('Error calculating price: $e');
+      appLog('Error calculating price: $e');
     }
   }
 

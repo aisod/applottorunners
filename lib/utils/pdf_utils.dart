@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'pdf_utils_web.dart' if (dart.library.io) 'pdf_utils_mobile.dart' as platform;
+import 'package:lotto_runners/utils/app_log.dart';
 
-/// PDF Utility class for handling PDF operations
-/// This class delegates to platform-specific implementations
+/// PDF helpers: merge, download, and minimal receipt-style PDF output.
 class PdfUtils {
-  /// Merge multiple PDF files into a single PDF
-  /// Note: This is a placeholder implementation. In a real app, you would use
-  /// a PDF library like pdf or syncfusion_flutter_pdf
+  /// Merge multiple PDF files into a single PDF (uses first file when merge is not supported).
   static Future<dynamic> mergePDFs(List<dynamic> pdfFiles) async {
     try {
       if (pdfFiles.isEmpty) return null;
@@ -15,7 +13,7 @@ class PdfUtils {
       // Delegate to platform-specific implementation
       return await platform.mergePDFsPlatform(pdfFiles);
     } catch (e) {
-      print('Error merging PDFs: $e');
+      appLog('Error merging PDFs: $e');
       return null;
     }
   }
@@ -26,7 +24,7 @@ class PdfUtils {
       // Delegate to platform-specific implementation
       return await platform.downloadPDFPlatform(pdfFile, fileName);
     } catch (e) {
-      print('Error downloading PDF: $e');
+      appLog('Error downloading PDF: $e');
       return false;
     }
   }
@@ -74,7 +72,7 @@ class PdfUtils {
         return await platform.downloadPDFBytesPlatform(pdfBytes, fileName);
       }
     } catch (e) {
-      print('Error downloading PDF bytes: $e');
+      appLog('Error downloading PDF bytes: $e');
       return false;
     }
   }
@@ -82,23 +80,17 @@ class PdfUtils {
   /// Generate PDF from data and download it
   static Future<bool> generateAndDownloadPDF(Map<String, dynamic> data, String fileName) async {
     try {
-      // This is a placeholder for PDF generation
-      // In a real implementation, you would use the 'pdf' package to generate PDF content
-      // For now, we'll create a simple PDF with the data
-      
       final pdfBytes = _generateSimplePDF(data);
       return await downloadPDFBytes(pdfBytes, fileName);
     } catch (e) {
-      print('Error generating and downloading PDF: $e');
+      appLog('Error generating and downloading PDF: $e');
       return false;
     }
   }
 
-  /// Simple PDF generation (placeholder implementation)
-  /// In a real app, you would use the 'pdf' package for proper PDF generation
+  /// Minimal PDF bytes for a simple text summary (suitable for lightweight receipts).
   static List<int> _generateSimplePDF(Map<String, dynamic> data) {
-    // This is a minimal PDF structure for demonstration
-    // In production, use the 'pdf' package: https://pub.dev/packages/pdf
+    // Minimal PDF structure; extend with the `pdf` package for richer layouts if needed.
     final pdfContent = '''
 %PDF-1.4
 1 0 obj

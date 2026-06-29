@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to manage immediate errand requests that are waiting for runner acceptance
 /// These errands are stored temporarily until a runner accepts them
@@ -31,7 +32,7 @@ class ImmediateErrandService {
           .select()
           .single();
 
-      print(
+      appLog(
           '📝 Stored pending immediate errand in database: ${errandData['title']} with ID: ${response['id']}');
 
       // Store the database ID in SharedPreferences for tracking
@@ -42,7 +43,7 @@ class ImmediateErrandService {
 
       return response;
     } catch (e) {
-      print('❌ Error storing pending errand: $e');
+      appLog('❌ Error storing pending errand: $e');
       throw Exception('Failed to store pending errand: $e');
     }
   }
@@ -64,7 +65,7 @@ class ImmediateErrandService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('❌ Error getting pending errands: $e');
+      appLog('❌ Error getting pending errands: $e');
       return [];
     }
   }
@@ -79,9 +80,9 @@ class ImmediateErrandService {
       pendingIds.remove(errandId);
       await prefs.setStringList('pending_errand_ids', pendingIds);
 
-      print('🗑️ Removed pending errand from tracking: $errandId');
+      appLog('🗑️ Removed pending errand from tracking: $errandId');
     } catch (e) {
-      print('❌ Error removing pending errand: $e');
+      appLog('❌ Error removing pending errand: $e');
     }
   }
 
@@ -90,9 +91,9 @@ class ImmediateErrandService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_pendingErrandsKey);
-      print('🧹 Cleared all pending errands');
+      appLog('🧹 Cleared all pending errands');
     } catch (e) {
-      print('❌ Error clearing pending errands: $e');
+      appLog('❌ Error clearing pending errands: $e');
     }
   }
 
@@ -112,9 +113,9 @@ class ImmediateErrandService {
           .filter('runner_id', 'is', null)
           .lt('created_at', expiredCutoff.toIso8601String());
 
-      print('🧹 Deleted expired immediate errands from database');
+      appLog('🧹 Deleted expired immediate errands from database');
     } catch (e) {
-      print('❌ Error cleaning up expired errands: $e');
+      appLog('❌ Error cleaning up expired errands: $e');
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/pages/runner_messages_page.dart';
 import 'package:lotto_runners/pages/runner_wallet_page.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class RunnerHomePage extends StatefulWidget {
   final Function(int)? onNavigateToTab;
@@ -19,8 +20,6 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
   Map<String, dynamic>? _userProfile;
   bool _isLoading = true;
   int _unreadMessagesCount = 0;
-  bool _isOnline = false;
-  bool _isUpdatingOnlineStatus = false;
   Map<String, dynamic> _stats = {
     'total_errands': 0,
     'completed_errands': 0,
@@ -65,11 +64,9 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                     sum + ((e['price_amount'] as num?)?.toDouble() ?? 0.0));
 
         if (mounted) {
-          final isOnline = profile?['is_online'] == true;
           setState(() {
             _userProfile = profile;
             _unreadMessagesCount = unreadCount;
-            _isOnline = isOnline;
             _stats = {
               'total_errands': errands.length,
               'completed_errands': completedErrands,
@@ -81,7 +78,7 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
         }
       }
     } catch (e) {
-      print('Error loading runner home data: $e');
+      appLog('Error loading runner home data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -299,7 +296,6 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
                     ],
                   ),
                   SizedBox(height: isSmallMobile ? 14 : 18),
-                  _buildOnlineStatusCard(isSmallMobile, isDesktop),
                 ],
               ),
             ),
@@ -317,165 +313,6 @@ class _RunnerHomePageState extends State<RunnerHomePage> {
     );
   }
 
-  Widget _buildOnlineStatusCard(bool isSmallMobile, bool isDesktop) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final Color backgroundColor = _isOnline
-        ? (isDark
-            ? theme.colorScheme.primaryContainer.withOpacity(0.3)
-            : LottoRunnersColors.primaryBlue.withOpacity(0.08))
-        : (isDark
-            ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.6)
-            : theme.colorScheme.surfaceContainerHighest.withOpacity(0.6));
-
-    final Color borderColor = _isOnline
-        ? LottoRunnersColors.primaryBlue.withOpacity(0.7)
-        : theme.colorScheme.outline.withOpacity(0.4);
-
-    final Color statusColor =
-        _isOnline ? Colors.green : theme.colorScheme.error;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallMobile ? 12 : 16,
-        vertical: isSmallMobile ? 10 : 12,
-      ),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _isOnline ? Icons.wifi_tethering : Icons.wifi_off,
-              size: isSmallMobile ? 18 : 20,
-              color: statusColor,
-            ),
-          ),
-          SizedBox(width: isSmallMobile ? 10 : 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _isOnline ? 'You are online' : 'You are offline',
-                  style: TextStyle(
-                    fontSize: isSmallMobile ? 13 : 14,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _isOnline
-                      ? 'Customers can now see you and send you errands.'
-                      : 'Go online to start receiving new errands and rides.',
-                  style: TextStyle(
-                    fontSize: isSmallMobile ? 11 : 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.65),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: isSmallMobile ? 6 : 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _isOnline ? 'Online' : 'Offline',
-                    style: TextStyle(
-                      fontSize: isSmallMobile ? 11 : 12,
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  IgnorePointer(
-                    ignoring: _isUpdatingOnlineStatus,
-                    child: Switch.adaptive(
-                      value: _isOnline,
-                      activeColor: Colors.white,
-                      activeTrackColor: statusColor,
-                      inactiveThumbColor: theme.colorScheme.onSurfaceVariant,
-                      inactiveTrackColor:
-                          theme.colorScheme.outline.withOpacity(0.4),
-                      onChanged: (value) => _toggleOnlineStatus(value),
-                    ),
-                  ),
-                ],
-              ),
-              if (_isUpdatingOnlineStatus)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _toggleOnlineStatus(bool value) async {
-    if (_isUpdatingOnlineStatus) return;
-
-    setState(() {
-      _isOnline = value;
-      _isUpdatingOnlineStatus = true;
-    });
-
-    try {
-      final success = await SupabaseConfig.updateUserProfile({
-        'is_online': value,
-      });
-
-      if (!success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not update your online status.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error updating online status: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Something went wrong. Please try again.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUpdatingOnlineStatus = false;
-        });
-      }
-    }
-  }
 
   Widget _buildQuickActions(
       bool isSmallMobile, bool isMobile, ThemeData theme) {

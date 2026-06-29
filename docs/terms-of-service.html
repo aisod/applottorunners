@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terms of Service — Lotto Runners</title>
+  <style>
+    :root {
+      --lr-blue: #3b82f6;
+      --lr-blue-dark: #1d4ed8;
+      --lr-yellow: #facc15;
+      --lr-text: #1e293b;
+      --lr-muted: #64748b;
+      --lr-bg: #f8fafc;
+      --lr-card: #ffffff;
+      --lr-border: #e2e8f0;
+      --lr-radius: 12px;
+      --lr-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--lr-text);
+      background: var(--lr-bg);
+    }
+
+    .page-header {
+      background: linear-gradient(135deg, var(--lr-blue-dark) 0%, var(--lr-blue) 100%);
+      color: #fff;
+      padding: 2.5rem 1.5rem 2rem;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .page-header .tagline {
+      margin: 0;
+      opacity: 0.92;
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem 1.25rem;
+      margin-top: 1.25rem;
+      font-size: 0.9rem;
+    }
+
+    .meta-bar span {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+    }
+
+    .legal-nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .legal-nav a {
+      color: #fff;
+      opacity: 0.95;
+      text-decoration: none;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      font-weight: 500;
+    }
+
+    .legal-nav a:hover {
+      background: rgba(255, 255, 255, 0.12);
+      text-decoration: none;
+    }
+
+    .legal-nav a.is-active {
+      background: var(--lr-yellow);
+      color: var(--lr-blue-dark);
+      border-color: var(--lr-yellow);
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 42rem;
+      margin: -1.25rem auto 3rem;
+      padding: 0 1rem;
+    }
+
+    .card {
+      background: var(--lr-card);
+      border-radius: var(--lr-radius);
+      box-shadow: var(--lr-shadow);
+      padding: 1.75rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .intro {
+      border-left: 4px solid var(--lr-yellow);
+      padding-left: 1rem;
+      margin: 0 0 1rem;
+    }
+
+    h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--lr-blue-dark);
+    }
+
+    h3 {
+      margin: 1.25rem 0 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--lr-text);
+    }
+
+    p { margin: 0 0 1rem; }
+    p:last-child { margin-bottom: 0; }
+
+    ul {
+      margin: 0 0 1rem;
+      padding-left: 1.35rem;
+    }
+
+    li { margin-bottom: 0.4rem; }
+    li:last-child { margin-bottom: 0; }
+
+    a {
+      color: var(--lr-blue);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .highlight {
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 1rem 1.15rem;
+      margin: 0;
+    }
+
+    .highlight-warn {
+      background: #fffbeb;
+      border-left: 4px solid var(--lr-yellow);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.15rem;
+      margin: 1rem 0 0;
+    }
+
+    .role-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .role-list li {
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--lr-border);
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .role-list li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .role-list strong {
+      color: var(--lr-blue-dark);
+      font-size: 0.95rem;
+    }
+
+    .prohibited-list li::marker {
+      color: var(--lr-blue);
+    }
+
+    .contact-card {
+      text-align: center;
+      background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%);
+    }
+
+    .contact-card a.btn {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      background: var(--lr-blue);
+      color: #fff !important;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .contact-card a.btn:hover {
+      background: var(--lr-blue-dark);
+      text-decoration: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0 1rem 2rem;
+      font-size: 0.85rem;
+      color: var(--lr-muted);
+    }
+
+    footer a {
+      color: var(--lr-blue);
+      font-weight: 500;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --lr-text: #e2e8f0;
+        --lr-muted: #94a3b8;
+        --lr-bg: #0f172a;
+        --lr-card: #1e293b;
+        --lr-border: #334155;
+        --lr-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+      }
+
+      .highlight { background: #1e3a5f; }
+      .highlight-warn { background: #422006; }
+      .contact-card {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      }
+
+      .legal-nav a.is-active {
+        color: #0f172a;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>Terms of Service</h1>
+    <p class="tagline">Lotto Runners</p>
+    <div class="meta-bar">
+      <span>Effective: 20 May 2026</span>
+      <span>Last updated: 26 May 2026</span>
+    </div>
+    <nav class="legal-nav" aria-label="Legal documents">
+      <a href="/terms-of-service" class="is-active">Terms of Service</a>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/delete-account">Delete account</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="card">
+      <p class="intro">These Terms of Service (“<strong>Terms</strong>”) govern your use of the Lotto Runners mobile and web application (the “<strong>App</strong>”) operated by Lotto Runners (“<strong>we</strong>”, “<strong>us</strong>”, “<strong>our</strong>”).</p>
+      <p>By creating an account or using the App, you agree to these Terms and our <a href="/privacy-policy">Privacy Policy</a>. If you do not agree, please do not use the App.</p>
+    </section>
+
+    <section class="card">
+      <h2>1. The service</h2>
+      <p>Lotto Runners connects <strong>customers</strong> who need errands, deliveries, and transport with <strong>runners</strong> who complete those jobs. We also provide bus bookings, contract transport, and related services as described in the App.</p>
+      <p class="highlight">We are a <strong>platform</strong> — runners are independent service providers, not our employees, unless we state otherwise in writing.</p>
+    </section>
+
+    <section class="card">
+      <h2>2. Eligibility and accounts</h2>
+      <ul>
+        <li>You must be at least <strong>18 years old</strong> (or the age of majority in your jurisdiction) to use the App.</li>
+        <li>You must provide accurate registration information and keep your account credentials secure.</li>
+        <li>You are responsible for all activity under your account.</li>
+        <li>We may suspend or terminate accounts that violate these Terms or applicable law.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>3. User roles</h2>
+      <p>The App serves different types of users. Your role determines which features you can access.</p>
+      <ul class="role-list">
+        <li><strong>Customer</strong> Posts errands, books transport, and pays for services through the App.</li>
+        <li><strong>Runner</strong> Accepts and completes jobs. Must meet verification requirements before taking certain work.</li>
+        <li><strong>Admin</strong> Authorised staff who manage users, jobs, payments, and platform operations on our behalf.</li>
+      </ul>
+      <p class="highlight-warn">Runner accounts require additional verification (documents, vehicle details, and related checks) before accepting certain jobs.</p>
+    </section>
+
+    <section class="card">
+      <h2>4. Acceptable use</h2>
+      <p>You agree <strong>not</strong> to:</p>
+      <ul class="prohibited-list">
+        <li>Use the App for illegal, fraudulent, or harmful purposes</li>
+        <li>Harass, threaten, or discriminate against other users</li>
+        <li>Provide false information or impersonate another person</li>
+        <li>Interfere with the App’s security, servers, or normal operation</li>
+        <li>Circumvent payments, fees, or escrow rules owed through the platform</li>
+        <li>Upload, send, or share <strong>nudity, sexually explicit material, pornography</strong>, or content that sexualises minors (zero tolerance)</li>
+        <li>Use the App to solicit, distribute, or trade adult or sexual services</li>
+      </ul>
+      <p>We may remove content, restrict features, or suspend accounts for violations.</p>
+    </section>
+
+    <section class="card">
+      <h2>5. User content (photos, chat, and files)</h2>
+      <p class="highlight">The App is <strong>not</strong> a social network. It does <strong>not</strong> offer public profiles, public feeds, or <strong>public sharing</strong> of photos or messages.</p>
+
+      <h3>5.1 What you may upload</h3>
+      <p>You may attach photos, PDFs, or messages only where the App allows — for example errand details, verification documents, or <strong>private</strong> in-app chat between customer and runner for an <strong>active</strong> job.</p>
+
+      <h3>5.2 Nudity and sexual content — prohibited</h3>
+      <p>You must <strong>not</strong> upload or send:</p>
+      <ul class="prohibited-list">
+        <li>Nudity or partial nudity intended to be sexually provocative</li>
+        <li>Pornography or sexually explicit images, video, or text</li>
+        <li>Sexual solicitation, escort services, or offers of sexual acts</li>
+        <li>Any sexual content involving minors (we report to authorities where required by law)</li>
+      </ul>
+      <p>Upload only content that is <strong>relevant and necessary</strong> for the service (for example a prescription photo, licence disc, or parcel photo).</p>
+
+      <h3>5.3 No public sharing</h3>
+      <p>Content you upload is <strong>not</strong> published to the general public. It is visible only to you, the other party to your booking (where applicable), and authorised Lotto Runners administrators. There is no public timeline, discover feed, or open gallery.</p>
+
+      <h3>5.4 Moderation and enforcement</h3>
+      <p>We may review, remove, or restrict content that violates these Terms. Serious violations may result in immediate account termination and referral to law enforcement. Report concerns to <a href="mailto:info@lottoerunners.com">info@lottoerunners.com</a>.</p>
+    </section>
+
+    <section class="card">
+      <h2>6. Bookings, payments, and cancellations</h2>
+      <ul>
+        <li>Prices, fees, and payment methods are shown <strong>before</strong> you confirm a booking.</li>
+        <li>Payments may be processed through third-party providers (for example <strong>PayToday</strong>). Their terms and privacy policies also apply.</li>
+        <li>Cancellation and refund rules depend on the service type and job status; details are shown in the App at booking time.</li>
+        <li>We may hold funds in escrow until a job is completed, as described in the App.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>7. Runner obligations</h2>
+      <p>If you register as a runner, you agree to:</p>
+      <ul>
+        <li>Complete accepted jobs professionally and on time</li>
+        <li>Follow traffic, safety, and local transport laws</li>
+        <li>Keep required licences, insurance, and vehicle documentation valid and up to date</li>
+        <li>Use location and navigation features only for active jobs, as permitted by the App</li>
+      </ul>
+      <p>Failure to meet these standards may result in suspension or permanent removal from the platform.</p>
+    </section>
+
+    <section class="card">
+      <h2>8. Limitation of liability</h2>
+      <p>To the fullest extent permitted by law:</p>
+      <ul>
+        <li>The App is provided “<strong>as is</strong>” without warranties of uninterrupted or error-free operation.</li>
+        <li>We are not liable for indirect, incidental, or consequential damages arising from your use of the App.</li>
+        <li>Our total liability for any claim related to the App is limited to the fees you paid us in the twelve (12) months before the claim, or <strong>NAD 1,000</strong>, whichever is greater, unless applicable law requires otherwise.</li>
+      </ul>
+      <p class="highlight">Nothing in these Terms limits liability that cannot be limited under applicable law.</p>
+    </section>
+
+    <section class="card">
+      <h2>9. Intellectual property</h2>
+      <p>The App, Lotto Runners branding, logos, and content we provide are owned by us or our licensors. You may not copy, modify, distribute, or create derivative works without our written permission.</p>
+    </section>
+
+    <section class="card">
+      <h2>10. Privacy</h2>
+      <p>Your personal data is handled as described in our <a href="/privacy-policy">Privacy Policy</a>. By using the App, you consent to that processing.</p>
+    </section>
+
+    <section class="card">
+      <h2>11. Account deletion</h2>
+      <p>You may delete your account at any time from <strong>Profile → Delete account</strong> in the App. Full steps and details on what data is deleted or kept are at <a href="/delete-account">https://lottoerunners.com/delete-account</a>. You can also request deletion by emailing <a href="mailto:info@lottoerunners.com">info@lottoerunners.com</a>.</p>
+      <p class="highlight-warn">Deletion is <strong>permanent</strong> and removes your profile and associated data, subject to legal retention requirements (for example completed transaction records).</p>
+    </section>
+
+    <section class="card">
+      <h2>12. Changes to these Terms</h2>
+      <p>We may update these Terms from time to time. The latest version will always be posted on this page with an updated effective date. Continued use of the App after changes means you accept the updated Terms. Important changes may be communicated in the App or by email.</p>
+    </section>
+
+    <section class="card">
+      <h2>13. Governing law and disputes</h2>
+      <p>These Terms are governed by the laws of the <strong>Republic of Namibia</strong>, without regard to conflict-of-law rules.</p>
+      <p>Disputes should first be raised with us at <a href="mailto:info@lottoerunners.com">info@lottoerunners.com</a>. Courts in Namibia have exclusive jurisdiction unless mandatory consumer protection law in your country provides otherwise.</p>
+    </section>
+
+    <section class="card contact-card">
+      <h2>14. Contact us</h2>
+      <p><strong>Lotto Runners — Legal &amp; support</strong></p>
+      <p>Email: <a href="mailto:info@lottoerunners.com">info@lottoerunners.com</a></p>
+      <p>Phone: <a href="tel:+264811284627">+264 81 128 4627</a></p>
+      <a class="btn" href="mailto:info@lottoerunners.com">Email us about these Terms</a>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; Lotto Runners. All rights reserved. &nbsp;·&nbsp;
+    <a href="/privacy-policy">Privacy Policy</a>
+  </footer>
+
+</body>
+</html>

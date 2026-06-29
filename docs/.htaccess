@@ -1,0 +1,23 @@
+# Clean URLs for legal pages (Apache / cPanel).
+# Upload this file to the same folder as privacy-policy.html, terms-of-service.html,
+# and delete-account.html (usually public_html on lottoerunners.com).
+#
+# Public URLs (use these in Google Play — no .html):
+#   https://lottoerunners.com/privacy-policy
+#   https://lottoerunners.com/terms-of-service
+#   https://lottoerunners.com/delete-account
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Redirect *.html to clean URLs (address bar shows no .html)
+  RewriteRule ^privacy-policy\.html$ /privacy-policy [R=301,L,NC]
+  RewriteRule ^terms-of-service\.html$ /terms-of-service [R=301,L,NC]
+  RewriteRule ^delete-account\.html$ /delete-account [R=301,L,NC]
+
+  # Serve clean URLs from the HTML files on disk
+  RewriteRule ^privacy-policy/?$ privacy-policy.html [L]
+  RewriteRule ^terms-of-service/?$ terms-of-service.html [L]
+  RewriteRule ^delete-account/?$ delete-account.html [L]
+</IfModule>

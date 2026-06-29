@@ -7,6 +7,7 @@ import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'package:intl/intl.dart';
 import 'dart:typed_data';
 import 'package:lotto_runners/theme.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Enhanced Shopping Service Form
 /// Supports multiple stores and location type selection
@@ -1136,7 +1137,7 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
               'errand-images', imagePath, _images[i]);
           imageUrls.add(imageUrl);
         } catch (e) {
-          print('Error uploading image $i: $e');
+          appLog('Error uploading image $i: $e');
         }
       }
 
@@ -1249,7 +1250,7 @@ class _EnhancedShoppingFormPageState extends State<EnhancedShoppingFormPage> {
           await SupabaseConfig.notifyAdminsOfShoppingRequest(createdErrand);
         } catch (e) {
           // Soft-fail admin notification so user flow is not blocked
-          print(
+          appLog(
               '⚠️ Error notifying admins of shopping request ${createdErrand['id']}: $e');
         }
 

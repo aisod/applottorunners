@@ -4,6 +4,7 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/global_transportation_popup_service.dart';
 import 'package:lotto_runners/services/immediate_transportation_service.dart';
 import 'package:lotto_runners/services/transportation_acceptance_notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Popup widget that shows "Looking for a driver" when customer requests immediate transportation
 class LookingForDriverPopup extends StatefulWidget {
@@ -111,13 +112,13 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
   Future<void> _checkForDriverAcceptance() async {
     // Check if widget is still mounted before proceeding
     if (!mounted) {
-      print('🔍 [Acceptance] Widget unmounted, skipping check');
+      appLog('🔍 [Acceptance] Widget unmounted, skipping check');
       return;
     }
 
     // Don't check if we've already shown the acceptance notification
     if (_hasShownAcceptanceNotification) {
-      print(
+      appLog(
           '🔍 [Acceptance] Acceptance notification already shown, skipping check');
       return;
     }
@@ -134,13 +135,13 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
 
         // Check if still mounted after async operation
         if (!mounted) {
-          print(
+          appLog(
               '🔍 [Acceptance] Widget unmounted during pending bookings query, aborting');
           return;
         }
-        print(
+        appLog(
             '🔍 [Acceptance] Looking for booking with pickup: ${widget.pickupLocation}');
-        print(
+        appLog(
             '🔍 [Acceptance] Available pending bookings: ${pendingBookings.map((b) => '${b['id']} - ${b['pickup_location']} to ${b['dropoff_location']} - ${b['status']}').toList()}');
 
         var matchingBooking = pendingBookings.firstWhere(
@@ -152,7 +153,7 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
 
         // If not found in pending, check accepted bookings for this customer
         if (matchingBooking.isEmpty) {
-          print(
+          appLog(
               '🔍 [Acceptance] Not found in pending, checking accepted bookings...');
           final userId = SupabaseConfig.currentUser?.id;
           if (userId != null) {
@@ -165,7 +166,7 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
 
             // Check if still mounted after async operation
             if (!mounted) {
-              print(
+              appLog(
                   '🔍 [Acceptance] Widget unmounted during async operation, aborting');
               return;
             }
@@ -177,21 +178,21 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
                     booking['is_immediate'] == true)
                 .toList();
 
-            print(
+            appLog(
                 '🔍 [Acceptance] Accepted immediate bookings: ${acceptedBookings.map((b) => '${b['id']} - ${b['pickup_location']} to ${b['dropoff_location']} - ${b['status']} - ${b['driver_id']}').toList()}');
 
             if (acceptedBookings.isNotEmpty) {
               matchingBooking = acceptedBookings.first;
-              print(
+              appLog(
                   '🔍 [Acceptance] Found accepted booking: ${matchingBooking['id']}');
             }
           }
         }
 
-        print(
+        appLog(
             '🔍 [Acceptance] Matching booking found: ${matchingBooking.isNotEmpty ? 'YES' : 'NO'}');
         if (matchingBooking.isNotEmpty) {
-          print(
+          appLog(
               '🔍 [Acceptance] Booking status: ${matchingBooking['status']}, Driver ID: ${matchingBooking['driver_id']}');
         }
 
@@ -224,7 +225,7 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
 
             // Check if still mounted after async operation
             if (!mounted) {
-              print(
+              appLog(
                   '🔍 [Acceptance] Widget unmounted during driver info fetch, aborting');
               return;
             }
@@ -273,7 +274,7 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
 
         // Check if still mounted after async operation
         if (!mounted) {
-          print(
+          appLog(
               '🔍 [Acceptance] Widget unmounted during booking query, aborting');
           return;
         }
@@ -320,7 +321,7 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
 
             // Check if still mounted after async operation
             if (!mounted) {
-              print(
+              appLog(
                   '🔍 [Acceptance] Widget unmounted during driver info fetch, aborting');
               return;
             }
@@ -345,11 +346,11 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
         }
       }
     } catch (e) {
-      print('Error checking for driver acceptance: $e');
+      appLog('Error checking for driver acceptance: $e');
 
       // Only handle errors if widget is still mounted
       if (!mounted) {
-        print(
+        appLog(
             '🔍 [Acceptance] Widget unmounted during error handling, aborting');
         return;
       }
@@ -358,7 +359,7 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
       if (e.toString().contains('No rows found') ||
           e.toString().contains('PGRST116') ||
           e.toString().contains('multiple (or no) rows returned')) {
-        print(
+        appLog(
             '🔍 [Acceptance] Booking not found (likely auto-deleted): ${e.toString()}');
         if (_timeRemaining <= 5 && mounted) {
           setState(() {
@@ -372,7 +373,7 @@ class _LookingForDriverPopupState extends State<LookingForDriverPopup>
         }
       } else {
         // Log other errors for debugging
-        print('🔍 [Acceptance] Unexpected error: ${e.toString()}');
+        appLog('🔍 [Acceptance] Unexpected error: ${e.toString()}');
       }
     }
   }

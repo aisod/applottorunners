@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FOREGROUND_SERVICE_LOCATION — Lotto Runners Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary:   #1B6FE8;
+      --primary-d: #1251b0;
+      --accent:    #F5C518;
+      --bg:        #0B0F1A;
+      --bg2:       #111827;
+      --bg3:       #1C2333;
+      --surface:   #1E2A40;
+      --border:    rgba(255,255,255,0.08);
+      --text:      #E8EDF5;
+      --muted:     #7A8AA0;
+      --green:     #22C55E;
+      --purple:    #A855F7;
+      --orange:    #F97316;
+      --red:       #EF4444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════  HERO  ══════════════════════════ */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(27,111,232,.35) 0%, transparent 70%),
+                  radial-gradient(ellipse 50% 40% at 80% 80%, rgba(168,85,247,.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(27,111,232,.15);
+      border: 1px solid rgba(27,111,232,.4);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 13px; font-weight: 600;
+      color: #6eaaff;
+      margin-bottom: 28px;
+      animation: fadeUp .6s ease both;
+    }
+
+    .badge .dot {
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+      animation: fadeUp .7s .1s ease both;
+    }
+
+    .hero h1 span { color: var(--accent); }
+
+    .hero p {
+      max-width: 620px;
+      font-size: 1.1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin: 0 auto 48px;
+      animation: fadeUp .7s .2s ease both;
+    }
+
+    .scroll-hint {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      color: var(--muted); font-size: 13px;
+      animation: fadeUp .7s .5s ease both;
+    }
+
+    .scroll-hint svg { animation: bounce 2s infinite; }
+
+    /* ═══════════════════════  SECTIONS  ══════════════════════ */
+    section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-label {
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .lead {
+      color: var(--muted); font-size: 1.05rem; line-height: 1.7;
+      max-width: 700px; margin-bottom: 48px;
+    }
+
+    /* ═══════════════════════  PERMISSION CARD  ══════════════ */
+    .manifest-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 48px;
+    }
+
+    .manifest-card-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px;
+      background: rgba(255,255,255,.03);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .file-dots { display: flex; gap: 6px; }
+    .file-dots span {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #454545;
+    }
+    .file-dots span:nth-child(1) { background: #ff5f57; }
+    .file-dots span:nth-child(2) { background: #ffbd2e; }
+    .file-dots span:nth-child(3) { background: #28ca41; }
+
+    .file-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; color: var(--muted);
+    }
+
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13.5px;
+      line-height: 1.75;
+      padding: 28px;
+      overflow-x: auto;
+      color: #cdd6f4;
+    }
+
+    .hl-tag    { color: #89b4fa; }
+    .hl-attr   { color: #cba6f7; }
+    .hl-val    { color: #a6e3a1; }
+    .hl-comment{ color: #6c7086; font-style: italic; }
+    .hl-focus  {
+      background: rgba(245,197,24,.12);
+      border-left: 3px solid var(--accent);
+      padding-left: 12px;
+      display: block;
+      border-radius: 0 6px 6px 0;
+    }
+
+    /* ═══════════════════════  FLOW DIAGRAM  ══════════════════ */
+    .flow-grid {
+      display: grid;
+      gap: 0;
+    }
+
+    .flow-step {
+      display: flex; align-items: flex-start; gap: 20px;
+      position: relative;
+      padding: 0 0 40px 0;
+    }
+
+    .flow-step:last-child { padding-bottom: 0; }
+
+    .flow-step::before {
+      content: '';
+      position: absolute;
+      left: 27px; top: 56px;
+      width: 2px;
+      bottom: 0;
+      background: linear-gradient(to bottom, var(--border), transparent);
+    }
+
+    .flow-step:last-child::before { display: none; }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .step-body { flex: 1; padding-top: 8px; }
+    .step-body h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .step-body p  { color: var(--muted); line-height: 1.65; font-size: 0.95rem; }
+
+    .step-code {
+      margin-top: 16px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .step-code-header {
+      padding: 8px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+    }
+
+    .step-code pre { font-size: 12.5px; padding: 16px; }
+
+    /* ═══════════════════════  TASK CARDS  ═════════════════════ */
+    .tasks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .task-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      transition: transform .25s, border-color .25s, box-shadow .25s;
+      cursor: default;
+    }
+
+    .task-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(27,111,232,.4);
+      box-shadow: 0 20px 40px rgba(0,0,0,.3);
+    }
+
+    .task-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      margin-bottom: 18px;
+    }
+
+    .task-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
+    .task-card p  { color: var(--muted); font-size: .9rem; line-height: 1.6; }
+
+    .task-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .tag {
+      font-size: 11px; font-weight: 600;
+      padding: 4px 10px; border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
+
+    /* ═══════════════════════  PERMISSION RATIONALE  ══════════ */
+    .rationale-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 48px;
+    }
+
+    .rationale-table th, .rationale-table td {
+      padding: 14px 20px;
+      text-align: left;
+      font-size: .9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rationale-table thead th {
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      font-weight: 700;
+      background: rgba(255,255,255,.02);
+    }
+
+    .rationale-table tbody tr:hover { background: rgba(255,255,255,.02); }
+
+    .pill {
+      display: inline-block;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 999px;
+    }
+
+    .pill-green  { background: rgba(34,197,94,.15);  color: var(--green);  }
+    .pill-blue   { background: rgba(27,111,232,.15); color: #6eaaff; }
+    .pill-orange { background: rgba(249,115,22,.15); color: var(--orange); }
+    .pill-purple { background: rgba(168,85,247,.15); color: var(--purple); }
+
+    /* ═══════════════════════  DECLARATION CALLOUT  ═══════════ */
+    .callout {
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin: 32px 0;
+      display: flex; gap: 16px;
+    }
+
+    .callout-warning {
+      background: rgba(245,197,24,.07);
+      border: 1px solid rgba(245,197,24,.2);
+    }
+
+    .callout-info {
+      background: rgba(27,111,232,.07);
+      border: 1px solid rgba(27,111,232,.2);
+    }
+
+    .callout-success {
+      background: rgba(34,197,94,.07);
+      border: 1px solid rgba(34,197,94,.2);
+    }
+
+    .callout-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+    .callout-body h4 { font-size: .95rem; font-weight: 700; margin-bottom: 8px; }
+    .callout-body p  { color: var(--muted); font-size: .9rem; line-height: 1.65; }
+
+    /* ═══════════════════════  DIVIDER  ══════════════════════ */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+      margin: 0 24px;
+    }
+
+    /* ═══════════════════════  FOOTER  ═══════════════════════ */
+    footer {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+      font-size: .875rem;
+    }
+
+    footer strong { color: var(--accent); }
+
+    /* ═══════════════════════  ANIMATIONS  ══════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(.85); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(6px); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-16px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .fade-in {
+      opacity: 0;
+      animation: fadeUp .7s ease forwards;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════  HERO  ═══════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+
+  <div class="badge">
+    <span class="dot"></span>
+    Android Permissions · Play Store Compliance
+  </div>
+
+  <h1>
+    <span>FOREGROUND_SERVICE_LOCATION</span><br/>
+    in Lotto Runners
+  </h1>
+  <p>
+    A complete walkthrough of why this permission is declared, which app features rely on it,
+    and how it flows through the codebase — from manifest to live GPS tracking and turn-by-turn navigation.
+  </p>
+
+  <div class="scroll-hint">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5v14M5 12l7 7 7-7"/>
+    </svg>
+    Scroll to explore
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════  WHAT IS IT  ════════════════════════════ -->
+<div class="divider"></div>
+<section>
+  <div class="section-label">01 — Background</div>
+  <h2>What is this permission?</h2>
+  <p class="lead">
+    <code>FOREGROUND_SERVICE_LOCATION</code> (added in Android 14 / API 34) is a fine-grained
+    permission that <em>specifically</em> allows a foreground service to access the device's location.
+    Without it, any foreground service that calls GPS APIs will be rejected at runtime on Android 14+.
+  </p>
+
+  <div class="callout callout-warning">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <h4>Google Play policy change (August 2024)</h4>
+      <p>
+        Apps targeting API 34+ must declare <strong>android:foregroundServiceType="location"</strong>
+        on each relevant service AND declare <code>FOREGROUND_SERVICE_LOCATION</code> in the manifest.
+        Failure causes a runtime crash and a Play Store policy rejection.
+      </p>
+    </div>
+  </div>
+
+  <div class="manifest-card" style="margin-top:32px">
+    <div class="manifest-card-header">
+      <div class="file-dots"><span></span><span></span><span></span></div>
+      <span class="file-name">android/app/src/main/AndroidManifest.xml</span>
+    </div>
+    <pre><span class="hl-comment">&lt;!-- Internet permission for Supabase --&gt;</span>
+&lt;<span class="hl-tag">uses-permission</span> <span class="hl-attr">android:name</span>=<span class="hl-val">"android.permission.INTERNET"</span> /&gt;
+
+&lt;<span class="hl-comment">&lt;!-- Location (maps, job pickup/drop-off, runner tracking while using the app) --&gt;</span>
+&lt;<span class="hl-tag">uses-permission</span> <span class="hl-attr">android:name</span>=<span class="hl-val">"android.permission.ACCESS_FINE_LOCATION"</span> /&gt;
+&lt;<span class="hl-tag">uses-permission</span> <span class="hl-attr">android:name</span>=<span class="hl-val">"android.permission.ACCESS_COARSE_LOCATION"</span> /&gt;
+
+&lt;<span class="hl-comment">&lt;!-- Foreground service for Mapbox turn-by-turn navigation --&gt;</span>
+<span class="hl-focus">&lt;<span class="hl-tag">uses-permission</span> <span class="hl-attr">android:name</span>=<span class="hl-val">"android.permission.FOREGROUND_SERVICE"</span> /&gt;
+&lt;<span class="hl-tag">uses-permission</span> <span class="hl-attr">android:name</span>=<span class="hl-val">"android.permission.FOREGROUND_SERVICE_LOCATION"</span> /&gt;</span>
+
+<span class="hl-comment">&lt;!-- ACCESS_BACKGROUND_LOCATION is explicitly REMOVED — app only tracks while visible --&gt;</span>
+&lt;<span class="hl-tag">uses-permission</span> <span class="hl-attr">android:name</span>=<span class="hl-val">"android.permission.ACCESS_BACKGROUND_LOCATION"</span>
+    <span class="hl-attr">tools:node</span>=<span class="hl-val">"remove"</span> /&gt;</pre>
+  </div>
+
+  <div class="callout callout-success">
+    <div class="callout-icon">✅</div>
+    <div class="callout-body">
+      <h4>Background location deliberately removed</h4>
+      <p>
+        The manifest explicitly strips <code>ACCESS_BACKGROUND_LOCATION</code> from any merged
+        dependency using <code>tools:node="remove"</code>. This confirms the app <em>only</em>
+        tracks location when the user has the app open or the navigation screen visible —
+        no hidden background tracking.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════  TASKS  ═════════════════════════════════  -->
+<div class="divider"></div>
+<section>
+  <div class="section-label">02 — Use Cases</div>
+  <h2>Features that require this permission</h2>
+  <p class="lead">
+    Two distinct runtime tasks inside Lotto Runners use foreground location services.
+    Both are runner-facing and only activate after explicit user action.
+  </p>
+
+  <div class="tasks-grid">
+
+    <div class="task-card">
+      <div class="task-icon" style="background:rgba(27,111,232,.15)">📡</div>
+      <h3>Live Runner GPS Tracking</h3>
+      <p>
+        When a runner presses <em>"Start Errand"</em>, <code>TrackingService.startTracking()</code>
+        opens a continuous GPS stream via Geolocator. Every position update (filtered to 15 m
+        minimum movement) is upserted to the <code>runner_tracking</code> Supabase table so
+        customers see the runner moving in real time on their map.
+      </p>
+      <div class="task-tags">
+        <span class="tag">TrackingService</span>
+        <span class="tag">Geolocator</span>
+        <span class="tag">Supabase Realtime</span>
+        <span class="tag">Runner Dashboard</span>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="task-icon" style="background:rgba(168,85,247,.15)">🗺️</div>
+      <h3>Mapbox Turn-by-Turn Navigation</h3>
+      <p>
+        When a runner taps <em>"Voice Nav"</em> on an errand or transport booking,
+        <code>MapboxNavigationService.startNavigation()</code> launches the
+        <code>flutter_mapbox_navigation</code> full-screen navigator. Mapbox creates its own
+        foreground service (with type <em>location</em>) to keep GPS running while the navigation
+        UI is active, voice prompts fire, and the route recalculates.
+      </p>
+      <div class="task-tags">
+        <span class="tag">MapboxNavigationService</span>
+        <span class="tag">flutter_mapbox_navigation</span>
+        <span class="tag">FOREGROUND_SERVICE_LOCATION</span>
+        <span class="tag">Voice instructions</span>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="task-icon" style="background:rgba(34,197,94,.15)">📍</div>
+      <h3>Customer Live Tracking View</h3>
+      <p>
+        The <code>CustomerTrackingPage</code> subscribes to Supabase Realtime changes on
+        <code>runner_tracking</code>. Each time the runner moves, the customer's map marker
+        animates to the new coordinates. The customer's own <code>myLocationEnabled</code>
+        flag also uses foreground location to show a "you are here" dot.
+      </p>
+      <div class="task-tags">
+        <span class="tag">CustomerTrackingPage</span>
+        <span class="tag">Google Maps Flutter</span>
+        <span class="tag">Supabase Realtime</span>
+        <span class="tag">ACCESS_FINE_LOCATION</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════  FLOW  ══════════════════════════════════  -->
+<div class="divider"></div>
+<section>
+  <div class="section-label">03 — Runtime Flow</div>
+  <h2>Step-by-step: how it works</h2>
+  <p class="lead">
+    From the moment a runner accepts an errand to GPS data appearing on the customer's screen —
+    here's exactly what happens in code.
+  </p>
+
+  <div class="flow-grid">
+
+    <!-- STEP 1 -->
+    <div class="flow-step">
+      <div class="step-num" style="background:rgba(27,111,232,.15);color:var(--primary)">1</div>
+      <div class="step-body">
+        <h3>Runner presses "Start Errand"</h3>
+        <p>
+          In <code>runner_dashboard_page.dart</code>, the <code>_startErrand()</code> handler
+          first updates the errand status in Supabase, then immediately calls
+          <code>TrackingService().startTracking()</code> with the errand ID and runner user ID.
+        </p>
+        <div class="step-code">
+          <div class="step-code-header">runner_dashboard_page.dart · line 2039–2046</div>
+          <pre><span class="hl-comment">// Mark errand as in_progress in Supabase</span>
+await SupabaseConfig.startErrand(errand[<span class="hl-val">'id'</span>]);
+
+<span class="hl-comment">// Begin foreground GPS streaming</span>
+await TrackingService().startTracking(
+  errand[<span class="hl-val">'id'</span>],
+  SupabaseConfig.currentUser!.id,
+);</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="flow-step">
+      <div class="step-num" style="background:rgba(245,197,24,.12);color:var(--accent)">2</div>
+      <div class="step-body">
+        <h3>TrackingService checks permissions</h3>
+        <p>
+          Before opening the GPS stream, <code>TrackingService</code> verifies that location
+          services are enabled and that the user has granted at least
+          <code>LocationPermission.whileInUse</code>. If denied, tracking is aborted gracefully —
+          no crash, no silent failure.
+        </p>
+        <div class="step-code">
+          <div class="step-code-header">tracking_service.dart · line 26–44</div>
+          <pre>bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+<span class="hl-tag">if</span> (!serviceEnabled) { <span class="hl-tag">return</span>; }
+
+LocationPermission permission = await Geolocator.checkPermission();
+<span class="hl-tag">if</span> (permission == LocationPermission.denied) {
+  permission = await Geolocator.requestPermission();
+  <span class="hl-tag">if</span> (permission == LocationPermission.denied) { <span class="hl-tag">return</span>; }
+}
+<span class="hl-tag">if</span> (permission == LocationPermission.deniedForever) { <span class="hl-tag">return</span>; }</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="flow-step">
+      <div class="step-num" style="background:rgba(34,197,94,.12);color:var(--green)">3</div>
+      <div class="step-body">
+        <h3>GPS stream opens — foreground service active</h3>
+        <p>
+          <code>Geolocator.getPositionStream()</code> uses the platform's foreground location
+          service under the hood (the one guarded by <code>FOREGROUND_SERVICE_LOCATION</code>).
+          Updates are filtered to <strong>15 m distance</strong> to balance accuracy and
+          battery life. The initial position is also fetched immediately so the customer sees
+          the runner straight away.
+        </p>
+        <div class="step-code">
+          <div class="step-code-header">tracking_service.dart · line 51–69</div>
+          <pre><span class="hl-tag">const</span> LocationSettings locationSettings = LocationSettings(
+  accuracy: LocationAccuracy.high,
+  distanceFilter: <span class="hl-val">15</span>, <span class="hl-comment">// Only update if moved 15 m</span>
+);
+
+_positionSubscription =
+  Geolocator.getPositionStream(locationSettings: locationSettings)
+    .listen((Position position) {
+      _updateLocationInDatabase(position); <span class="hl-comment">// ← upsert to Supabase</span>
+    });</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="flow-step">
+      <div class="step-num" style="background:rgba(168,85,247,.12);color:var(--purple)">4</div>
+      <div class="step-body">
+        <h3>Location synced to Supabase in real time</h3>
+        <p>
+          Each GPS event upserts <code>latitude</code>, <code>longitude</code>, <code>heading</code>,
+          and a timestamp into the <code>runner_tracking</code> table keyed by <code>errand_id</code>.
+          A single row per errand is maintained — no unbounded growth.
+        </p>
+        <div class="step-code">
+          <div class="step-code-header">tracking_service.dart · line 89–98</div>
+          <pre>await SupabaseConfig.client.from(<span class="hl-val">'runner_tracking'</span>).upsert({
+  <span class="hl-val">'errand_id'</span>:  _currentErrandId,
+  <span class="hl-val">'runner_id'</span>:  _currentRunnerId,
+  <span class="hl-val">'latitude'</span>:   position.latitude,
+  <span class="hl-val">'longitude'</span>:  position.longitude,
+  <span class="hl-val">'heading'</span>:    position.heading,
+  <span class="hl-val">'updated_at'</span>: DateTime.now().toIso8601String(),
+});</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="flow-step">
+      <div class="step-num" style="background:rgba(249,115,22,.12);color:var(--orange)">5</div>
+      <div class="step-body">
+        <h3>Customer map updates via Supabase Realtime</h3>
+        <p>
+          <code>CustomerTrackingPage</code> subscribes to <code>PostgresChangeEvent.all</code>
+          on the <code>runner_tracking</code> table filtered to the errand ID. When the database row
+          changes, the map marker animates to the new coordinates and the route polyline is
+          recalculated to reflect the runner's current position.
+        </p>
+        <div class="step-code">
+          <div class="step-code-header">customer_tracking_page.dart · line 102–127</div>
+          <pre>_trackingChannel = SupabaseConfig.client
+  .channel(<span class="hl-val">'public:runner_tracking:errand_id=eq.$errandId'</span>)
+  .onPostgresChanges(
+    event: PostgresChangeEvent.all,
+    table: <span class="hl-val">'runner_tracking'</span>,
+    filter: PostgresChangeFilter(
+      type:  PostgresChangeFilterType.eq,
+      column: <span class="hl-val">'errand_id'</span>,
+      value:  errandId,
+    ),
+    callback: (payload) {
+      setState(() {
+        _runnerLocation = LatLng(
+          payload.newRecord[<span class="hl-val">'latitude'</span>],
+          payload.newRecord[<span class="hl-val">'longitude'</span>],
+        );
+      });
+      _animateMarkerTo(_runnerLocation!); <span class="hl-comment">// smooth map animation</span>
+      _updateRoutePolyline();            <span class="hl-comment">// redraw route to destination</span>
+    })
+  .subscribe();</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 6 — Navigation -->
+    <div class="flow-step">
+      <div class="step-num" style="background:rgba(27,111,232,.15);color:#6eaaff">6</div>
+      <div class="step-body">
+        <h3>Optional: Runner taps "Voice Nav" → Mapbox Navigation</h3>
+        <p>
+          When the runner wants turn-by-turn directions, <code>MapboxNavigationService.startNavigation()</code>
+          launches the full Mapbox navigation experience. The <code>flutter_mapbox_navigation</code>
+          SDK internally creates its own foreground service with type <code>location</code>,
+          which is why both <code>FOREGROUND_SERVICE</code> and <code>FOREGROUND_SERVICE_LOCATION</code>
+          must be declared — without them, Android 14+ blocks the service from starting.
+        </p>
+        <div class="step-code">
+          <div class="step-code-header">runner_dashboard_page.dart · line 1677–1693</div>
+          <pre><span class="hl-comment">// 1. Get runner's current GPS position</span>
+final currentPos = await LocationService.getCurrentPosition();
+
+<span class="hl-comment">// 2. Geocode the destination address to lat/lng</span>
+final coords = await LocationService.getCoordinatesFromAddress(address);
+
+<span class="hl-comment">// 3. Launch Mapbox foreground navigation service</span>
+await MapboxNavigationService().startNavigation(
+  wayPoints: [
+    WayPoint(name: <span class="hl-val">'Start'</span>,  latitude: currentPos.latitude,  longitude: currentPos.longitude),
+    WayPoint(name: address, latitude: coords[<span class="hl-val">'latitude'</span>]!, longitude: coords[<span class="hl-val">'longitude'</span>]!),
+  ],
+);</pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════  RATIONALE TABLE  ═══════════════════════ -->
+<div class="divider"></div>
+<section>
+  <div class="section-label">04 — Permission Rationale</div>
+  <h2>Why each permission is justified</h2>
+  <p class="lead">
+    The table below maps every location-related permission to its specific use case,
+    showing exactly why it is needed and confirming no over-declaration.
+  </p>
+
+  <table class="rationale-table">
+    <thead>
+      <tr>
+        <th>Permission</th>
+        <th>Status</th>
+        <th>Required for</th>
+        <th>Justification</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>ACCESS_FINE_LOCATION</code></td>
+        <td><span class="pill pill-green">Declared</span></td>
+        <td>GPS tracking, map "my location" button, geocoding current position</td>
+        <td>Runners must share precise street-level location. Customers need their own "you are here" dot.</td>
+      </tr>
+      <tr>
+        <td><code>ACCESS_COARSE_LOCATION</code></td>
+        <td><span class="pill pill-green">Declared</span></td>
+        <td>Fallback when GPS unavailable, network location</td>
+        <td>Required companion permission alongside FINE; used when satellite lock is slow.</td>
+      </tr>
+      <tr>
+        <td><code>FOREGROUND_SERVICE</code></td>
+        <td><span class="pill pill-green">Declared</span></td>
+        <td>Running the GPS stream while user is on the navigation/tracking screen</td>
+        <td>Android requires this base permission for <em>any</em> foreground service.</td>
+      </tr>
+      <tr>
+        <td><code>FOREGROUND_SERVICE_LOCATION</code></td>
+        <td><span class="pill pill-blue">Declared (highlighted)</span></td>
+        <td>Geolocator position stream during active errand + Mapbox navigation service</td>
+        <td>Android 14+ requirement: foreground services that access location MUST declare this type-specific permission.</td>
+      </tr>
+      <tr>
+        <td><code>ACCESS_BACKGROUND_LOCATION</code></td>
+        <td><span class="pill pill-orange">Removed via tools:node</span></td>
+        <td>—</td>
+        <td>Explicitly stripped from merged dependencies. App does NOT track in background.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <div class="callout-icon">ℹ️</div>
+    <div class="callout-body">
+      <h4>Play Store declaration requirement</h4>
+      <p>
+        When submitting to Google Play, apps using <code>FOREGROUND_SERVICE_LOCATION</code> must
+        complete the <em>Prominent Disclosure</em> form in Play Console, explaining in plain language
+        that location is used during active errand delivery and turn-by-turn navigation.
+        The form should reference both the <strong>TrackingService</strong> (runner tracking) and
+        <strong>Mapbox Navigation</strong> (turn-by-turn) as the two tasks that need it.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════  SUMMARY  ═══════════════════════════════ -->
+<div class="divider"></div>
+<section>
+  <div class="section-label">05 — Summary</div>
+  <h2>Putting it all together</h2>
+
+  <div class="callout callout-success">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <h4>The single sentence for reviewers</h4>
+      <p>
+        <strong>Lotto Runners</strong> uses <code>FOREGROUND_SERVICE_LOCATION</code> to power two
+        runner-facing features that only activate on explicit user action:
+        <strong>(1) live GPS location streaming</strong> to a Supabase database so customers can
+        watch their runner move on a real-time map, and
+        <strong>(2) Mapbox turn-by-turn navigation</strong> which internally runs a foreground
+        service with <em>foregroundServiceType="location"</em> to keep GPS alive while the runner
+        drives to pickup/dropoff addresses — all while the app is visibly open and in use.
+        Background location is explicitly disabled.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Lotto Runners &mdash; Android Permissions Documentation</p>
+  <p style="margin-top:8px">Built with <strong>Flutter</strong> · Powered by <strong>Supabase</strong> &amp; <strong>Mapbox</strong></p>
+</footer>
+
+<script>
+  // Animate sections as they scroll into view
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('section, .manifest-card, .task-card, .callout, .flow-step').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = 'opacity .6s ease, transform .6s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>

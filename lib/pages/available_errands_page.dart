@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/notification_service.dart';
@@ -12,11 +13,15 @@ import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/utils/map_utils.dart';
 import 'package:lotto_runners/pages/route_map_page.dart';
+import 'package:lotto_runners/services/mapbox_navigation_service.dart';
+import 'package:lotto_runners/services/location_service.dart';
+import 'package:flutter_mapbox_navigation/flutter_mapbox_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lotto_runners/pages/profile_page.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
 import 'package:lotto_runners/services/paytoday_config.dart';
 import 'package:lotto_runners/pages/paytoday_payment_page.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class AvailableErrandsPage extends StatefulWidget {
   const AvailableErrandsPage({super.key});
@@ -144,7 +149,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         setState(() => _userProfile = profile);
       }
     } catch (e) {
-      print('Error loading user profile: $e');
+      appLog('Error loading user profile: $e');
     }
   }
 
@@ -158,7 +163,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         vehicleType: null,
         runnerVehicleType: _userProfile?['vehicle_type'],
       );
-      print(
+      appLog(
           '📊 Loaded ${errands.length} regular errands from database (excluding immediate errands)');
 
       // Clean up expired immediate errands (but don't display them in the list)
@@ -166,7 +171,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
 
       // Use only regular errands (immediate errands are handled by GlobalErrandPopupService)
       final allErrands = errands;
-      print(
+      appLog(
           '🔄 Total errands available: ${allErrands.length} (regular errands only)');
 
       // Filter errands based on runner's vehicle type
@@ -195,7 +200,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
             runnerVehicleType.toString().toLowerCase();
       }).toList();
 
-      print(
+      appLog(
           '🔍 After filtering: ${filteredErrands.length} errands (${errands.where((e) => !e['id'].toString().startsWith('pending_')).length} from DB + ${filteredErrands.where((e) => e['id'].toString().startsWith('pending_')).length} pending)');
 
       if (mounted) {
@@ -205,7 +210,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         });
       }
     } catch (e) {
-      print('Error loading available errands: $e');
+      appLog('Error loading available errands: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         _showErrorSnackBar(
@@ -218,7 +223,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
     try {
       setState(() => _isLoadingBookings = true);
 
-      print('🚌 Loading available transportation bookings...');
+      appLog('🚌 Loading available transportation bookings...');
 
       // Get runner's vehicle type to filter available bookings
       final userId = SupabaseConfig.currentUser?.id;
@@ -226,13 +231,13 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
 
       if (userId != null) {
         runnerVehicleType = await SupabaseConfig.getRunnerVehicleType(userId);
-        print('🚗 Runner vehicle type: $runnerVehicleType');
+        appLog('🚗 Runner vehicle type: $runnerVehicleType');
       }
 
       // Get all available bookings (transportation + contracts) filtered by runner's vehicle type
       final availableBookings = await SupabaseConfig.getAvailableAllBookings(
           vehicleTypeId: runnerVehicleType);
-      print(
+      appLog(
           '📋 Available transportation bookings: ${availableBookings.length}');
 
       // Filter bookings to match runner's vehicle type
@@ -240,30 +245,30 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         // For contract bookings, apply vehicle type filtering
         if (booking['booking_type'] == 'contract') {
           final bookingVehicleType = booking['vehicle_type']?['name'] ?? '';
-          print(
+          appLog(
               '🔍 Checking contract booking: ${booking['pickup_location']} → ${booking['dropoff_location']}');
-          print('   Contract vehicle type: "$bookingVehicleType"');
-          print('   Runner vehicle type: "$runnerVehicleType"');
+          appLog('   Contract vehicle type: "$bookingVehicleType"');
+          appLog('   Runner vehicle type: "$runnerVehicleType"');
 
           // If contract booking has no vehicle type requirement (null or empty), show to all runners
           if (bookingVehicleType.isEmpty) {
-            print('✅ Contract booking with no vehicle requirement included');
+            appLog('✅ Contract booking with no vehicle requirement included');
             return true; // Contract bookings without vehicle type can be done by anyone
           }
 
           // If contract booking requires a specific vehicle type, only show to runners with matching vehicle type
           if (runnerVehicleType == null || runnerVehicleType.isEmpty) {
-            print('❌ Runner has no vehicle type, excluding contract booking');
+            appLog('❌ Runner has no vehicle type, excluding contract booking');
             return false; // Runner doesn't have a vehicle type, can't do vehicle contract bookings
           }
 
           final matches = bookingVehicleType.toLowerCase() ==
               runnerVehicleType.toLowerCase();
-          print('   Vehicle type match: $matches');
+          appLog('   Vehicle type match: $matches');
           if (matches) {
-            print('✅ Matching contract booking included');
+            appLog('✅ Matching contract booking included');
           } else {
-            print('❌ Non-matching contract booking excluded');
+            appLog('❌ Non-matching contract booking excluded');
           }
 
           return matches;
@@ -271,38 +276,38 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
 
         // For transportation bookings, apply vehicle type filtering
         final bookingVehicleType = booking['vehicle_type']?['name'] ?? '';
-        print(
+        appLog(
             '🔍 Checking transportation booking: ${booking['pickup_location']} → ${booking['dropoff_location']}');
-        print('   Booking vehicle type: "$bookingVehicleType"');
-        print('   Runner vehicle type: "$runnerVehicleType"');
+        appLog('   Booking vehicle type: "$bookingVehicleType"');
+        appLog('   Runner vehicle type: "$runnerVehicleType"');
 
         // If transportation booking has no vehicle type requirement (null or empty), show to all runners
         if (bookingVehicleType.isEmpty) {
-          print(
+          appLog(
               '✅ Transportation booking with no vehicle requirement included');
           return true; // Transportation bookings without vehicle type can be done by anyone
         }
 
         // If transportation booking requires a specific vehicle type, only show to runners with matching vehicle type
         if (runnerVehicleType == null || runnerVehicleType.isEmpty) {
-          print(
+          appLog(
               '❌ Runner has no vehicle type, excluding transportation booking');
           return false; // Runner doesn't have a vehicle type, can't do vehicle transportation bookings
         }
 
         final matches =
             bookingVehicleType.toLowerCase() == runnerVehicleType.toLowerCase();
-        print('   Vehicle type match: $matches');
+        appLog('   Vehicle type match: $matches');
         if (matches) {
-          print('✅ Matching transportation booking included');
+          appLog('✅ Matching transportation booking included');
         } else {
-          print('❌ Non-matching transportation booking excluded');
+          appLog('❌ Non-matching transportation booking excluded');
         }
 
         return matches;
       }).toList();
 
-      print(
+      appLog(
           '✅ Available bookings for vehicle type $runnerVehicleType: ${filteredBookings.length}');
 
       if (mounted) {
@@ -312,7 +317,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         });
       }
     } catch (e) {
-      print('❌ Error loading available bookings: $e');
+      appLog('❌ Error loading available bookings: $e');
       if (mounted) {
         setState(() => _isLoadingBookings = false);
         _showErrorSnackBar(
@@ -1254,26 +1259,91 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                         ],
                       ),
                     ),
-                    if (MapUtils.getErrandNavigationAddress(errand) != null)
+                    if (!kIsWeb && MapUtils.getErrandNavigationAddress(errand) != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            final address =
-                                MapUtils.getErrandNavigationAddress(errand);
-                            if (address != null) {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => RouteMapPage(
-                                    destinationAddress: address,
-                                    title: errand['title']?.toString(),
-                                  ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  final address = MapUtils.getErrandNavigationAddress(errand);
+                                  Navigator.push(
+                                    context,
+                                    PageTransitions.slideFromBottom(
+                                      RouteMapPage(
+                                        dropoffAddress: address,
+                                        title: 'Errand Route',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.map_outlined, size: 18),
+                                label: const Text('View Route'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
                                 ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.directions, size: 18),
-                          label: const Text('Follow route to location'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  final address =
+                                      MapUtils.getErrandNavigationAddress(errand);
+                                  if (address == null) return;
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Starting navigation...')),
+                                  );
+
+                                  try {
+                                    final coords =
+                                        await LocationService.getCoordinatesFromAddress(
+                                      address,
+                                    );
+                                    if (coords == null) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Could not find location coordinates.')),
+                                        );
+                                      }
+                                      return;
+                                    }
+
+                                    final currentPos =
+                                        await LocationService.getCurrentPosition();
+                                    if (currentPos == null) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Could not determine your current location.')),
+                                        );
+                                      }
+                                      return;
+                                    }
+
+                                    await MapboxNavigationService().startNavigation(
+                                      wayPoints: [
+                                        WayPoint(name: 'Start', latitude: currentPos.latitude, longitude: currentPos.longitude),
+                                        WayPoint(name: address, latitude: coords['latitude']!, longitude: coords['longitude']!),
+                                      ],
+                                    );
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Error starting navigation: $e')),
+                                      );
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.navigation, size: 18),
+                                label: const Text('Start Nav'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                   ],
@@ -1553,7 +1623,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         // Close loading if open
         Navigator.canPop(context) ? Navigator.pop(context) : null;
 
-        print('❌ Contract acceptance error: $e');
+        appLog('❌ Contract acceptance error: $e');
 
         // Show more detailed error message
         String errorMessage = 'Failed to accept errand. Please try again.';
@@ -1701,11 +1771,11 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
               onSuccess: () async {
                 // Payment successful - now finalize errand acceptance
                 try {
-                  print(
+                  appLog(
                       '🎯 ACCEPTING ERRAND: ${errand['id']} (Status: ${errand['status']})');
 
                   await SupabaseConfig.acceptErrand(errand['id'], userId);
-                  print('✅ ERRAND: Status updated to accepted');
+                  appLog('✅ ERRAND: Status updated to accepted');
 
                   // Notify admins which runner accepted this shopping request (if applicable)
                   try {
@@ -1718,7 +1788,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                       runnerName: runnerName,
                     );
                   } catch (e) {
-                    print(
+                    appLog(
                         '⚠️ Error notifying admins of shopping acceptance for errand ${errand['id']}: $e');
                   }
 
@@ -1726,16 +1796,16 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
                   if (errand['status'] == 'pending') {
                     await ImmediateErrandService.removePendingErrand(
                         errand['id']);
-                    print('🗑️ PENDING ERRAND: Removed from pending tracking');
+                    appLog('🗑️ PENDING ERRAND: Removed from pending tracking');
                   }
                 } catch (e) {
-                  print('❌ Error finalizing errand acceptance: $e');
+                  appLog('❌ Error finalizing errand acceptance: $e');
                   rethrow;
                 }
               },
               onFailure: () {
                 // Payment failed - do nothing, errand remains available
-                print('❌ Payment failed for errand ${errand['id']}');
+                appLog('❌ Payment failed for errand ${errand['id']}');
               },
             ),
           ),
@@ -1749,7 +1819,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       }
     } catch (e) {
       if (mounted) {
-        print('❌ Contract acceptance error: $e');
+        appLog('❌ Contract acceptance error: $e');
 
         // Show more detailed error message
         String errorMessage = 'Failed to accept errand. Please try again.';
@@ -2175,15 +2245,15 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
               child: ElevatedButton.icon(
                 onPressed: () {
                   // Check booking type and call appropriate acceptance function
-                  print(
+                  appLog(
                       '🔍 DEBUG: [AVAILABLE TRANSPORT] Booking type check - booking_type: ${booking['booking_type']}');
 
                   if (booking['booking_type'] == 'contract') {
-                    print(
+                    appLog(
                         '✅ DEBUG: [AVAILABLE TRANSPORT] Routing to contract acceptance');
                     _acceptContractBooking(booking);
                   } else {
-                    print(
+                    appLog(
                         '✅ DEBUG: [AVAILABLE TRANSPORT] Routing to transportation acceptance');
                     _acceptTransportationBooking(booking);
                   }
@@ -2302,17 +2372,17 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
 
   Future<void> _acceptContractBooking(Map<String, dynamic> booking) async {
     try {
-      print(
+      appLog(
           '🚀 DEBUG: [AVAILABLE TRANSPORT] Starting contract booking acceptance...');
-      print(
+      appLog(
           '📋 DEBUG: [AVAILABLE TRANSPORT] Booking data: ${booking.toString()}');
-      print('🆔 DEBUG: [AVAILABLE TRANSPORT] Booking ID: ${booking['id']}');
+      appLog('🆔 DEBUG: [AVAILABLE TRANSPORT] Booking ID: ${booking['id']}');
 
       final userId = SupabaseConfig.currentUser?.id;
-      print('👤 DEBUG: [AVAILABLE TRANSPORT] Current user ID: $userId');
+      appLog('👤 DEBUG: [AVAILABLE TRANSPORT] Current user ID: $userId');
 
       if (userId == null) {
-        print('❌ DEBUG: [AVAILABLE TRANSPORT] No user ID found');
+        appLog('❌ DEBUG: [AVAILABLE TRANSPORT] No user ID found');
         _showErrorSnackBar('Please sign in to accept bookings.');
         return;
       }
@@ -2322,30 +2392,30 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       final description = booking['description'] ?? 'Contract booking';
 
       {
-        print(
+        appLog(
             '✅ DEBUG: [AVAILABLE TRANSPORT] User confirmed contract acceptance');
 
         // Accept the contract booking
         try {
           await SupabaseConfig.acceptContractBooking(booking['id'], userId);
 
-          print(
+          appLog(
               '✅ DEBUG: [AVAILABLE TRANSPORT] Contract booking accepted successfully');
           _showSuccessSnackBar('Contract booking accepted successfully!');
 
           // Refresh the list
           _loadAvailableTransportationBookings();
         } catch (e) {
-          print('❌ DEBUG: [AVAILABLE TRANSPORT] Contract acceptance error: $e');
+          appLog('❌ DEBUG: [AVAILABLE TRANSPORT] Contract acceptance error: $e');
           _showErrorSnackBar(_getUserFriendlyErrorMessage(
               'Failed to accept contract booking: $e'));
         }
       }
     } catch (e, stackTrace) {
-      print(
+      appLog(
           '💥 DEBUG: [AVAILABLE TRANSPORT] Exception caught in _acceptContractBooking');
-      print('💥 DEBUG: [AVAILABLE TRANSPORT] Error: $e');
-      print('💥 DEBUG: [AVAILABLE TRANSPORT] Stack trace: $stackTrace');
+      appLog('💥 DEBUG: [AVAILABLE TRANSPORT] Error: $e');
+      appLog('💥 DEBUG: [AVAILABLE TRANSPORT] Stack trace: $stackTrace');
 
       _showErrorSnackBar(
           _getUserFriendlyErrorMessage('Error accepting contract booking: $e'));
@@ -2355,20 +2425,20 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
   Future<void> _acceptTransportationBooking(
       Map<String, dynamic> booking) async {
     try {
-      print('🚀 DEBUG: Starting transportation booking acceptance...');
-      print('📋 DEBUG: Booking data: ${booking.toString()}');
+      appLog('🚀 DEBUG: Starting transportation booking acceptance...');
+      appLog('📋 DEBUG: Booking data: ${booking.toString()}');
 
       // Accept shuttle service directly without confirmation
       final serviceName =
           booking['service']?['name'] ?? 'Transportation Service';
 
-      print('✅ DEBUG: User confirmed acceptance');
+      appLog('✅ DEBUG: User confirmed acceptance');
 
       final userId = SupabaseConfig.currentUser?.id;
-      print('👤 DEBUG: Current user ID: $userId');
+      appLog('👤 DEBUG: Current user ID: $userId');
 
       if (userId == null) {
-        print('❌ DEBUG: No user ID found');
+        appLog('❌ DEBUG: No user ID found');
         _showErrorSnackBar('Please sign in to accept bookings.');
         return;
       }
@@ -2377,12 +2447,12 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
       final subcategoryName = booking['service']?['subcategory']?['name'] ?? '';
       final isBusService = subcategoryName.toLowerCase().contains('bus');
 
-      print('🚌 DEBUG: Service name: $serviceName');
-      print('🚌 DEBUG: Subcategory name: $subcategoryName');
-      print('🚌 DEBUG: Is bus service: $isBusService');
+      appLog('🚌 DEBUG: Service name: $serviceName');
+      appLog('🚌 DEBUG: Subcategory name: $subcategoryName');
+      appLog('🚌 DEBUG: Is bus service: $isBusService');
 
       if (isBusService) {
-        print('❌ DEBUG: Blocked - this is a bus service');
+        appLog('❌ DEBUG: Blocked - this is a bus service');
         _showErrorSnackBar(
             'Runners cannot accept bus service bookings. Bus services are scheduled routes.');
         return;
@@ -2395,23 +2465,23 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      print('📝 DEBUG: Update data: $updateData');
-      print('🆔 DEBUG: Booking ID: ${booking['id']}');
+      appLog('📝 DEBUG: Update data: $updateData');
+      appLog('🆔 DEBUG: Booking ID: ${booking['id']}');
 
       // Try to update the booking
-      print('🔄 DEBUG: Calling updateTransportationBooking...');
+      appLog('🔄 DEBUG: Calling updateTransportationBooking...');
       final success = await SupabaseConfig.updateTransportationBooking(
         booking['id'],
         updateData,
       );
 
-      print('📊 DEBUG: Update result: $success');
+      appLog('📊 DEBUG: Update result: $success');
 
       if (success) {
-        print('✅ DEBUG: Booking update successful');
+        appLog('✅ DEBUG: Booking update successful');
 
         // Create chat conversation between runner and customer
-        print('💬 DEBUG: Creating chat conversation...');
+        appLog('💬 DEBUG: Creating chat conversation...');
         final conversationId =
             await ChatService.createTransportationConversation(
           bookingId: booking['id'],
@@ -2420,11 +2490,11 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
           serviceName: serviceName,
         );
 
-        print('💬 DEBUG: Conversation ID: $conversationId');
+        appLog('💬 DEBUG: Conversation ID: $conversationId');
 
         if (conversationId != null) {
           // Notify runner that they successfully accepted the booking
-          print('🔔 DEBUG: Sending notification...');
+          appLog('🔔 DEBUG: Sending notification...');
           await NotificationService.notifyRunnerTransportationAccepted(
               serviceName);
 
@@ -2434,17 +2504,17 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
           _showSuccessSnackBar('Shuttle service accepted successfully!');
         }
 
-        print('🔄 DEBUG: Refreshing booking list...');
+        appLog('🔄 DEBUG: Refreshing booking list...');
         _loadAvailableTransportationBookings(); // Refresh the list
       } else {
-        print('❌ DEBUG: Booking update failed');
+        appLog('❌ DEBUG: Booking update failed');
         _showErrorSnackBar(_getUserFriendlyErrorMessage(
             'Failed to accept booking. Please try again.'));
       }
     } catch (e, stackTrace) {
-      print('💥 DEBUG: Exception caught in _acceptTransportationBooking');
-      print('💥 DEBUG: Error: $e');
-      print('💥 DEBUG: Stack trace: $stackTrace');
+      appLog('💥 DEBUG: Exception caught in _acceptTransportationBooking');
+      appLog('💥 DEBUG: Error: $e');
+      appLog('💥 DEBUG: Stack trace: $stackTrace');
 
       // Show detailed error to user for debugging
       _showErrorSnackBar(
@@ -2884,7 +2954,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
           return 'Deliver to: ${deliveryAddress.toString().trim()}';
         }
         // Fallback to location_address (store names)
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       case 'delivery':
         // For delivery, show pickup → delivery
@@ -2907,7 +2977,7 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
         } else if (deliveryAddress != null) {
           return 'To: ${deliveryAddress.toString().trim()}';
         }
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       case 'document_services':
       case 'license_discs':
@@ -2929,13 +2999,13 @@ class _AvailableErrandsPageState extends State<AvailableErrandsPage>
           return 'Pickup: ${pickupLocation.toString().trim()}';
         }
         // Fallback to location_address
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       case 'elderly_services':
       case 'queue_sitting':
       default:
         // For these services, location_address is the primary location
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
     }
   }
 }

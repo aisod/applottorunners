@@ -3,6 +3,7 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'dart:async';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -167,20 +168,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         }
       }
 
-      print('🔍 Company Earnings Debug:');
-      print(
+      appLog('🔍 Company Earnings Debug:');
+      appLog(
           '   Provider Commission Total: N\$${totalProviderCommission.toStringAsFixed(2)}');
-      print('   Bus Revenue Total: N\$${totalBusRevenue.toStringAsFixed(2)}');
-      print(
+      appLog('   Bus Revenue Total: N\$${totalBusRevenue.toStringAsFixed(2)}');
+      appLog(
           '   Total Earnings: N\$${(totalProviderCommission + totalBusRevenue).toStringAsFixed(2)}');
-      print(
+      appLog(
           '   Daily: N\$${(dailyProviderCommission + dailyBusRevenue).toStringAsFixed(2)}');
-      print(
+      appLog(
           '   Weekly: N\$${(weeklyProviderCommission + weeklyBusRevenue).toStringAsFixed(2)}');
-      print(
+      appLog(
           '   Monthly: N\$${(monthlyProviderCommission + monthlyBusRevenue).toStringAsFixed(2)}');
-      print('   Bus Bookings Count: ${busBookings.length}');
-      print(
+      appLog('   Bus Bookings Count: ${busBookings.length}');
+      appLog(
           '   Transportation Bookings Count: ${transportationBookings.length}');
 
       return {
@@ -198,7 +199,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         'monthly_bus': monthlyBusRevenue,
       };
     } catch (e) {
-      print('❌ Error calculating company earnings: $e');
+      appLog('❌ Error calculating company earnings: $e');
       return {};
     }
   }

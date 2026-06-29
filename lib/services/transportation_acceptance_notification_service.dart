@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotto_runners/widgets/transportation_accepted_popup.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to manage transportation acceptance notifications for customers
 class TransportationAcceptanceNotificationService {
@@ -17,7 +18,7 @@ class TransportationAcceptanceNotificationService {
   /// Start monitoring for transportation acceptances
   void startMonitoring(BuildContext context) {
     _currentContext = context;
-    print(
+    appLog(
         '🔔 [Transportation] Started monitoring for transportation acceptances');
   }
 
@@ -25,7 +26,7 @@ class TransportationAcceptanceNotificationService {
   void stopMonitoring() {
     _currentContext = null;
     _hideNotification();
-    print(
+    appLog(
         '🔔 [Transportation] Stopped monitoring for transportation acceptances');
   }
 
@@ -35,14 +36,14 @@ class TransportationAcceptanceNotificationService {
     required String serviceName,
     required String driverName,
   }) {
-    print(
+    appLog(
         '🔔 [Transportation] Attempting to show notification for booking: $bookingId');
-    print('🔔 [Transportation] Service: $serviceName');
-    print('🔔 [Transportation] Driver: $driverName');
+    appLog('🔔 [Transportation] Service: $serviceName');
+    appLog('🔔 [Transportation] Driver: $driverName');
 
     // Check if we've already shown this notification
     if (_shownNotifications.contains(bookingId)) {
-      print(
+      appLog(
           '🔔 [Transportation] Notification already shown for booking: $bookingId, skipping');
       return;
     }
@@ -51,7 +52,7 @@ class TransportationAcceptanceNotificationService {
     _hideNotification();
 
     if (_currentContext == null) {
-      print('❌ [Transportation] No context available for notification');
+      appLog('❌ [Transportation] No context available for notification');
       return;
     }
 
@@ -71,7 +72,7 @@ class TransportationAcceptanceNotificationService {
     // Mark this notification as shown
     _shownNotifications.add(bookingId);
 
-    print(
+    appLog(
         '🔔 [Transportation] Showed acceptance notification for booking: $bookingId');
   }
 
@@ -87,7 +88,7 @@ class TransportationAcceptanceNotificationService {
   /// Clear shown notifications (for testing or cleanup)
   void clearShownNotifications() {
     _shownNotifications.clear();
-    print('🔔 [Transportation] Cleared shown notifications');
+    appLog('🔔 [Transportation] Cleared shown notifications');
   }
 
   /// Dispose resources

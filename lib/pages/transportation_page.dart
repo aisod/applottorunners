@@ -5,6 +5,7 @@ import '../supabase/supabase_config.dart';
 import '../widgets/simple_location_picker.dart';
 import '../widgets/looking_for_driver_popup.dart';
 import '../utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Shuttle Services Page
 ///
@@ -82,7 +83,7 @@ class _TransportationPageState extends State<TransportationPage> {
         _userType = userType;
       });
     } catch (e) {
-      print('Error loading user type: $e');
+      appLog('Error loading user type: $e');
     }
   }
 
@@ -110,20 +111,20 @@ class _TransportationPageState extends State<TransportationPage> {
   //       });
   //     }
   //   } catch (e) {
-  //     print('Error loading transportation data: $e');
+  //     appLog('Error loading transportation data: $e');
   //   }
   // }
 
   /// Calculate pricing when locations change (distance calculation removed)
   Future<void> _calculatePricing() async {
     if (_selectedVehicleId == null) {
-      print('Pricing calculation skipped: no vehicle selected');
+      appLog('Pricing calculation skipped: no vehicle selected');
       return;
     }
 
-    print('Starting pricing calculation...');
-    print('Selected vehicle ID: $_selectedVehicleId');
-    print('User type: $_userType');
+    appLog('Starting pricing calculation...');
+    appLog('Selected vehicle ID: $_selectedVehicleId');
+    appLog('User type: $_userType');
 
     // Trigger UI update to show pricing
     setState(() {
@@ -176,9 +177,9 @@ class _TransportationPageState extends State<TransportationPage> {
                !name.contains('motorcycle');
       }).toList();
 
-      print('Loaded vehicles: ${filteredVehicles.length}');
+      appLog('Loaded vehicles: ${filteredVehicles.length}');
       for (var vehicle in filteredVehicles) {
-        print(
+        appLog(
             'Vehicle: ${vehicle['name']}, Base Price: ${vehicle['price_base']}, Business Price: ${vehicle['price_business']}, Price per KM: ${vehicle['price_per_km']}');
       }
 
@@ -186,7 +187,7 @@ class _TransportationPageState extends State<TransportationPage> {
         _vehicles = filteredVehicles;
       });
     } catch (e) {
-      print('Error loading vehicles: $e');
+      appLog('Error loading vehicles: $e');
       // Keep UI responsive without explicit loading state
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -258,16 +259,16 @@ class _TransportationPageState extends State<TransportationPage> {
 
   /// Submit transportation booking
   Future<void> _submitBooking() async {
-    print('🚀 DEBUG: [TRANSPORTATION PAGE] _submitBooking called');
+    appLog('🚀 DEBUG: [TRANSPORTATION PAGE] _submitBooking called');
     
     if (!_formKey.currentState!.validate()) {
-      print('❌ DEBUG: [TRANSPORTATION PAGE] Form validation failed');
+      appLog('❌ DEBUG: [TRANSPORTATION PAGE] Form validation failed');
       return;
     }
-    print('✅ DEBUG: [TRANSPORTATION PAGE] Form validation passed');
+    appLog('✅ DEBUG: [TRANSPORTATION PAGE] Form validation passed');
 
     if (_selectedVehicleId == null) {
-      print('❌ DEBUG: [TRANSPORTATION PAGE] No vehicle selected');
+      appLog('❌ DEBUG: [TRANSPORTATION PAGE] No vehicle selected');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select a vehicle type'),
@@ -276,24 +277,24 @@ class _TransportationPageState extends State<TransportationPage> {
       );
       return;
     }
-    print('✅ DEBUG: [TRANSPORTATION PAGE] Vehicle selected: $_selectedVehicleId');
+    appLog('✅ DEBUG: [TRANSPORTATION PAGE] Vehicle selected: $_selectedVehicleId');
 
     try {
-      print('🚀 DEBUG: [TRANSPORTATION PAGE] Starting booking submission...');
-      print('👤 DEBUG: [TRANSPORTATION PAGE] Current user ID: ${SupabaseConfig.currentUser?.id}');
-      print('👤 DEBUG: [TRANSPORTATION PAGE] Current user email: ${SupabaseConfig.currentUser?.email}');
-      print('🚗 DEBUG: [TRANSPORTATION PAGE] Selected vehicle ID: $_selectedVehicleId');
-      print('📍 DEBUG: [TRANSPORTATION PAGE] Pickup location: ${_pickupLocationController.text}');
-      print('📍 DEBUG: [TRANSPORTATION PAGE] Dropoff location: ${_dropoffLocationController.text}');
-      print('🗓️ DEBUG: [TRANSPORTATION PAGE] Is immediate booking: $_isImmediateBooking');
-      print('📅 DEBUG: [TRANSPORTATION PAGE] Selected date: $_selectedDate');
-      print('⏰ DEBUG: [TRANSPORTATION PAGE] Selected time: $_selectedTime');
-      print('📝 DEBUG: [TRANSPORTATION PAGE] Special requests: ${_specialRequestsController.text}');
+      appLog('🚀 DEBUG: [TRANSPORTATION PAGE] Starting booking submission...');
+      appLog('👤 DEBUG: [TRANSPORTATION PAGE] Current user ID: ${SupabaseConfig.currentUser?.id}');
+      appLog('👤 DEBUG: [TRANSPORTATION PAGE] Current user email: ${SupabaseConfig.currentUser?.email}');
+      appLog('🚗 DEBUG: [TRANSPORTATION PAGE] Selected vehicle ID: $_selectedVehicleId');
+      appLog('📍 DEBUG: [TRANSPORTATION PAGE] Pickup location: ${_pickupLocationController.text}');
+      appLog('📍 DEBUG: [TRANSPORTATION PAGE] Dropoff location: ${_dropoffLocationController.text}');
+      appLog('🗓️ DEBUG: [TRANSPORTATION PAGE] Is immediate booking: $_isImmediateBooking');
+      appLog('📅 DEBUG: [TRANSPORTATION PAGE] Selected date: $_selectedDate');
+      appLog('⏰ DEBUG: [TRANSPORTATION PAGE] Selected time: $_selectedTime');
+      appLog('📝 DEBUG: [TRANSPORTATION PAGE] Special requests: ${_specialRequestsController.text}');
 
       // Validate coordinates
-      print('🌐 DEBUG: [TRANSPORTATION PAGE] Coordinate validation:');
-      print('   - Pickup lat: $_pickupLat, lng: $_pickupLng');
-      print('   - Dropoff lat: $_dropoffLat, lng: $_dropoffLng');
+      appLog('🌐 DEBUG: [TRANSPORTATION PAGE] Coordinate validation:');
+      appLog('   - Pickup lat: $_pickupLat, lng: $_pickupLng');
+      appLog('   - Dropoff lat: $_dropoffLat, lng: $_dropoffLng');
 
       final bookingData = {
         'user_id': SupabaseConfig.currentUser?.id,
@@ -320,27 +321,27 @@ class _TransportationPageState extends State<TransportationPage> {
         'is_immediate': _isImmediateBooking, // Add flag for immediate bookings
       };
 
-      print('📦 DEBUG: [TRANSPORTATION PAGE] Booking data prepared:');
-      print('   - user_id: ${bookingData['user_id']}');
-      print('   - vehicle_type_id: ${bookingData['vehicle_type_id']}');
-      print('   - pickup_location: ${bookingData['pickup_location']}');
-      print('   - dropoff_location: ${bookingData['dropoff_location']}');
-      print('   - is_immediate: ${bookingData['is_immediate']}');
-      print('   - booking_date: ${bookingData['booking_date']}');
-      print('   - booking_time: ${bookingData['booking_time']}');
-      print('   - status: ${bookingData['status']}');
+      appLog('📦 DEBUG: [TRANSPORTATION PAGE] Booking data prepared:');
+      appLog('   - user_id: ${bookingData['user_id']}');
+      appLog('   - vehicle_type_id: ${bookingData['vehicle_type_id']}');
+      appLog('   - pickup_location: ${bookingData['pickup_location']}');
+      appLog('   - dropoff_location: ${bookingData['dropoff_location']}');
+      appLog('   - is_immediate: ${bookingData['is_immediate']}');
+      appLog('   - booking_date: ${bookingData['booking_date']}');
+      appLog('   - booking_time: ${bookingData['booking_time']}');
+      appLog('   - status: ${bookingData['status']}');
 
-      print('🔄 DEBUG: [TRANSPORTATION PAGE] Calling createTransportationBooking...');
+      appLog('🔄 DEBUG: [TRANSPORTATION PAGE] Calling createTransportationBooking...');
       final result =
           await SupabaseConfig.createTransportationBooking(bookingData);
 
-      print('📊 DEBUG: [TRANSPORTATION PAGE] Booking creation result received');
-      print('📊 DEBUG: [TRANSPORTATION PAGE] Result is null: ${result == null}');
+      appLog('📊 DEBUG: [TRANSPORTATION PAGE] Booking creation result received');
+      appLog('📊 DEBUG: [TRANSPORTATION PAGE] Result is null: ${result == null}');
       if (result != null) {
-        print('📊 DEBUG: [TRANSPORTATION PAGE] Result ID: ${result['id']}');
-        print('📊 DEBUG: [TRANSPORTATION PAGE] Full result: $result');
+        appLog('📊 DEBUG: [TRANSPORTATION PAGE] Result ID: ${result['id']}');
+        appLog('📊 DEBUG: [TRANSPORTATION PAGE] Full result: $result');
       } else {
-        print('❌ DEBUG: [TRANSPORTATION PAGE] Booking creation returned null - check error logs above');
+        appLog('❌ DEBUG: [TRANSPORTATION PAGE] Booking creation returned null - check error logs above');
       }
 
       if (result != null && result['id'] != null) {
@@ -396,7 +397,7 @@ class _TransportationPageState extends State<TransportationPage> {
           }
         }
       } else {
-        print('❌ DEBUG: [TRANSPORTATION PAGE] Booking creation failed - result is null or missing ID');
+        appLog('❌ DEBUG: [TRANSPORTATION PAGE] Booking creation failed - result is null or missing ID');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -408,10 +409,10 @@ class _TransportationPageState extends State<TransportationPage> {
         }
       }
     } catch (e, stackTrace) {
-      print('❌ DEBUG: [TRANSPORTATION PAGE] Exception caught in _submitBooking');
-      print('❌ DEBUG: [TRANSPORTATION PAGE] Error type: ${e.runtimeType}');
-      print('❌ DEBUG: [TRANSPORTATION PAGE] Error message: $e');
-      print('❌ DEBUG: [TRANSPORTATION PAGE] Stack trace: $stackTrace');
+      appLog('❌ DEBUG: [TRANSPORTATION PAGE] Exception caught in _submitBooking');
+      appLog('❌ DEBUG: [TRANSPORTATION PAGE] Error type: ${e.runtimeType}');
+      appLog('❌ DEBUG: [TRANSPORTATION PAGE] Error message: $e');
+      appLog('❌ DEBUG: [TRANSPORTATION PAGE] Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -479,9 +480,7 @@ class _TransportationPageState extends State<TransportationPage> {
             ),
           ],
         ),
-        actions: const [
-          // ThemeToggleButton(), // Commented out dark mode for now
-        ],
+
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(isSmallMobile ? 16 : 20),
@@ -1205,6 +1204,11 @@ class _TransportationPageState extends State<TransportationPage> {
           final bool isSelected = _selectedVehicleId == id;
           final bool hasDiscount = vehicle['discount_percentage'] != null && 
                                    vehicle['discount_percentage'] > 0;
+          final double listPrice = _userType == 'business'
+              ? ((vehicle['price_business'] as num?)?.toDouble() ??
+                  (vehicle['price_base'] as num?)?.toDouble() ??
+                  100.0)
+              : ((vehicle['price_base'] as num?)?.toDouble() ?? 75.0);
           
           return Padding(
             padding: EdgeInsets.only(
@@ -1330,7 +1334,7 @@ class _TransportationPageState extends State<TransportationPage> {
                         // Price display
                         if (hasDiscount) ...[
                           Text(
-                            'N\$${(_userType == 'business' ? '100.00' : '75.00')}',
+                            'N\$${listPrice.toStringAsFixed(2)}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.outline,
                               fontWeight: FontWeight.w400,
@@ -1339,7 +1343,7 @@ class _TransportationPageState extends State<TransportationPage> {
                             ),
                           ),
                           Text(
-                            'N\$${SupabaseConfig.calculateDiscountedPrice(_userType == 'business' ? 100.0 : 75.0, vehicle['discount_percentage'].toDouble()).toStringAsFixed(2)}',
+                            'N\$${SupabaseConfig.calculateDiscountedPrice(listPrice, vehicle['discount_percentage'].toDouble()).toStringAsFixed(2)}',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.orange,
                               fontWeight: FontWeight.bold,

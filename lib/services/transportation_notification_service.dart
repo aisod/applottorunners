@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:lotto_runners/supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class TransportationNotificationService {
   static StreamSubscription? _bookingsSubscription;
@@ -19,7 +20,7 @@ class TransportationNotificationService {
       _handleNewTransportationBookings(data, user.id);
     });
 
-    print('🚗 Transportation notifications setup for user: ${user.id}');
+    appLog('🚗 Transportation notifications setup for user: ${user.id}');
   }
 
   /// Handle new transportation bookings and notify relevant runners
@@ -47,14 +48,14 @@ class TransportationNotificationService {
           // Check if vehicle types match (or if runner can accept any vehicle)
           if (_vehicleTypesMatch(bookingVehicleType, runnerVehicleType)) {
             // This runner can accept this booking - the dashboard will handle the popup
-            print(
+            appLog(
                 '🎯 New ride request available for runner: $bookingVehicleType');
             break;
           }
         }
       }
     } catch (e) {
-      print('❌ Error handling transportation bookings: $e');
+      appLog('❌ Error handling transportation bookings: $e');
     }
   }
 
@@ -109,9 +110,9 @@ class TransportationNotificationService {
         'accepted_at': DateTime.now().toIso8601String(),
       }).eq('id', booking['id']);
 
-      print('✅ Booking accepted notification sent');
+      appLog('✅ Booking accepted notification sent');
     } catch (e) {
-      print('❌ Error sending booking accepted notification: $e');
+      appLog('❌ Error sending booking accepted notification: $e');
     }
   }
 

@@ -4,9 +4,17 @@ import 'package:lotto_runners/image_upload.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/widgets/document_upload_widget.dart';
-import 'package:lotto_runners/pages/terms_conditions_runner_page.dart';
-import 'package:lotto_runners/pages/terms_conditions_individual_page.dart';
+
 import 'package:lotto_runners/pages/feedback_page.dart';
+import 'package:lotto_runners/utils/app_log.dart';
+import 'package:lotto_runners/utils/legal_links.dart';
+import 'package:lotto_runners/utils/app_errors.dart';
+import 'package:lotto_runners/widgets/app_loading.dart';
+import 'package:lotto_runners/widgets/app_loading_overlay.dart';
+import 'package:lotto_runners/services/connectivity_service.dart';
+import 'package:lotto_runners/services/navigation_service.dart';
+import 'package:provider/provider.dart';
+
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -110,7 +118,7 @@ class _ProfilePageState extends State<ProfilePage> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading profile: $e'),
+            content: Text(AppErrors.message(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -124,7 +132,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: AppLoadingIndicator(
+          message: 'Loading profile…',
+          showLogo: true,
+        ),
       );
     }
 
@@ -154,6 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         actions: [
+
           IconButton(
             onPressed: _showSignOutDialog,
             icon: Icon(
@@ -989,22 +1001,32 @@ class _ProfilePageState extends State<ProfilePage> {
           },
         ),
         ListTile(
+          leading: const Icon(Icons.description_outlined,
+              color: LottoRunnersColors.primaryYellow),
+          title: const Text('Terms of Service'),
+          trailing: const Icon(Icons.chevron_right,
+              color: LottoRunnersColors.primaryYellow),
+          onTap: () => openTermsOfService(context),
+        ),
+        ListTile(
           leading: const Icon(Icons.privacy_tip_outlined,
               color: LottoRunnersColors.primaryYellow),
           title: const Text('Privacy Policy'),
           trailing: const Icon(Icons.chevron_right,
               color: LottoRunnersColors.primaryYellow),
-          onTap: () => _showPrivacyPage(),
+          onTap: () => openPrivacyPolicy(context),
         ),
-        ListTile(
-          leading: const Icon(Icons.article_outlined,
-              color: LottoRunnersColors.primaryYellow),
-          title: const Text('Terms of Service'),
-          trailing: const Icon(Icons.chevron_right,
-              color: LottoRunnersColors.primaryYellow),
-          onTap: () => _showTermsPage(),
-        ),
+
         const Divider(height: 32),
+        ListTile(
+          leading: Icon(Icons.delete_forever,
+              color: Theme.of(context).colorScheme.error),
+          title: Text(
+            'Delete account',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          onTap: _showDeleteAccountDialog,
+        ),
         ListTile(
           leading:
               Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
@@ -2111,35 +2133,35 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _uploadProfileImage({required bool fromCamera}) async {
     try {
       setState(() => _isUploadingImage = true);
-      print('🚀 Starting profile image upload...');
+      appLog('🚀 Starting profile image upload...');
 
       final imageBytes = fromCamera
           ? await ImageUploadHelper.captureImage()
           : await ImageUploadHelper.pickImageFromGallery();
 
       if (imageBytes != null) {
-        print('📷 Image selected, size: ${imageBytes.length} bytes');
+        appLog('📷 Image selected, size: ${imageBytes.length} bytes');
 
         final userId = SupabaseConfig.currentUser?.id;
         if (userId == null) throw Exception('User not authenticated');
 
-        print('👤 User ID: $userId');
-        print('📤 Uploading to Supabase storage...');
+        appLog('👤 User ID: $userId');
+        appLog('📤 Uploading to Supabase storage...');
 
         // Upload image to Supabase storage using the dedicated profile image function
         final imageUrl =
             await SupabaseConfig.uploadProfileImage(userId, imageBytes);
-        print('✅ Image uploaded successfully: $imageUrl');
+        appLog('✅ Image uploaded successfully: $imageUrl');
 
         // Update user profile with new avatar URL
         await SupabaseConfig.updateUserProfile({
           'avatar_url': imageUrl,
         });
-        print('✅ Profile updated with avatar URL');
+        appLog('✅ Profile updated with avatar URL');
 
         // Refresh user data to show new image
         await _loadUserData();
-        print('✅ Profile data refreshed');
+        appLog('✅ Profile data refreshed');
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2150,10 +2172,10 @@ class _ProfilePageState extends State<ProfilePage> {
           );
         }
       } else {
-        print('❌ No image selected');
+        appLog('❌ No image selected');
       }
     } catch (e) {
-      print('❌ Error uploading image: $e');
+      appLog('❌ Error uploading image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2208,11 +2230,112 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _showDeleteAccountDialog() {
+    final email = _userProfile?['email'] as String? ??
+        SupabaseConfig.currentUser?.email ??
+        '';
+    final confirmController = TextEditingController();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete account'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This permanently deletes your account, profile, and associated data. This cannot be undone.',
+            ),
+            if (email.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Type your email to confirm:',
+                style: Theme.of(dialogContext).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmController,
+                decoration: InputDecoration(
+                  hintText: email,
+                  border: const OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (email.isNotEmpty &&
+                  confirmController.text.trim().toLowerCase() !=
+                      email.toLowerCase()) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Email does not match. Deletion cancelled.'),
+                  ),
+                );
+                return;
+              }
+              Navigator.pop(dialogContext);
+              await _deleteAccount();
+            },
+            child: Text(
+              'Delete permanently',
+              style: TextStyle(
+                color: Theme.of(dialogContext).colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).then((_) => confirmController.dispose());
+  }
+
+  Future<void> _deleteAccount() async {
+    if (!context.read<ConnectivityService>().isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppErrors.message(
+              Exception('NETWORK_ERROR: No internet connection'),
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    AppLoadingOverlay.show(context, message: 'Deleting account…');
+    try {
+      await SupabaseConfig.deleteMyAccount();
+      if (mounted) {
+        NavigationService.showSuccessMessage('Your account has been deleted.');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppErrors.message(e)),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      AppLoadingOverlay.hide();
+    }
+  }
+
   void _showSignOutDialog() {
     showDialog(
       context: context,
       builder: (context) {
-        final theme = Theme.of(context);
         return AlertDialog(
           title: const Text('Sign Out'),
           content: const Text('Are you sure you want to sign out?'),
@@ -2295,75 +2418,5 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showPrivacyPage() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Privacy Policy'),
-        content: const SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Data Collection:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text(
-                  'We collect information necessary to provide our service including your name, email, phone number, and location when posting errands.'),
-              SizedBox(height: 16),
-              Text('Data Usage:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text(
-                  'Your data is used to connect you with runners, process payments, and improve our service. We do not sell your personal information.'),
-              SizedBox(height: 16),
-              Text('Data Protection:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text(
-                  'We use industry-standard security measures to protect your data. All payments are processed securely through encrypted channels.'),
-              SizedBox(height: 16),
-              Text('Your Rights:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text(
-                  'You can request access to, correction of, or deletion of your personal data at any time by contacting us.'),
-              SizedBox(height: 16),
-              Text('Contact:', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text('For privacy concerns, email info@lottoerunners.com or call 0811284627'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTermsPage() {
-    final userType = _userProfile?['user_type'] as String?;
-
-    // Navigate to appropriate terms page based on user type
-    if (userType == 'runner') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const TermsConditionsRunnerPage(),
-        ),
-      );
-    } else {
-      // For individual, business, or admin users, show individual terms
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const TermsConditionsIndividualPage(),
-        ),
-      );
-    }
-  }
 }
+

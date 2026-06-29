@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Feedback page for customers and runners to submit feedback, bug reports, and feature requests
 class FeedbackPage extends StatefulWidget {
@@ -72,7 +73,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
         }
       }
     } catch (e) {
-      print('Error loading user profile: $e');
+      appLog('Error loading user profile: $e');
     }
   }
 

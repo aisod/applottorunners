@@ -4,6 +4,7 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/global_errand_popup_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'package:lotto_runners/services/errand_acceptance_notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Popup widget that shows "Looking for a runner" when customer requests immediate errand
 class LookingForRunnerPopup extends StatefulWidget {
@@ -108,13 +109,13 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
   Future<void> _checkForRunnerAcceptance() async {
     // Check if widget is still mounted before proceeding
     if (!mounted) {
-      print('🔍 [Acceptance] Widget unmounted, skipping check');
+      appLog('🔍 [Acceptance] Widget unmounted, skipping check');
       return;
     }
 
     // Don't check if we've already shown the acceptance notification
     if (_hasShownAcceptanceNotification) {
-      print(
+      appLog(
           '🔍 [Acceptance] Acceptance notification already shown, skipping check');
       return;
     }
@@ -130,13 +131,13 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
 
         // Check if still mounted after async operation
         if (!mounted) {
-          print(
+          appLog(
               '🔍 [Acceptance] Widget unmounted during pending errands query, aborting');
           return;
         }
-        print(
+        appLog(
             '🔍 [Acceptance] Looking for errand with title: ${widget.errandTitle}');
-        print(
+        appLog(
             '🔍 [Acceptance] Available pending errands: ${pendingErrands.map((e) => '${e['id']} - ${e['title']} - ${e['status']}').toList()}');
 
         var matchingErrand = pendingErrands.firstWhere(
@@ -146,7 +147,7 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
 
         // If not found in pending, check accepted errands for this customer
         if (matchingErrand.isEmpty) {
-          print(
+          appLog(
               '🔍 [Acceptance] Not found in pending, checking accepted errands...');
           final userId = SupabaseConfig.currentUser?.id;
           if (userId != null) {
@@ -154,7 +155,7 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
 
             // Check if still mounted after async operation
             if (!mounted) {
-              print(
+              appLog(
                   '🔍 [Acceptance] Widget unmounted during async operation, aborting');
               return;
             }
@@ -165,21 +166,21 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
                     errand['is_immediate'] == true)
                 .toList();
 
-            print(
+            appLog(
                 '🔍 [Acceptance] Accepted immediate errands: ${acceptedErrands.map((e) => '${e['id']} - ${e['title']} - ${e['status']} - ${e['runner_id']}').toList()}');
 
             if (acceptedErrands.isNotEmpty) {
               matchingErrand = acceptedErrands.first;
-              print(
+              appLog(
                   '🔍 [Acceptance] Found accepted errand: ${matchingErrand['id']}');
             }
           }
         }
 
-        print(
+        appLog(
             '🔍 [Acceptance] Matching errand found: ${matchingErrand.isNotEmpty ? 'YES' : 'NO'}');
         if (matchingErrand.isNotEmpty) {
-          print(
+          appLog(
               '🔍 [Acceptance] Errand status: ${matchingErrand['status']}, Runner ID: ${matchingErrand['runner_id']}');
         }
 
@@ -207,7 +208,7 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
 
             // Check if still mounted after async operation
             if (!mounted) {
-              print(
+              appLog(
                   '🔍 [Acceptance] Widget unmounted during runner info fetch, aborting');
               return;
             }
@@ -252,7 +253,7 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
 
         // Check if still mounted after async operation
         if (!mounted) {
-          print(
+          appLog(
               '🔍 [Acceptance] Widget unmounted during errand query, aborting');
           return;
         }
@@ -280,7 +281,7 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
 
             // Check if still mounted after async operation
             if (!mounted) {
-              print(
+              appLog(
                   '🔍 [Acceptance] Widget unmounted during runner info fetch, aborting');
               return;
             }
@@ -305,11 +306,11 @@ class _LookingForRunnerPopupState extends State<LookingForRunnerPopup>
         }
       }
     } catch (e) {
-      print('Error checking for runner acceptance: $e');
+      appLog('Error checking for runner acceptance: $e');
 
       // Only handle errors if widget is still mounted
       if (!mounted) {
-        print(
+        appLog(
             '🔍 [Acceptance] Widget unmounted during error handling, aborting');
         return;
       }

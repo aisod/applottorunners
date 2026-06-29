@@ -7,6 +7,7 @@ import 'package:lotto_runners/utils/responsive.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:lotto_runners/utils/pdf_utils.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class MyHistoryPage extends StatefulWidget {
   const MyHistoryPage({super.key});
@@ -126,7 +127,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
         _animationController.forward();
       }
     } catch (e) {
-      print('Error loading history: $e');
+      appLog('Error loading history: $e');
       setState(() {
         _isLoading = false;
       });
@@ -266,13 +267,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const IconButton(
-                    onPressed: null,
-                    icon: Icon(
-                      Icons.refresh,
-                      color: Colors.transparent,
-                    ),
-                  ),
+                  const SizedBox(width: 48),
                   Expanded(
                     child: Text(
                       'My History',
@@ -528,10 +523,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
       ),
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: () {}, // No action needed for history items
-          borderRadius: BorderRadius.circular(0),
-          child: Padding(
+        child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,7 +644,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
                               (item['pickup_location'] != null &&
                                       item['dropoff_location'] != null
                                   ? '${item['pickup_location']} → ${item['dropoff_location']}'
-                                  : item['pickup_location'] ?? 'Location TBD'),
+                                  : item['pickup_location'] ?? 'Location not set'),
                           theme: theme,
                         ),
                       if (item['location_address'] != null ||
@@ -767,7 +759,6 @@ class _MyHistoryPageState extends State<MyHistoryPage>
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -804,7 +795,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
         );
       }
     } catch (e) {
-      print('Error downloading invoice: $e');
+      appLog('Error downloading invoice: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -827,7 +818,7 @@ class _MyHistoryPageState extends State<MyHistoryPage>
       final logoBytes = await rootBundle.load('web/icons/logolotto.png');
       logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
     } catch (e) {
-      print('Could not load logo: $e');
+      appLog('Could not load logo: $e');
     }
 
     // Get user profile for invoice

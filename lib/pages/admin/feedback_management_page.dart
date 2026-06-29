@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/theme.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Admin page to view and manage user feedback
 class FeedbackManagementPage extends StatefulWidget {
@@ -50,7 +51,7 @@ class _FeedbackManagementPageState extends State<FeedbackManagementPage> {
         _filterFeedback();
       }
     } catch (e) {
-      print('❌ Error loading feedback: $e');
+      appLog('❌ Error loading feedback: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         if (context.mounted) {

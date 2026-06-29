@@ -2,6 +2,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Invoice Service
 ///
@@ -17,7 +18,7 @@ class InvoiceService {
     required Map<String, dynamic> userProfile,
   }) async {
     try {
-      print('📄 Generating invoice for errand: $errandId');
+      appLog('📄 Generating invoice for errand: $errandId');
 
       final pdf = pw.Document();
       final now = DateTime.now();
@@ -58,9 +59,9 @@ class InvoiceService {
         onLayout: (PdfPageFormat format) async => pdf.save(),
       );
 
-      print('✅ Invoice generated successfully');
+      appLog('✅ Invoice generated successfully');
     } catch (e) {
-      print('❌ Error generating invoice: $e');
+      appLog('❌ Error generating invoice: $e');
       rethrow;
     }
   }
@@ -76,7 +77,7 @@ class InvoiceService {
     int? passengerCount,
   }) async {
     try {
-      print('📄 Generating invoice for transportation booking: $bookingId');
+      appLog('📄 Generating invoice for transportation booking: $bookingId');
 
       final pdf = pw.Document();
       final now = DateTime.now();
@@ -119,9 +120,9 @@ class InvoiceService {
         onLayout: (PdfPageFormat format) async => pdf.save(),
       );
 
-      print('✅ Invoice generated successfully');
+      appLog('✅ Invoice generated successfully');
     } catch (e) {
-      print('❌ Error generating invoice: $e');
+      appLog('❌ Error generating invoice: $e');
       rethrow;
     }
   }
@@ -136,7 +137,7 @@ class InvoiceService {
     int? durationValue,
   }) async {
     try {
-      print('📄 Generating invoice for contract: $contractId');
+      appLog('📄 Generating invoice for contract: $contractId');
 
       final pdf = pw.Document();
       final now = DateTime.now();
@@ -184,9 +185,9 @@ class InvoiceService {
         onLayout: (PdfPageFormat format) async => pdf.save(),
       );
 
-      print('✅ Invoice generated successfully');
+      appLog('✅ Invoice generated successfully');
     } catch (e) {
-      print('❌ Error generating invoice: $e');
+      appLog('❌ Error generating invoice: $e');
       rethrow;
     }
   }

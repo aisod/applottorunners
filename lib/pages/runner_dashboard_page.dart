@@ -12,7 +12,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:lotto_runners/pages/profile_page.dart';
 import 'package:lotto_runners/pages/runner_wallet_page.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lotto_runners/pages/route_map_page.dart';
+import 'package:lotto_runners/services/mapbox_navigation_service.dart';
+import 'package:lotto_runners/services/location_service.dart';
+import 'package:flutter_mapbox_navigation/flutter_mapbox_navigation.dart';
+import 'package:lotto_runners/services/tracking_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class RunnerDashboardPage extends StatefulWidget {
   const RunnerDashboardPage({super.key});
@@ -32,9 +38,6 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
   bool _isLoadingLimits = true;
   Map<String, dynamic>? _userProfile;
 
-  // Debug information
-  String _debugInfo = '';
-  bool _showDebugInfo = false;
   String _selectedStatus = 'all';
   bool _isRefreshing = false;
 
@@ -91,7 +94,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         setState(() => _userProfile = profile);
       }
     } catch (e) {
-      print('Error loading user profile: $e');
+      appLog('Error loading user profile: $e');
     }
   }
 
@@ -99,26 +102,30 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
     try {
       setState(() => _isLoading = true);
       final userId = SupabaseConfig.currentUser?.id;
-      print('🔄 Loading runner errands for user: $userId');
+      appLog('🔄 Loading runner errands for user: $userId');
 
       if (userId != null) {
         final errands = await SupabaseConfig.getRunnerErrands(userId);
-        print(
+        appLog(
             '📋 Loaded ${errands.length} errands: ${errands.map((e) => '${e['title']} (${e['status']})').toList()}');
+        if (errands.isNotEmpty) {
+          appLog('🔍 DEBUG: First errand customer object: ${errands.first['customer']}');
+          appLog('🔍 DEBUG: First errand runner object: ${errands.first['runner']}');
+        }
 
         if (mounted) {
           setState(() {
             _errands = errands;
             _isLoading = false;
           });
-          print('✅ Updated state with ${_errands.length} errands');
+          appLog('✅ Updated state with ${_errands.length} errands');
         }
       } else {
-        print('❌ No user ID found');
+        appLog('❌ No user ID found');
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      print('❌ Error loading runner errands: $e');
+      appLog('❌ Error loading runner errands: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -141,7 +148,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       // Get runner's vehicle type to filter available bookings
       final runnerVehicleType =
           await SupabaseConfig.getRunnerVehicleType(userId);
-      print('🚗 Runner vehicle type: $runnerVehicleType');
+      appLog('🚗 Runner vehicle type: $runnerVehicleType');
 
       // Get all available bookings (transportation + contracts)
       final availableBookings = await SupabaseConfig.getAvailableAllBookings();
@@ -174,7 +181,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
             runnerVehicleType.toLowerCase();
       }).toList();
 
-      print(
+      appLog(
           '🎯 Available bookings for vehicle type $runnerVehicleType: ${pendingBookings.length}');
 
       // Combine runner bookings and available bookings
@@ -187,7 +194,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         });
       }
     } catch (e) {
-      print('Error loading bookings: $e');
+      appLog('Error loading bookings: $e');
       if (mounted) {
         setState(() => _isLoadingBookings = false);
         _showErrorSnackBar('Failed to load bookings. Please try again.');
@@ -209,7 +216,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         }
       }
     } catch (e) {
-      print('Error loading runner limits: $e');
+      appLog('Error loading runner limits: $e');
       if (mounted) {
         setState(() => _isLoadingLimits = false);
       }
@@ -229,7 +236,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         }
       }
     } catch (e) {
-      print('Error loading notifications: $e');
+      appLog('Error loading notifications: $e');
     }
   }
 
@@ -239,7 +246,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
     Timer.periodic(const Duration(seconds: 60), (timer) {
       if (mounted) {
         _loadData();
-        print('🔄 Auto-refreshing runner dashboard data...');
+        appLog('🔄 Auto-refreshing runner dashboard data...');
       } else {
         timer.cancel();
       }
@@ -256,7 +263,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
 
   Future<void> _checkForNewTransportationBookings() async {
     try {
-      print('🔍 Checking for new transportation bookings...');
+      appLog('🔍 Checking for new transportation bookings...');
 
       // Get current user and check if they're a runner
       final user = SupabaseConfig.currentUser;
@@ -271,12 +278,12 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           .maybeSingle();
 
       if (runnerApp == null) {
-        print('❌ User is not an approved runner');
+        appLog('❌ User is not an approved runner');
         return;
       }
 
       final runnerVehicleType = runnerApp['vehicle_type'] ?? '';
-      print('🚗 Runner vehicle type: $runnerVehicleType');
+      appLog('🚗 Runner vehicle type: $runnerVehicleType');
 
       // Get all pending immediate bookings
       final bookings = await SupabaseConfig.client
@@ -291,11 +298,11 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           .filter('driver_id', 'is', null)
           .order('created_at', ascending: false);
 
-      print('📋 Found ${bookings.length} pending immediate bookings');
+      appLog('📋 Found ${bookings.length} pending immediate bookings');
 
       for (final booking in bookings) {
         final bookingVehicleType = booking['vehicle_type']?['name'] ?? '';
-        print('🎯 Booking vehicle type: $bookingVehicleType');
+        appLog('🎯 Booking vehicle type: $bookingVehicleType');
 
         // Check if vehicle types match (case insensitive)
         final matches = runnerVehicleType.isEmpty ||
@@ -310,7 +317,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           // Note: Popup handling moved to GlobalRidePopupService
 
           if (!existsInList) {
-            print(
+            appLog(
                 '🎉 New matching booking found - but GlobalRidePopupService handles popups now');
             // Just refresh the local list
             await _loadTransportationBookings();
@@ -319,7 +326,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         }
       }
     } catch (e) {
-      print('❌ Error checking for new bookings: $e');
+      appLog('❌ Error checking for new bookings: $e');
     }
   }
 
@@ -338,7 +345,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
 
       return response['vehicle_type'] ?? '';
     } catch (e) {
-      print('Error fetching runner vehicle type: $e');
+      appLog('Error fetching runner vehicle type: $e');
       return '';
     }
   }
@@ -366,7 +373,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
 
   // Debug section removed
 
-  // Note: Test popup method removed - use GlobalRidePopupService.instance.testPopup() instead
+  // Ride request popups are driven by GlobalRidePopupService from the home shell.
 
   void _showErrorSnackBar(String message) {
     final theme = Theme.of(context);
@@ -387,48 +394,14 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
     );
   }
 
-  void _addDebugInfo(String message) {
-    setState(() {
-      _debugInfo +=
-          '${DateTime.now().toString().substring(11, 19)}: $message\n';
-      _showDebugInfo = true;
-    });
-    print('🐛 DEBUG UI: $message');
-  }
-
-  void _showDebugDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Debug Information'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: SingleChildScrollView(
-            child: Text(
-              _debugInfo.isEmpty
-                  ? 'No debug information available'
-                  : _debugInfo,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _debugInfo = '';
-              });
-            },
-            child: const Text('Clear'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+  String _formatBookingSchedule(Map<String, dynamic> booking) {
+    final date = booking['booking_date']?.toString().trim() ?? '';
+    final time = booking['booking_time']?.toString().trim() ?? '';
+    final parts = <String>[];
+    if (date.isNotEmpty) parts.add(date);
+    if (time.isNotEmpty) parts.add(time);
+    if (parts.isEmpty) return 'Schedule not set';
+    return parts.join(' ');
   }
 
   List<Map<String, dynamic>> get _filteredErrands {
@@ -440,10 +413,10 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       return errand['status'] == _selectedStatus;
     }).toList();
 
-    print(
+    appLog(
         '🔍 Filtering errands: ${_errands.length} total, ${filtered.length} filtered by status "$_selectedStatus"');
     if (filtered.isNotEmpty) {
-      print(
+      appLog(
           '📋 Filtered errands: ${filtered.map((e) => '${e['title']} (${e['status']})').toList()}');
     }
 
@@ -460,10 +433,10 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       return booking['status'] == _selectedStatus;
     }).toList();
 
-    print(
+    appLog(
         '🔍 Filtering transportation bookings: ${_transportationBookings.length} total, ${filtered.length} filtered by status "$_selectedStatus"');
     if (filtered.isNotEmpty) {
-      print(
+      appLog(
           '📋 Filtered transportation bookings: ${filtered.map((b) => '${b['pickup_location']} → ${b['dropoff_location']} (${b['status']})').toList()}');
     }
 
@@ -475,7 +448,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
     final theme = Theme.of(context);
 
     // Debug information
-    print(
+    appLog(
         '🏗️ Building RunnerDashboardPage - Errands: ${_errands.length}, Status: $_selectedStatus, Loading: $_isLoading');
 
     return Stack(
@@ -563,12 +536,12 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         allServices.where((service) => service['status'] == 'completed').length;
 
     // Debug: Log analytics breakdown
-    print('📊 ANALYTICS BREAKDOWN:');
-    print(
+    appLog('📊 ANALYTICS BREAKDOWN:');
+    appLog(
         '   Errands: ${_errands.length} (Accepted: ${_errands.where((e) => e['status'] == 'accepted').length}, In Progress: ${_errands.where((e) => e['status'] == 'in_progress').length}, Completed: ${_errands.where((e) => e['status'] == 'completed').length})');
-    print(
+    appLog(
         '   Transportation/Contracts: ${_transportationBookings.length} (Accepted: ${_transportationBookings.where((t) => t['status'] == 'accepted').length}, In Progress: ${_transportationBookings.where((t) => t['status'] == 'in_progress').length}, Completed: ${_transportationBookings.where((t) => t['status'] == 'completed').length})');
-    print(
+    appLog(
         '   TOTAL: ${allServices.length} (Accepted: $acceptedCount, In Progress: $inProgressCount, Completed: $completedCount)');
 
     return SliverAppBar(
@@ -599,10 +572,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           ),
           tooltip: 'Refresh',
         ),
-        // ThemeToggleButton(
-        //   backgroundColor: Colors.white.withValues(alpha: 0.2),
-        //   foregroundColor: Colors.white,
-        // ),
+
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
@@ -768,7 +738,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                     onSelected: (selected) {
                       setState(() {
                         _selectedStatus = status['value']!;
-                        print(
+                        appLog(
                             '🔄 Errands status filter changed to: $_selectedStatus');
                       });
                     },
@@ -963,14 +933,25 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            errand['customer']?['full_name'] ?? 'Customer',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize:
-                                  Responsive.isSmallMobile(context) ? 14 : 16,
-                            ),
-                          ),
+                          Builder(builder: (ctx) {
+                            final customer = errand['customer'];
+                            String name;
+                            if (customer is List && customer.isNotEmpty) {
+                              name = customer[0]['full_name'] ?? 'Customer';
+                            } else if (customer is Map) {
+                              name = (customer['full_name'] as String?) ?? 'Customer';
+                            } else {
+                              name = 'Customer';
+                            }
+                            return Text(
+                              name,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                fontSize:
+                                    Responsive.isSmallMobile(context) ? 14 : 16,
+                              ),
+                            );
+                          }),
                           if (errand['customer']?['phone'] != null)
                             Text(
                               errand['customer']!['phone'],
@@ -1023,27 +1004,26 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ),
                     ),
                   ),
-                  if (MapUtils.getErrandNavigationAddress(errand) != null)
+                  if (!kIsWeb && status != 'completed' && MapUtils.getErrandNavigationAddress(errand) != null)
                     IconButton(
-                      icon: const Icon(Icons.directions),
+                      icon: const Icon(Icons.map_outlined),
                       iconSize: Responsive.isSmallMobile(context) ? 20 : 22,
-                      color: Theme.of(context).colorScheme.primary,
-                      tooltip: 'Follow route to location',
+                      color: LottoRunnersColors.primaryBlue,
+                      tooltip: 'View Route on Map',
                       onPressed: () {
-                        final address =
-                            MapUtils.getErrandNavigationAddress(errand);
-                        if (address != null) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => RouteMapPage(
-                                destinationAddress: address,
-                                title: errand['title']?.toString(),
-                              ),
+                        final address = MapUtils.getErrandNavigationAddress(errand);
+                        Navigator.push(
+                          context,
+                          PageTransitions.slideFromBottom(
+                            RouteMapPage(
+                              dropoffAddress: address,
+                              title: 'Errand Route',
                             ),
-                          );
-                        }
+                          ),
+                        );
                       },
                     ),
+
                   const SizedBox(width: 16),
                   const Icon(Icons.schedule,
                       color: LottoRunnersColors.primaryYellow, size: 16),
@@ -1465,7 +1445,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           return 'Deliver to: ${deliveryAddress.toString().trim()}';
         }
         // Fallback to location_address (store names)
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       case 'delivery':
         // For delivery, show pickup → delivery
@@ -1488,7 +1468,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         } else if (deliveryAddress != null) {
           return 'To: ${deliveryAddress.toString().trim()}';
         }
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       case 'document_services':
       case 'license_discs':
@@ -1510,13 +1490,13 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           return 'Pickup: ${pickupLocation.toString().trim()}';
         }
         // Fallback to location_address
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       case 'elderly_services':
       case 'queue_sitting':
       default:
         // For these services, location_address is the primary location
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
     }
   }
 
@@ -1641,30 +1621,93 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       '${errand['time_limit_hours']}h', Icons.timer, theme),
                   _buildDetailRow('Location', _getDisplayLocation(errand),
                       Icons.location_on, theme),
-                  if (MapUtils.getErrandNavigationAddress(errand) != null)
+                  if (!kIsWeb && status != 'completed' && MapUtils.getErrandNavigationAddress(errand) != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          final address =
-                              MapUtils.getErrandNavigationAddress(errand);
-                          if (address != null) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => RouteMapPage(
-                                  destinationAddress: address,
-                                  title: errand['title']?.toString(),
-                                ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                final address = MapUtils.getErrandNavigationAddress(errand);
+                                Navigator.push(
+                                  context,
+                                  PageTransitions.slideFromBottom(
+                                    RouteMapPage(
+                                      dropoffAddress: address,
+                                      title: 'Errand Route',
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.map_outlined, size: 18),
+                              label: const Text('View Route'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: LottoRunnersColors.primaryBlue,
+                                side: const BorderSide(color: LottoRunnersColors.primaryBlue),
                               ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.directions, size: 18),
-                        label: const Text('Follow route to location'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: theme.colorScheme.primary,
-                          side: BorderSide(color: theme.colorScheme.primary),
-                        ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final address =
+                                    MapUtils.getErrandNavigationAddress(errand);
+                                if (address == null) return;
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Starting navigation...')),
+                                );
+
+                                try {
+                                  final coords =
+                                      await LocationService.getCoordinatesFromAddress(
+                                    address,
+                                  );
+                                  if (coords == null) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Could not find location coordinates.')),
+                                      );
+                                    }
+                                    return;
+                                  }
+
+                                  final currentPos =
+                                      await LocationService.getCurrentPosition();
+                                  if (currentPos == null) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Could not determine your current location.')),
+                                      );
+                                    }
+                                    return;
+                                  }
+
+                                  await MapboxNavigationService().startNavigation(
+                                    wayPoints: [
+                                      WayPoint(name: 'Start', latitude: currentPos.latitude, longitude: currentPos.longitude),
+                                      WayPoint(name: address, latitude: coords['latitude']!, longitude: coords['longitude']!),
+                                    ],
+                                  );
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error starting navigation: $e')),
+                                    );
+                                  }
+                                }
+                              },
+                              icon: const Icon(Icons.navigation, size: 18),
+                              label: const Text('Voice Nav'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: LottoRunnersColors.primaryBlue,
+                                side: const BorderSide(color: LottoRunnersColors.primaryBlue),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   if (errand['customer'] != null)
@@ -1960,7 +2003,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
   Future<void> _startErrand(Map<String, dynamic> errand) async {
     final theme = Theme.of(context);
     try {
-      print(' Starting errand with ID: ${errand['id']}');
+      appLog(' Starting errand with ID: ${errand['id']}');
 
       // Start errand directly without confirmation
 
@@ -1992,14 +2035,20 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         ),
       );
 
-      print('📡 Calling SupabaseConfig.startErrand...');
+      appLog('📡 Calling SupabaseConfig.startErrand...');
       await SupabaseConfig.startErrand(errand['id']);
-      print(' SupabaseConfig.startErrand completed successfully');
+      appLog(' SupabaseConfig.startErrand completed successfully');
+      
+      try {
+        await TrackingService().startTracking(errand['id'], SupabaseConfig.currentUser!.id);
+      } catch (e) {
+        appLog('Error starting tracking: $e');
+      }
 
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
         _showSuccessSnackBar('Errand started successfully!');
-        print('🔄 Refreshing errands list...');
+        appLog('🔄 Refreshing errands list...');
         _loadRunnerErrands(); // Refresh the list
       }
     } catch (e) {
@@ -2101,6 +2150,12 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           await ChatService.getConversationByErrand(errand['id']);
       if (conversation != null) {
         await ChatService.deleteConversation(conversation['id']);
+      }
+      
+      try {
+        await TrackingService().stopTracking();
+      } catch (e) {
+        appLog('Error stopping tracking: $e');
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2220,7 +2275,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                     onSelected: (selected) {
                       setState(() {
                         _selectedStatus = status['value']!;
-                        print(
+                        appLog(
                             '🔄 Transportation status filter changed to: $_selectedStatus');
                       });
                     },
@@ -2362,7 +2417,8 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       Map<String, dynamic> booking, ThemeData theme) {
     final service = booking['service'];
     final schedule = booking['schedule'];
-    final user = booking['user'];
+    final rawUser = booking['user'];
+    final user = rawUser is List && rawUser.isNotEmpty ? rawUser[0] : (rawUser is Map ? rawUser : null);
     final route = service?['route'];
     final vehicleType = service?['vehicle_type'];
 
@@ -2496,6 +2552,26 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       ),
                     ),
                   ),
+                  if (!kIsWeb && booking['status'] != 'completed' && (booking['pickup_location'] != null || booking['dropoff_location'] != null))
+                    IconButton(
+                      icon: const Icon(Icons.map_outlined),
+                      iconSize: 20,
+                      color: LottoRunnersColors.primaryBlue,
+                      tooltip: 'View Full Route',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          PageTransitions.slideFromBottom(
+                            RouteMapPage(
+                              pickupAddress: booking['pickup_location']?.toString(),
+                              dropoffAddress: booking['dropoff_location']?.toString(),
+                              title: 'Trip Route',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
                 ],
               ),
               const SizedBox(height: 8),
@@ -2518,7 +2594,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       color: LottoRunnersColors.primaryYellow, size: 16),
                   const SizedBox(width: 4),
                   Text(
-                    '${booking['booking_date'] ?? 'TBD'} ${booking['booking_time'] ?? ''}',
+                    _formatBookingSchedule(booking),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: Responsive.isSmallMobile(context) ? 12 : 13,
@@ -2561,16 +2637,16 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                     child: ElevatedButton.icon(
                       onPressed: () {
                         // Check booking type and call appropriate acceptance function
-                        print(
+                        appLog(
                             '🔍 DEBUG: Booking type check - booking_type: ${booking['booking_type']}');
-                        print(
+                        appLog(
                             '🔍 DEBUG: Booking type check - booking data: ${booking.toString()}');
 
                         if (booking['booking_type'] == 'contract') {
-                          print('✅ DEBUG: Routing to contract acceptance');
+                          appLog('✅ DEBUG: Routing to contract acceptance');
                           _acceptContractBooking(booking);
                         } else {
-                          print(
+                          appLog(
                               '✅ DEBUG: Routing to transportation acceptance');
                           _acceptTransportationBooking(booking);
                         }
@@ -2749,7 +2825,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
   /// Open chat with customer for accepted bookings (transportation or contract)
   Future<void> _openChatWithCustomer(Map<String, dynamic> booking) async {
     try {
-      print(
+      appLog(
           '🔍 DEBUG: [CHAT] Booking type check - booking_type: ${booking['booking_type']}');
 
       final isContract = booking['booking_type'] == 'contract';
@@ -2757,7 +2833,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       final serviceTitle =
           isContract ? 'Contract Service' : 'Transportation Service';
 
-      print('✅ DEBUG: [CHAT] Using conversation type: $conversationType');
+      appLog('✅ DEBUG: [CHAT] Using conversation type: $conversationType');
 
       // Get existing conversation based on booking type
       final conversation = isContract
@@ -2819,7 +2895,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         }
       }
     } catch (e) {
-      print('Error opening chat: $e');
+      appLog('Error opening chat: $e');
       if (mounted) {
         _showErrorSnackBar(
             'Unable to open chat. Please check your internet connection and try again.');
@@ -2829,30 +2905,27 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
 
   Future<void> _acceptContractBooking(Map<String, dynamic> booking) async {
     try {
-      print('🚀 DEBUG: [CONTRACT] Starting contract booking acceptance...');
-      print('🚀 DEBUG: [CONTRACT] Booking type: ${booking['booking_type']}');
-      print('🚀 DEBUG: [CONTRACT] Booking ID: ${booking['id']}');
-      _addDebugInfo('🚀 Starting contract booking acceptance...');
-      _addDebugInfo('📋 Booking data: ${booking.toString()}');
-      _addDebugInfo('🆔 Booking ID: ${booking['id']}');
+      appLog('🚀 DEBUG: [CONTRACT] Starting contract booking acceptance...');
+      appLog('🚀 DEBUG: [CONTRACT] Booking type: ${booking['booking_type']}');
+      appLog('🚀 DEBUG: [CONTRACT] Booking ID: ${booking['id']}');
 
       final userId = SupabaseConfig.currentUser?.id;
-      print('👤 DEBUG: [RUNNER DASHBOARD] Current user ID: $userId');
+      appLog('👤 DEBUG: [RUNNER DASHBOARD] Current user ID: $userId');
 
       if (userId == null) {
-        print('❌ DEBUG: [RUNNER DASHBOARD] No user ID found');
+        appLog('❌ DEBUG: [RUNNER DASHBOARD] No user ID found');
         _showErrorSnackBar('Please sign in to accept bookings.');
         return;
       }
 
       // Check if runner can accept more transportation bookings
-      print('🚦 DEBUG: [RUNNER DASHBOARD] Runner limits: $_runnerLimits');
+      appLog('🚦 DEBUG: [RUNNER DASHBOARD] Runner limits: $_runnerLimits');
       final canAccept = _runnerLimits['can_accept_transportation'] ?? false;
-      print(
+      appLog(
           '🚦 DEBUG: [RUNNER DASHBOARD] Can accept transportation: $canAccept');
 
       if (!canAccept) {
-        print('❌ DEBUG: [RUNNER DASHBOARD] Runner limit reached');
+        appLog('❌ DEBUG: [RUNNER DASHBOARD] Runner limit reached');
         _showErrorSnackBar(
           'You have reached the maximum limit of 2 active jobs. Please complete all jobs before accepting new ones.',
         );
@@ -2860,79 +2933,61 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       }
 
       // Accept contract booking directly without confirmation
-      final customerName = booking['user']?['full_name'] ?? 'Unknown Customer';
-      final description = booking['description'] ?? 'Contract booking';
-
-      print('✅ DEBUG: [RUNNER DASHBOARD] User confirmed contract acceptance');
+      appLog('✅ DEBUG: [RUNNER DASHBOARD] User confirmed contract acceptance');
 
       // Accept the contract booking
       try {
         await SupabaseConfig.acceptContractBooking(booking['id'], userId);
 
-        _addDebugInfo('✅ Contract booking accepted successfully');
         _showSuccessSnackBar('Contract booking accepted successfully!');
 
         // Refresh data
         await _loadData();
       } catch (e) {
-        print('❌ DEBUG: [RUNNER DASHBOARD] Contract acceptance error: $e');
-        _addDebugInfo('❌ Contract acceptance error: $e');
+        appLog('❌ DEBUG: [RUNNER DASHBOARD] Contract acceptance error: $e');
         String errorMsg = _getUserFriendlyErrorMessage(e.toString());
         _showErrorSnackBar(errorMsg);
-        _showDebugDialog();
       }
     } catch (e, stackTrace) {
-      print(
+      appLog(
           '💥 DEBUG: [RUNNER DASHBOARD] Exception caught in _acceptContractBooking');
-      print('💥 DEBUG: [RUNNER DASHBOARD] Error: $e');
-      print('💥 DEBUG: [RUNNER DASHBOARD] Stack trace: $stackTrace');
-
-      _addDebugInfo('💥 Exception caught: $e');
+      appLog('💥 DEBUG: [RUNNER DASHBOARD] Error: $e');
+      appLog('💥 DEBUG: [RUNNER DASHBOARD] Stack trace: $stackTrace');
 
       // Check if this is a limit-related error and show user-friendly message
       String errorMessage = _getUserFriendlyErrorMessage(e.toString());
       _showErrorSnackBar(errorMessage);
-
-      // Only show debug dialog for non-limit errors
-      if (!e.toString().contains('limit') &&
-          !e.toString().contains('maximum')) {
-        _showDebugDialog();
-      }
     }
   }
 
   Future<void> _acceptTransportationBooking(
       Map<String, dynamic> booking) async {
     try {
-      _addDebugInfo('🚀 Starting transportation booking acceptance...');
-      _addDebugInfo('📋 Booking data: ${booking.toString()}');
-      _addDebugInfo('🆔 Booking ID: ${booking['id']}');
-      _addDebugInfo('🆔 Booking ID type: ${booking['id'].runtimeType}');
-      print(
+      appLog(
           '🚀 DEBUG: [RUNNER DASHBOARD] Starting transportation booking acceptance...');
-      print('📋 DEBUG: [RUNNER DASHBOARD] Booking data: ${booking.toString()}');
-      print('🆔 DEBUG: [RUNNER DASHBOARD] Booking ID: ${booking['id']}');
-      print(
+      appLog('📋 DEBUG: [RUNNER DASHBOARD] Booking data: ${booking.toString()}');
+      appLog('🆔 DEBUG: [RUNNER DASHBOARD] Booking ID: ${booking['id']}');
+      appLog(
           '🆔 DEBUG: [RUNNER DASHBOARD] Booking ID type: ${booking['id'].runtimeType}');
 
       // Check runner limits first
       final userId = SupabaseConfig.currentUser?.id;
-      print('👤 DEBUG: [RUNNER DASHBOARD] Current user ID: $userId');
+      appLog('👤 DEBUG: [RUNNER DASHBOARD] Current user ID: $userId');
 
       if (userId == null) {
-        print('❌ DEBUG: [RUNNER DASHBOARD] No user ID found');
+        appLog('❌ DEBUG: [RUNNER DASHBOARD] No user ID found');
         _showErrorSnackBar('Please sign in to accept bookings.');
         return;
       }
 
       // Check if runner can accept more transportation bookings
-      print('🚦 DEBUG: [RUNNER DASHBOARD] Runner limits: $_runnerLimits');
+      appLog('🚦 DEBUG: [RUNNER DASHBOARD] Runner limits: $_runnerLimits');
       final canAccept = _runnerLimits['can_accept_transportation'] ?? false;
-      print(
+      appLog(
           '🚦 DEBUG: [RUNNER DASHBOARD] Can accept transportation: $canAccept');
 
       if (!canAccept) {
-        print('❌ DEBUG: [RUNNER DASHBOARD] Runner limit reached');
+        appLog('❌ DEBUG: [RUNNER DASHBOARD] Runner limit reached');
         _showErrorSnackBar(
           'You have reached the maximum limit of 2 active jobs. Please complete all jobs before accepting new ones.',
         );
@@ -2940,7 +2995,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       }
 
       // Show confirmation dialog
-      print('💬 DEBUG: [RUNNER DASHBOARD] Showing confirmation dialog...');
+      appLog('💬 DEBUG: [RUNNER DASHBOARD] Showing confirmation dialog...');
 
       // Get customer name and booking details
       final customerName = booking['user']?['full_name'] ??
@@ -2950,14 +3005,14 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       final dropoffLocation =
           booking['dropoff_location'] ?? 'Unknown destination';
 
-      print('💬 DEBUG: [RUNNER DASHBOARD] Customer name: $customerName');
-      print('💬 DEBUG: [RUNNER DASHBOARD] Pickup: $pickupLocation');
-      print('💬 DEBUG: [RUNNER DASHBOARD] Dropoff: $dropoffLocation');
+      appLog('💬 DEBUG: [RUNNER DASHBOARD] Customer name: $customerName');
+      appLog('💬 DEBUG: [RUNNER DASHBOARD] Pickup: $pickupLocation');
+      appLog('💬 DEBUG: [RUNNER DASHBOARD] Dropoff: $dropoffLocation');
 
       // Accept shuttle service directly without confirmation
-      print('💬 DEBUG: [RUNNER DASHBOARD] Accepting shuttle service directly');
+      appLog('💬 DEBUG: [RUNNER DASHBOARD] Accepting shuttle service directly');
 
-      print('✅ DEBUG: [RUNNER DASHBOARD] User confirmed acceptance');
+      appLog('✅ DEBUG: [RUNNER DASHBOARD] User confirmed acceptance');
 
       // Check if this is a bus service (runners cannot accept bus services)
       final serviceName =
@@ -2965,12 +3020,12 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       final subcategoryName = booking['service']?['subcategory']?['name'] ?? '';
       final isBusService = subcategoryName.toLowerCase().contains('bus');
 
-      print('🚌 DEBUG: [RUNNER DASHBOARD] Service name: $serviceName');
-      print('🚌 DEBUG: [RUNNER DASHBOARD] Subcategory name: $subcategoryName');
-      print('🚌 DEBUG: [RUNNER DASHBOARD] Is bus service: $isBusService');
+      appLog('🚌 DEBUG: [RUNNER DASHBOARD] Service name: $serviceName');
+      appLog('🚌 DEBUG: [RUNNER DASHBOARD] Subcategory name: $subcategoryName');
+      appLog('🚌 DEBUG: [RUNNER DASHBOARD] Is bus service: $isBusService');
 
       if (isBusService) {
-        print('❌ DEBUG: [RUNNER DASHBOARD] Blocked - this is a bus service');
+        appLog('❌ DEBUG: [RUNNER DASHBOARD] Blocked - this is a bus service');
         _showErrorSnackBar(
             'Runners cannot accept bus service bookings. Bus services are scheduled routes.');
         return;
@@ -2983,30 +3038,25 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      print('📝 DEBUG: [RUNNER DASHBOARD] Update data: $updateData');
-      print('🆔 DEBUG: [RUNNER DASHBOARD] Booking ID: ${booking['id']}');
+      appLog('📝 DEBUG: [RUNNER DASHBOARD] Update data: $updateData');
+      appLog('🆔 DEBUG: [RUNNER DASHBOARD] Booking ID: ${booking['id']}');
 
       // Try to update the booking
-      print(
+      appLog(
           '🔄 DEBUG: [RUNNER DASHBOARD] Calling updateTransportationBooking...');
-      _addDebugInfo('🔄 Calling updateTransportationBooking...');
-      _addDebugInfo('🆔 With booking ID: ${booking['id']}');
-      _addDebugInfo('📝 With update data: $updateData');
 
       final success = await SupabaseConfig.updateTransportationBooking(
         booking['id'],
         updateData,
       );
 
-      print('📊 DEBUG: [RUNNER DASHBOARD] Update result: $success');
-      _addDebugInfo('📊 Update result: $success');
+      appLog('📊 DEBUG: [RUNNER DASHBOARD] Update result: $success');
 
       if (success) {
-        print('✅ DEBUG: [RUNNER DASHBOARD] Booking update successful');
-        _addDebugInfo('✅ Booking update successful');
+        appLog('✅ DEBUG: [RUNNER DASHBOARD] Booking update successful');
 
         // Create chat conversation between runner and customer
-        print('💬 DEBUG: [RUNNER DASHBOARD] Creating chat conversation...');
+        appLog('💬 DEBUG: [RUNNER DASHBOARD] Creating chat conversation...');
         final conversationId =
             await ChatService.createTransportationConversation(
           bookingId: booking['id'],
@@ -3015,11 +3065,11 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
           serviceName: serviceName,
         );
 
-        print('💬 DEBUG: [RUNNER DASHBOARD] Conversation ID: $conversationId');
+        appLog('💬 DEBUG: [RUNNER DASHBOARD] Conversation ID: $conversationId');
 
         if (conversationId != null) {
           // Notify runner that they successfully accepted the booking
-          print('🔔 DEBUG: [RUNNER DASHBOARD] Sending notification...');
+          appLog('🔔 DEBUG: [RUNNER DASHBOARD] Sending notification...');
           await NotificationService.notifyRunnerTransportationAccepted(
               serviceName);
 
@@ -3030,36 +3080,22 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         }
 
         // Refresh data to update limits
-        print('🔄 DEBUG: [RUNNER DASHBOARD] Refreshing data...');
+        appLog('🔄 DEBUG: [RUNNER DASHBOARD] Refreshing data...');
         await _loadData();
       } else {
-        print('❌ DEBUG: [RUNNER DASHBOARD] Booking update failed');
-        _addDebugInfo('❌ Booking update failed');
-        _addDebugInfo(
-            '💡 This might be due to stale data - try refreshing the page');
+        appLog('❌ DEBUG: [RUNNER DASHBOARD] Booking update failed');
         _showErrorSnackBar(
             'Failed to accept booking. The booking may have expired or been taken by another runner. Please refresh the page and try again.');
-        // Show debug dialog to help diagnose the issue
-        _showDebugDialog();
       }
     } catch (e, stackTrace) {
-      print(
+      appLog(
           '💥 DEBUG: [RUNNER DASHBOARD] Exception caught in _acceptTransportationBooking');
-      print('💥 DEBUG: [RUNNER DASHBOARD] Error: $e');
-      print('💥 DEBUG: [RUNNER DASHBOARD] Stack trace: $stackTrace');
-
-      _addDebugInfo('💥 Exception caught: $e');
-      _addDebugInfo('💥 Stack trace: $stackTrace');
+      appLog('💥 DEBUG: [RUNNER DASHBOARD] Error: $e');
+      appLog('💥 DEBUG: [RUNNER DASHBOARD] Stack trace: $stackTrace');
 
       // Check if this is a limit-related error and show user-friendly message
       String errorMessage = _getUserFriendlyErrorMessage(e.toString());
       _showErrorSnackBar(errorMessage);
-
-      // Only show debug dialog for non-limit errors
-      if (!e.toString().contains('limit') &&
-          !e.toString().contains('maximum')) {
-        _showDebugDialog();
-      }
     }
   }
 
@@ -3098,14 +3134,14 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       );
 
       // Check booking type and call appropriate start function
-      print(
+      appLog(
           '🔍 DEBUG: [START TRIP] Booking type check - booking_type: ${booking['booking_type']}');
 
       if (booking['booking_type'] == 'contract') {
-        print('✅ DEBUG: [START TRIP] Starting contract booking');
+        appLog('✅ DEBUG: [START TRIP] Starting contract booking');
         await SupabaseConfig.startContractBooking(booking['id']);
       } else {
-        print('✅ DEBUG: [START TRIP] Starting transportation booking');
+        appLog('✅ DEBUG: [START TRIP] Starting transportation booking');
         await SupabaseConfig.startTransportationBooking(booking['id']);
       }
 
@@ -3126,6 +3162,13 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
+        
+        if (e.toString().contains('PAYMENT_REQUIRED')) {
+          _showErrorSnackBar(
+              'Payment required. The customer has not yet completed the upfront payment for this ${booking['booking_type'] == 'contract' ? 'contract' : 'shuttle'} service.');
+          return;
+        }
+
         _showErrorSnackBar(
             'Failed to start ${booking['booking_type'] == 'contract' ? 'contract service' : 'shuttle service'}. Please try again.');
       }
@@ -3194,14 +3237,14 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
       );
 
       // Check booking type and call appropriate completion function
-      print(
+      appLog(
           '🔍 DEBUG: [COMPLETE TRIP] Booking type check - booking_type: ${booking['booking_type']}');
 
       if (booking['booking_type'] == 'contract') {
-        print('✅ DEBUG: [COMPLETE TRIP] Completing contract booking');
+        appLog('✅ DEBUG: [COMPLETE TRIP] Completing contract booking');
         await SupabaseConfig.completeContractBooking(booking['id']);
       } else {
-        print('✅ DEBUG: [COMPLETE TRIP] Completing transportation booking');
+        appLog('✅ DEBUG: [COMPLETE TRIP] Completing transportation booking');
         await SupabaseConfig.completeTransportationBooking(booking['id']);
       }
 
@@ -3520,7 +3563,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                       'Service', serviceName, Icons.directions_bus, theme),
                   _buildDetailRow(
                       'Date & Time',
-                      '${booking['booking_date'] ?? 'TBD'} ${booking['booking_time'] ?? ''}',
+                      _formatBookingSchedule(booking),
                       Icons.schedule,
                       theme),
                   _buildDetailRow(
@@ -3629,15 +3672,98 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
                           Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      booking['special_requests']?.isNotEmpty == true
-                          ? booking['special_requests']
-                          : booking['notes'] ?? 'No description provided',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.6,
-                        fontSize: Responsive.isSmallMobile(context) ? 14 : 16,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          booking['special_requests']?.isNotEmpty == true
+                              ? booking['special_requests']
+                              : booking['notes'] ?? 'No description provided',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            height: 1.6,
+                            fontSize: Responsive.isSmallMobile(context) ? 14 : 16,
+                          ),
+                        ),
+                        if (booking['status'] == 'accepted' || booking['status'] == 'in_progress') ...[
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                PageTransitions.slideFromBottom(
+                                  RouteMapPage(
+                                    pickupAddress: booking['pickup_location']?.toString(),
+                                    dropoffAddress: booking['dropoff_location']?.toString(),
+                                    title: 'Contract Route',
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.map_outlined, size: 16),
+                            label: const Text('View Trip Route'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: LottoRunnersColors.primaryBlue,
+                              side: const BorderSide(color: LottoRunnersColors.primaryBlue),
+                              minimumSize: const Size(double.infinity, 44),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final address = booking['pickup_location']?.toString();
+                                    if (address == null) return;
+                                    final coords = await LocationService.getCoordinatesFromAddress(address);
+                                    final currentPos = await LocationService.getCurrentPosition();
+                                    if (coords != null && currentPos != null) {
+                                      await MapboxNavigationService().startNavigation(
+                                        wayPoints: [
+                                          WayPoint(name: 'Start', latitude: currentPos.latitude, longitude: currentPos.longitude),
+                                          WayPoint(name: 'Pickup', latitude: coords['latitude']!, longitude: coords['longitude']!),
+                                        ],
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.navigation, size: 16),
+                                  label: const Text('To Pickup'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: LottoRunnersColors.primaryBlue,
+                                    side: const BorderSide(color: LottoRunnersColors.primaryBlue),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final address = booking['dropoff_location']?.toString();
+                                    if (address == null) return;
+                                    final coords = await LocationService.getCoordinatesFromAddress(address);
+                                    final currentPos = await LocationService.getCurrentPosition();
+                                    if (coords != null && currentPos != null) {
+                                      await MapboxNavigationService().startNavigation(
+                                        wayPoints: [
+                                          WayPoint(name: 'Start', latitude: currentPos.latitude, longitude: currentPos.longitude),
+                                          WayPoint(name: 'Dropoff', latitude: coords['latitude']!, longitude: coords['longitude']!),
+                                        ],
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.navigation, size: 16),
+                                  label: const Text('To Dropoff'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: LottoRunnersColors.primaryBlue,
+                                    side: const BorderSide(color: LottoRunnersColors.primaryBlue),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
                     ),
                   ),
 
@@ -3902,7 +4028,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         }
       }
     } catch (e) {
-      print('Error opening chat: $e');
+      appLog('Error opening chat: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -4073,7 +4199,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         }
       }
     } catch (e) {
-      print('Error cancelling shuttle service: $e');
+      appLog('Error cancelling shuttle service: $e');
       _showErrorSnackBar('An error occurred. Please try again.');
     }
   }
@@ -4230,7 +4356,7 @@ class _RunnerDashboardPageState extends State<RunnerDashboardPage>
         ),
       );
     } catch (e) {
-      print('Error loading notifications: $e');
+      appLog('Error loading notifications: $e');
       _showErrorSnackBar('Failed to load notifications');
     }
   }

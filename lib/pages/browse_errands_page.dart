@@ -3,6 +3,7 @@ import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/widgets/errand_card.dart';
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class BrowseErrandsPage extends StatefulWidget {
   const BrowseErrandsPage({super.key});
@@ -65,7 +66,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
         });
       }
     } catch (e) {
-      print('Error loading user profile: $e');
+      appLog('Error loading user profile: $e');
     }
   }
 
@@ -104,7 +105,7 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
         _animationController.forward();
       }
     } catch (e) {
-      print('Error loading errands: $e');
+      appLog('Error loading errands: $e');
       setState(() {
         _isLoading = false;
       });
@@ -898,9 +899,9 @@ class _BrowseErrandsPageState extends State<BrowseErrandsPage>
               color: theme.colorScheme.onPrimary,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Column(
+            child: const Column(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 CircularProgressIndicator(
                   valueColor:
                       AlwaysStoppedAnimation(LottoRunnersColors.primaryBlue),

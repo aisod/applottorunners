@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class RideWaitingScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
@@ -114,7 +115,7 @@ class _RideWaitingScreenState extends State<RideWaitingScreen>
         }
       }
     } catch (e) {
-      print('Error checking booking status: $e');
+      appLog('Error checking booking status: $e');
     }
   }
 
@@ -140,7 +141,7 @@ class _RideWaitingScreenState extends State<RideWaitingScreen>
 
       widget.onBookingCancelled?.call();
     } catch (e) {
-      print('Error handling timeout: $e');
+      appLog('Error handling timeout: $e');
       widget.onBookingCancelled?.call();
     }
   }

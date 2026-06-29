@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to handle scheduled contract booking notifications with different reminder intervals
 /// Uses contract_start_date and contract_start_time columns for precise timing
@@ -19,7 +20,7 @@ class ScheduledContractNotificationService {
     if (!_isInitialized) {
       _startScheduledCheck();
       _isInitialized = true;
-      print('⏰ Scheduled contract notification service initialized');
+      appLog('⏰ Scheduled contract notification service initialized');
     }
   }
 
@@ -32,7 +33,7 @@ class ScheduledContractNotificationService {
       _checkScheduledContracts();
     });
 
-    print('⏰ [Scheduled] Starting scheduled contract checks every 5 minutes');
+    appLog('⏰ [Scheduled] Starting scheduled contract checks every 5 minutes');
   }
 
   /// Check for scheduled contract bookings and send appropriate notifications
@@ -41,7 +42,7 @@ class ScheduledContractNotificationService {
       final user = SupabaseConfig.currentUser;
       if (user == null) return;
 
-      print('🔍 [Scheduled] Checking for scheduled contract bookings...');
+      appLog('🔍 [Scheduled] Checking for scheduled contract bookings...');
 
       // Get user's scheduled contract bookings using contract_start_date and contract_start_time
       // Include driver_id for notifications
@@ -58,7 +59,7 @@ class ScheduledContractNotificationService {
         await _checkContractReminders(contract, now);
       }
     } catch (e) {
-      print('❌ [Scheduled] Error checking scheduled contracts: $e');
+      appLog('❌ [Scheduled] Error checking scheduled contracts: $e');
     }
   }
 
@@ -89,7 +90,7 @@ class ScheduledContractNotificationService {
       await _sendReminderIfNeeded(
           contract, minutesUntilStart, hoursUntilStart, daysUntilStart);
     } catch (e) {
-      print(
+      appLog(
           '❌ [Scheduled] Error checking reminders for contract ${contract['id']}: $e');
     }
   }
@@ -223,10 +224,10 @@ class ScheduledContractNotificationService {
         });
       }
 
-      print(
+      appLog(
           '📱 [Scheduled] Sent reminder: $title for contract ${contract['id']}');
     } catch (e) {
-      print('❌ [Scheduled] Error sending contract reminder notification: $e');
+      appLog('❌ [Scheduled] Error sending contract reminder notification: $e');
     }
   }
 
@@ -268,7 +269,7 @@ class ScheduledContractNotificationService {
 
       return upcoming;
     } catch (e) {
-      print('❌ [Scheduled] Error fetching upcoming contracts: $e');
+      appLog('❌ [Scheduled] Error fetching upcoming contracts: $e');
       return [];
     }
   }
@@ -291,6 +292,6 @@ class ScheduledContractNotificationService {
   void dispose() {
     _checkTimer?.cancel();
     _isInitialized = false;
-    print('⏰ [Scheduled] Scheduled contract notification service disposed');
+    appLog('⏰ [Scheduled] Scheduled contract notification service disposed');
   }
 }

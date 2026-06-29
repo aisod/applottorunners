@@ -9,6 +9,8 @@ import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
 import 'package:lotto_runners/pages/paytoday_payment_page.dart';
 import 'package:lotto_runners/services/paytoday_config.dart';
+import 'package:lotto_runners/pages/customer_tracking_page.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class MyErrandsPage extends StatefulWidget {
   const MyErrandsPage({super.key});
@@ -129,7 +131,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
         });
       }
     } catch (e) {
-      print('Error loading errands: $e');
+      appLog('Error loading errands: $e');
       setState(() {
         _isLoading = false;
       });
@@ -265,13 +267,13 @@ class _MyErrandsPageState extends State<MyErrandsPage>
 
   void _updateErrandStatus(Map<String, dynamic> errand) {
     // Implementation for updating errand status
-    print('Updating errand status: ${errand['id']}');
+    appLog('Updating errand status: ${errand['id']}');
   }
 
   Future<void> _approvePrice(Map<String, dynamic> errand) async {
     try {
-      print('🎯 Approving price for errand: ${errand['id']}');
-      print('🎯 Current status: ${errand['status']}');
+      appLog('🎯 Approving price for errand: ${errand['id']}');
+      appLog('🎯 Current status: ${errand['status']}');
 
       await SupabaseConfig.approveSpecialOrderPrice(errand['id']);
 
@@ -289,9 +291,9 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           (e) => e['id'] == errand['id'],
           orElse: () => {},
         );
-        print('🎯 After refresh - Errand status: ${approvedErrand['status']}');
-        print('🎯 Total errands in list: ${_errands.length}');
-        print(
+        appLog('🎯 After refresh - Errand status: ${approvedErrand['status']}');
+        appLog('🎯 Total errands in list: ${_errands.length}');
+        appLog(
             '🎯 Posted errands: ${_errands.where((e) => e['status'] == 'posted').length}');
 
         if (mounted) {
@@ -306,7 +308,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
         }
       }
     } catch (e) {
-      print('❌ Error approving price: $e');
+      appLog('❌ Error approving price: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -440,7 +442,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           }
         }
       } catch (e) {
-        print('Error opening chat: $e');
+        appLog('Error opening chat: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -494,7 +496,7 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           }
         }
       } catch (e) {
-        print('Error opening chat: $e');
+        appLog('Error opening chat: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -569,20 +571,20 @@ class _MyErrandsPageState extends State<MyErrandsPage>
 
   Widget _buildErrandsList(
       List<String> statusFilter, String tabType, ThemeData theme) {
-    print('📋 Building errands list for tab: $tabType');
-    print('📋 Status filter: $statusFilter');
-    print('📋 Total errands: ${_errands.length}');
+    appLog('📋 Building errands list for tab: $tabType');
+    appLog('📋 Status filter: $statusFilter');
+    appLog('📋 Total errands: ${_errands.length}');
 
     final filteredErrands = _errands.where((errand) {
       final matches = statusFilter.contains(errand['status']);
       if (errand['category'] == 'special_orders') {
-        print(
+        appLog(
             '📋 Special order ${errand['id']}: status=${errand['status']}, matches=$matches');
       }
       return matches;
     }).toList();
 
-    print('📋 Filtered errands for $tabType: ${filteredErrands.length}');
+    appLog('📋 Filtered errands for $tabType: ${filteredErrands.length}');
 
     if (filteredErrands.isEmpty) {
       return _buildEmptyState(tabType, theme);
@@ -604,6 +606,8 @@ class _MyErrandsPageState extends State<MyErrandsPage>
           VoidCallback? onPay;
           bool showApproveButton = false;
           VoidCallback? onApprove;
+          bool showLiveTrackButton = false;
+          VoidCallback? onLiveTrack;
 
           if (isCustomer) {
             final paymentStatus = _calculatePaymentStatus(errand);
@@ -620,6 +624,16 @@ class _MyErrandsPageState extends State<MyErrandsPage>
                 paymentStatusFromDb == 'in_escrow') {
               showApproveButton = true;
               onApprove = () => _handleApprovePayment(errand);
+            }
+            
+            if (errand['status'] == 'in_progress') {
+              showLiveTrackButton = true;
+              onLiveTrack = () {
+                Navigator.push(
+                  context,
+                  PageTransitions.slideFromBottom(CustomerTrackingPage(errand: errand)),
+                );
+              };
             }
           }
 
@@ -646,6 +660,8 @@ class _MyErrandsPageState extends State<MyErrandsPage>
               payButtonText: payButtonText,
               showApproveButton: showApproveButton,
               onApprove: onApprove,
+              showLiveTrackButton: showLiveTrackButton,
+              onLiveTrack: onLiveTrack,
             ),
           );
         },

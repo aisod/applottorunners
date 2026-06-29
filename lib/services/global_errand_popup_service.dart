@@ -4,6 +4,7 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/widgets/new_errand_request_popup.dart';
 import 'package:lotto_runners/services/notification_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Global service to manage errand request popups across the entire app
 class GlobalErrandPopupService {
@@ -29,7 +30,7 @@ class GlobalErrandPopupService {
     if (!_isInitialized) {
       _startPolling();
       _isInitialized = true;
-      print('🌍 Global errand popup service initialized');
+      appLog('🌍 Global errand popup service initialized');
     }
   }
 
@@ -42,12 +43,12 @@ class GlobalErrandPopupService {
   void _startPolling() {
     _checkTimer?.cancel();
 
-    print('⏱️ [Global] Starting errand request polling every 30 seconds');
+    appLog('⏱️ [Global] Starting errand request polling every 30 seconds');
     _checkTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (_currentContext != null) {
         _checkForNewErrandRequests();
       } else {
-        print('❌ [Global] No context available, stopping timer');
+        appLog('❌ [Global] No context available, stopping timer');
         timer.cancel();
       }
     });
@@ -61,19 +62,19 @@ class GlobalErrandPopupService {
 
       // Skip if popup is already showing
       if (_currentPopup != null) {
-        print('⏭️ [Global] Skipping check - popup already visible');
+        appLog('⏭️ [Global] Skipping check - popup already visible');
         return;
       }
 
-      print('🔍 [Global] Checking for new errand requests...');
+      appLog('🔍 [Global] Checking for new errand requests...');
 
       final user = SupabaseConfig.currentUser;
       if (user == null) {
-        print('❌ [Global] No current user - skipping errand request check');
+        appLog('❌ [Global] No current user - skipping errand request check');
         return;
       }
 
-      print('👤 [Global] Current user ID: ${user.id}');
+      appLog('👤 [Global] Current user ID: ${user.id}');
 
       // Check if user has a runner application (approved or pending)
       final runnerApp = await SupabaseConfig.client
@@ -83,42 +84,42 @@ class GlobalErrandPopupService {
           .maybeSingle();
 
       if (runnerApp == null) {
-        print(
+        appLog(
             '❌ [Global] User has no runner application - skipping global errand popup service');
         return;
       }
 
-      print(
+      appLog(
           '👤 [Global] Runner application status: ${runnerApp['verification_status']}');
 
       // Additional check: Get complete user profile to ensure they're actually a runner
       final userProfile = await SupabaseConfig.getCompleteUserProfile(user.id);
       if (userProfile == null) {
-        print(
+        appLog(
             '❌ [Global] Could not get user profile - skipping global errand popup service');
         return;
       }
 
       if (userProfile['user_type'] != 'runner') {
-        print(
+        appLog(
             '❌ [Global] User is not a runner type (${userProfile['user_type']}) - skipping global errand popup service');
         return;
       }
 
-      print(
+      appLog(
           '✅ [Global] User is a runner - proceeding with errand popup service');
 
       // Get runner's vehicle type for filtering
       final runnerVehicleType = userProfile['vehicle_type']?.toString() ?? '';
       final hasVehicle = userProfile['has_vehicle'] ?? false;
 
-      print(
+      appLog(
           '🚗 [Global] Runner vehicle info - has_vehicle: $hasVehicle, vehicle_type: "$runnerVehicleType"');
-      print('🚗 [Global] Runner profile keys: ${userProfile.keys.toList()}');
-      print('🚗 [Global] Runner user_type: ${userProfile['user_type']}');
+      appLog('🚗 [Global] Runner profile keys: ${userProfile.keys.toList()}');
+      appLog('🚗 [Global] Runner user_type: ${userProfile['user_type']}');
 
       // Get pending immediate errands
-      print('🔍 [Global] Querying database for immediate errands...');
+      appLog('🔍 [Global] Querying database for immediate errands...');
       final errands = await SupabaseConfig.client
           .from('errands')
           .select('''
@@ -130,11 +131,11 @@ class GlobalErrandPopupService {
           .filter('runner_id', 'is', null)
           .order('created_at', ascending: false);
 
-      print('📋 [Global] Found ${errands.length} pending immediate errands');
+      appLog('📋 [Global] Found ${errands.length} pending immediate errands');
 
       // Debug: Print details of each errand
       for (var errand in errands) {
-        print(
+        appLog(
             '📋 [Global] Errand: ${errand['id']} - ${errand['title']} - vehicle_type: "${errand['vehicle_type']}"');
       }
 
@@ -142,74 +143,74 @@ class GlobalErrandPopupService {
       final filteredErrands = errands.where((errand) {
         final errandVehicleType = errand['vehicle_type']?.toString() ?? '';
 
-        print(
+        appLog(
             '🔍 [Global] Checking errand: ${errand['title']} - errand vehicle: "$errandVehicleType"');
 
         // If errand has no vehicle type, any runner can do it
         if (errandVehicleType.isEmpty) {
-          print(
+          appLog(
               '✅ [Global] Errand has no vehicle type - showing to all runners');
           return true;
         }
 
         // If errand has a vehicle type, only show to runners with matching vehicle type
         if (runnerVehicleType.isEmpty) {
-          print(
+          appLog(
               '❌ [Global] Runner has no vehicle type, can\'t do vehicle errands');
           return false; // Runner has no vehicle type, can't do vehicle errands
         }
 
         final matches =
             errandVehicleType.toLowerCase() == runnerVehicleType.toLowerCase();
-        print(
+        appLog(
             '${matches ? "✅" : "❌"} [Global] Vehicle type match: "$errandVehicleType" vs "$runnerVehicleType"');
         return matches;
       }).toList();
 
-      print(
+      appLog(
           '🚗 [Global] After vehicle filtering: ${filteredErrands.length} errands match runner vehicle type: $runnerVehicleType');
 
       for (final errand in filteredErrands) {
         // Check if this errand was dismissed or declined recently
         final errandId = errand['id'];
         if (_dismissedErrands.contains(errandId)) {
-          print('⏭️ [Global] Skipping dismissed errand: $errandId');
+          appLog('⏭️ [Global] Skipping dismissed errand: $errandId');
           continue;
         }
         if (_declinedErrands.contains(errandId)) {
-          print('⏭️ [Global] Skipping declined errand: $errandId');
+          appLog('⏭️ [Global] Skipping declined errand: $errandId');
           continue;
         }
 
         // Check if this is a new errand (not the current one)
         if (_currentRequest?['id'] != errand['id']) {
-          print('🎉 [Global] New matching errand found! Showing popup...');
-          print(
+          appLog('🎉 [Global] New matching errand found! Showing popup...');
+          appLog(
               '🎉 [Global] Errand details: ${errand['title']} - ${errand['vehicle_type']}');
           _showErrandRequestPopup(errand);
           break;
         } else {
-          print(
+          appLog(
               '⏭️ [Global] Errand ${errand['id']} is already being shown as popup');
         }
       }
     } catch (e) {
-      print('❌ [Global] Error checking for errand requests: $e');
+      appLog('❌ [Global] Error checking for errand requests: $e');
     }
   }
 
   /// Show errand request popup globally
   void _showErrandRequestPopup(Map<String, dynamic> errand) {
     if (_currentContext == null) {
-      print('❌ [Global] Cannot show popup - no context available');
+      appLog('❌ [Global] Cannot show popup - no context available');
       return;
     }
 
-    print(
+    appLog(
         '🚨 [Global] Showing errand request popup for errand: ${errand['id']}');
-    print('🚨 [Global] Errand title: ${errand['title']}');
-    print('🚨 [Global] Errand vehicle type: ${errand['vehicle_type']}');
-    print('🚨 [Global] Current context: ${_currentContext.runtimeType}');
+    appLog('🚨 [Global] Errand title: ${errand['title']}');
+    appLog('🚨 [Global] Errand vehicle type: ${errand['vehicle_type']}');
+    appLog('🚨 [Global] Current context: ${_currentContext.runtimeType}');
 
     // Hide any existing popup
     hidePopup();
@@ -229,9 +230,9 @@ class GlobalErrandPopupService {
     // Insert into overlay
     try {
       Overlay.of(_currentContext!).insert(_currentPopup!);
-      print('✅ [Global] Popup inserted into overlay successfully');
+      appLog('✅ [Global] Popup inserted into overlay successfully');
     } catch (e) {
-      print('❌ [Global] Error inserting popup into overlay: $e');
+      appLog('❌ [Global] Error inserting popup into overlay: $e');
     }
 
     // Auto-dismiss after 30 seconds
@@ -245,7 +246,7 @@ class GlobalErrandPopupService {
   /// Accept errand request
   Future<void> _acceptErrandRequest(Map<String, dynamic> errand) async {
     try {
-      print('✅ [Global] Accepting errand request: ${errand['id']}');
+      appLog('✅ [Global] Accepting errand request: ${errand['id']}');
 
       await SupabaseConfig.acceptErrand(
           errand['id'], SupabaseConfig.currentUser!.id);
@@ -268,7 +269,7 @@ class GlobalErrandPopupService {
 
       hidePopup();
     } catch (e) {
-      print('❌ [Global] Error accepting errand: $e');
+      appLog('❌ [Global] Error accepting errand: $e');
 
       // Show error snackbar
       if (_currentContext != null) {
@@ -284,13 +285,13 @@ class GlobalErrandPopupService {
 
   /// Decline errand request
   void _declineErrandRequest() {
-    print('❌ [Global] Errand request declined');
+    appLog('❌ [Global] Errand request declined');
 
     // Add to declined errands to prevent re-showing
     if (_currentRequest != null) {
       final errandId = _currentRequest!['id'];
       _declinedErrands.add(errandId);
-      print('🚫 [Global] Added errand $errandId to declined list');
+      appLog('🚫 [Global] Added errand $errandId to declined list');
     }
 
     hidePopup();
@@ -298,13 +299,13 @@ class GlobalErrandPopupService {
 
   /// Dismiss errand request
   void _dismissErrandRequest() {
-    print('👋 [Global] Errand request dismissed');
+    appLog('👋 [Global] Errand request dismissed');
 
     // Add to dismissed errands to prevent re-showing
     if (_currentRequest != null) {
       final errandId = _currentRequest!['id'];
       _dismissedErrands.add(errandId);
-      print('⏸️ [Global] Added errand $errandId to dismissed list');
+      appLog('⏸️ [Global] Added errand $errandId to dismissed list');
     }
 
     hidePopup();
@@ -312,9 +313,9 @@ class GlobalErrandPopupService {
 
   /// Dismiss a specific errand request by ID (public method)
   void dismissErrandById(String errandId) {
-    print('👋 [Global] Dismissing errand request by ID: $errandId');
+    appLog('👋 [Global] Dismissing errand request by ID: $errandId');
     _dismissedErrands.add(errandId);
-    print('⏸️ [Global] Added errand $errandId to dismissed list');
+    appLog('⏸️ [Global] Added errand $errandId to dismissed list');
   }
 
   /// Hide the current popup
@@ -326,7 +327,7 @@ class GlobalErrandPopupService {
 
   /// Manual check for new errand requests (for debug purposes)
   Future<void> manualCheck() async {
-    print('🔍 [Global] Manual check triggered');
+    appLog('🔍 [Global] Manual check triggered');
     await _checkForNewErrandRequests();
   }
 
@@ -344,7 +345,7 @@ class GlobalErrandPopupService {
   void clearDismissedErrands() {
     _dismissedErrands.clear();
     _declinedErrands.clear();
-    print('🧹 [Global] Cleared dismissed and declined errand tracking');
+    appLog('🧹 [Global] Cleared dismissed and declined errand tracking');
   }
 
   /// Dispose resources
@@ -354,7 +355,7 @@ class GlobalErrandPopupService {
     clearDismissedErrands();
     _currentContext = null;
     _isInitialized = false;
-    print('🌍 Global errand popup service disposed');
+    appLog('🌍 Global errand popup service disposed');
   }
 }
 

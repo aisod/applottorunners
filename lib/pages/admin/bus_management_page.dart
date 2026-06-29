@@ -5,6 +5,7 @@ import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/pages/chat_page.dart';
 import 'package:lotto_runners/services/chat_service.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Bus Management Services Page
 ///
@@ -88,11 +89,11 @@ class _BusManagementPageState extends State<BusManagementPage> {
   /// Accept a bus booking
   Future<void> _acceptBooking(String bookingId) async {
     try {
-      print('🔄 Accepting bus booking: $bookingId');
+      appLog('🔄 Accepting bus booking: $bookingId');
       final success =
           await SupabaseConfig.updateBusBookingStatus(bookingId, 'accepted');
       if (success) {
-        print('✅ Bus booking accepted successfully');
+        appLog('✅ Bus booking accepted successfully');
 
         // Create chat conversation for the accepted booking
         final booking = _busBookings.firstWhere((b) => b['id'] == bookingId);
@@ -104,18 +105,18 @@ class _BusManagementPageState extends State<BusManagementPage> {
         );
 
         if (conversationId != null) {
-          print('✅ Chat conversation created: $conversationId');
+          appLog('✅ Chat conversation created: $conversationId');
         }
 
         _showSuccessSnackBar('Booking accepted successfully!');
         await _loadBusBookings(); // Reload to update status
-        print('🔄 Bus bookings reloaded');
+        appLog('🔄 Bus bookings reloaded');
       } else {
-        print('❌ Failed to accept bus booking');
+        appLog('❌ Failed to accept bus booking');
         _showErrorSnackBar('Failed to accept booking. Please try again.');
       }
     } catch (e) {
-      print('❌ Error accepting bus booking: $e');
+      appLog('❌ Error accepting bus booking: $e');
       _showErrorSnackBar('Error accepting booking: $e');
     }
   }
@@ -123,21 +124,21 @@ class _BusManagementPageState extends State<BusManagementPage> {
   /// Update booking status
   Future<void> _updateBookingStatus(String bookingId, String status) async {
     try {
-      print('🔄 Updating bus booking status: $bookingId to $status');
+      appLog('🔄 Updating bus booking status: $bookingId to $status');
       final success =
           await SupabaseConfig.updateBusBookingStatus(bookingId, status);
       if (success) {
-        print('✅ Bus booking status updated successfully');
+        appLog('✅ Bus booking status updated successfully');
         _showSuccessSnackBar('Booking status updated to $status!');
         await _loadBusBookings(); // Reload to update status
-        print('🔄 Bus bookings reloaded');
+        appLog('🔄 Bus bookings reloaded');
       } else {
-        print('❌ Failed to update bus booking status');
+        appLog('❌ Failed to update bus booking status');
         _showErrorSnackBar(
             'Failed to update booking status. Please try again.');
       }
     } catch (e) {
-      print('❌ Error updating bus booking status: $e');
+      appLog('❌ Error updating bus booking status: $e');
       _showErrorSnackBar('Error updating status: $e');
     }
   }
@@ -184,7 +185,7 @@ class _BusManagementPageState extends State<BusManagementPage> {
         ),
       );
     } catch (e) {
-      print('❌ Error opening chat: $e');
+      appLog('❌ Error opening chat: $e');
       _showErrorSnackBar('Failed to open chat: $e');
     }
   }
@@ -248,10 +249,7 @@ class _BusManagementPageState extends State<BusManagementPage> {
             onPressed: _loadBusBookings,
             tooltip: 'Refresh Bookings',
           ),
-          // const ThemeToggleButton( // Commented out dark mode for now
-          //   foregroundColor: LottoRunnersColors.primaryYellow,
-          //   backgroundColor: Colors.transparent,
-          // ),
+
         ],
       ),
       body: Column(

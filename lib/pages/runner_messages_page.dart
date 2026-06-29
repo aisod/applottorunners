@@ -4,6 +4,7 @@ import '../utils/responsive.dart';
 import '../theme.dart';
 import 'package:intl/intl.dart';
 import 'message_chat_page.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Runner page for viewing messages from admin and replying
 class RunnerMessagesPage extends StatefulWidget {
@@ -31,8 +32,8 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
       final messages = await SupabaseConfig.getRunnerMessages();
       final unreadCount = await SupabaseConfig.getUnreadAdminMessagesCount();
 
-      print('📨 Runner loaded ${messages.length} messages');
-      print('📨 Unread messages: $unreadCount');
+      appLog('📨 Runner loaded ${messages.length} messages');
+      appLog('📨 Unread messages: $unreadCount');
 
       setState(() {
         _messages = messages;
@@ -40,7 +41,7 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Error loading runner messages: $e');
+      appLog('❌ Error loading runner messages: $e');
       setState(() => _isLoading = false);
       _showErrorSnackBar('Error loading messages: $e');
     }
@@ -51,7 +52,7 @@ class _RunnerMessagesPageState extends State<RunnerMessagesPage> {
       await SupabaseConfig.markAdminMessageAsRead(messageId);
       await _loadMessages(); // Refresh to update read status
     } catch (e) {
-      print('❌ Error marking message as read: $e');
+      appLog('❌ Error marking message as read: $e');
     }
   }
 

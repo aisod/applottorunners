@@ -9,7 +9,7 @@ analyzer:
 linter:
   rules:
     # Flutter specific rules
-    avoid_print: false
+    avoid_print: true
     prefer_single_quotes: true
     always_declare_return_types: true
     avoid_unnecessary_containers: true

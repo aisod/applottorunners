@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../supabase/supabase_config.dart';
 import 'package:intl/intl.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Chat page for viewing message thread and replying
 class MessageChatPage extends StatefulWidget {
@@ -58,7 +59,7 @@ class _MessageChatPageState extends State<MessageChatPage> {
       // Mark as read
       await SupabaseConfig.markAdminMessageAsRead(widget.message['id']);
     } catch (e) {
-      print('❌ Error loading thread: $e');
+      appLog('❌ Error loading thread: $e');
       setState(() => _isLoading = false);
       _showErrorSnackBar('Error loading conversation: $e');
     }

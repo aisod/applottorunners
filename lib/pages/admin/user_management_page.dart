@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:lotto_runners/utils/app_log.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -34,9 +35,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
       setState(() => _isLoading = true);
       final users = await SupabaseConfig.getAllUsers();
 
-      print('📊 Loaded ${users.length} users from database');
+      appLog('📊 Loaded ${users.length} users from database');
       for (var user in users) {
-        print(
+        appLog(
             '👤 User: ${user['full_name']} - Verified: ${user['is_verified']}');
       }
 
@@ -47,10 +48,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
         });
         // Reapply current filters after loading
         _filterUsers(_searchQuery, _selectedFilter);
-        print('🔄 Applied filters - showing ${_filteredUsers.length} users');
+        appLog('🔄 Applied filters - showing ${_filteredUsers.length} users');
       }
     } catch (e) {
-      print('❌ Error loading users: $e');
+      appLog('❌ Error loading users: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         if (context.mounted) {
@@ -168,36 +169,36 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
     if (confirmed == true) {
       try {
-        print('🔍 Verify User Debug:');
-        print('  User ID: $userId');
-        print('  User Name: $userName');
-        print('  Currently Verified: $isCurrentlyVerified');
-        print('  Action: $action');
+        appLog('🔍 Verify User Debug:');
+        appLog('  User ID: $userId');
+        appLog('  User Name: $userName');
+        appLog('  Currently Verified: $isCurrentlyVerified');
+        appLog('  Action: $action');
 
         // Debug: Check if user exists in current data
         final userInList = _users.firstWhere(
           (u) => u['id'] == userId,
           orElse: () => {},
         );
-        print(
+        appLog(
             '🔍 User in current list: ${userInList.isNotEmpty ? "Found" : "NOT FOUND"}');
         if (userInList.isNotEmpty) {
-          print('  User data: $userInList');
+          appLog('  User data: $userInList');
         }
 
         if (action == 'verify') {
           await SupabaseConfig.verifyUser(userId);
-          print('✅ User verified successfully');
+          appLog('✅ User verified successfully');
         } else {
           await SupabaseConfig.unverifyUser(userId);
-          print('✅ User unverified successfully');
+          appLog('✅ User unverified successfully');
         }
 
         // Small delay to ensure database update is committed
         await Future.delayed(const Duration(milliseconds: 500));
 
         if (mounted) {
-          print('🔄 Reloading users list...');
+          appLog('🔄 Reloading users list...');
           // Force refresh by clearing current state
           setState(() {
             _users = [];
@@ -216,7 +217,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
           }
         }
       } catch (e) {
-        print('❌ Error ${action}ing user: $e');
+        appLog('❌ Error ${action}ing user: $e');
         if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -299,7 +300,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
             .maybeSingle();
         runnerApplication = response;
       } catch (e) {
-        print('Error fetching runner application: $e');
+        appLog('Error fetching runner application: $e');
       }
     }
 
@@ -1050,7 +1051,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
             return;
           }
         } catch (e) {
-          print('Downloads directory not available: $e');
+          appLog('Downloads directory not available: $e');
         }
 
         // Fallback: Try to open the document URL directly

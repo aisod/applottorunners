@@ -192,7 +192,7 @@ class _MapPickerSheetState extends State<MapPickerSheet> {
                       }
                     },
                     // Removed markers to avoid duplication with the center pin
-                    markers: {},
+                    markers: const {},
                     onCameraMove: (position) {
                       if (mounted) {
                         setState(() {

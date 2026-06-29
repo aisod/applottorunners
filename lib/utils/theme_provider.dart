@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
@@ -30,7 +31,7 @@ class ThemeProvider extends ChangeNotifier {
       }
     } catch (e) {
       // If there's an error, keep the default system theme
-      print('Error loading theme mode: $e');
+      appLog('Error loading theme mode: $e');
     }
   }
 
@@ -43,7 +44,7 @@ class ThemeProvider extends ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt(_themeKey, mode.index);
       } catch (e) {
-        print('Error saving theme mode: $e');
+        appLog('Error saving theme mode: $e');
       }
     }
   }

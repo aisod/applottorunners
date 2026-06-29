@@ -9,6 +9,7 @@ import 'package:lotto_runners/services/runner_search_service.dart';
 import 'package:lotto_runners/services/immediate_errand_service.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:intl/intl.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class PostErrandFormPage extends StatefulWidget {
   final Map<String, dynamic> selectedService;
@@ -1082,7 +1083,7 @@ class _PostErrandFormPageState extends State<PostErrandFormPage> {
         );
       }
 
-      print(
+      appLog(
           'Attempting to ${fromCamera ? 'capture from camera' : 'pick from gallery'}');
 
       Uint8List? imageBytes;
@@ -1092,13 +1093,13 @@ class _PostErrandFormPageState extends State<PostErrandFormPage> {
         try {
           imageBytes = await ImageUploadHelper.captureImage();
         } catch (e) {
-          print('Primary camera method failed: $e');
+          appLog('Primary camera method failed: $e');
           // Fallback to alternative camera method
           try {
-            print('Trying alternative camera method...');
+            appLog('Trying alternative camera method...');
             imageBytes = await ImageUploadHelper.captureImageAlternative();
           } catch (e2) {
-            print('Alternative camera method also failed: $e2');
+            appLog('Alternative camera method also failed: $e2');
             rethrow; // Let the outer catch handle the error
           }
         }
@@ -1107,7 +1108,7 @@ class _PostErrandFormPageState extends State<PostErrandFormPage> {
       }
 
       if (imageBytes != null) {
-        print(
+        appLog(
             'Image ${fromCamera ? 'captured' : 'selected'} successfully. Size: ${imageBytes.length} bytes');
 
         setState(() {
@@ -1127,11 +1128,11 @@ class _PostErrandFormPageState extends State<PostErrandFormPage> {
           );
         }
       } else {
-        print(
+        appLog(
             'No image ${fromCamera ? 'captured' : 'selected'} - user cancelled or error occurred');
       }
     } catch (e) {
-      print('Error in _pickImage (fromCamera: $fromCamera): $e');
+      appLog('Error in _pickImage (fromCamera: $fromCamera): $e');
 
       if (mounted) {
         String errorMessage = fromCamera
@@ -1173,18 +1174,18 @@ class _PostErrandFormPageState extends State<PostErrandFormPage> {
       }
 
       // Debug: Print the errand data being sent
-      print('🔍 Submitting errand with data:');
-      print('  - User ID: $userId');
-      print('  - Selected Service: ${widget.selectedService}');
-      print('  - Service Category: ${widget.selectedService['category']}');
-      print('  - Service Name: ${widget.selectedService['name']}');
-      print('  - Location: ${_locationController.text.trim()}');
-      print('  - Pickup: ${_pickupController.text.trim()}');
-      print('  - Delivery: ${_deliveryController.text.trim()}');
-      print('  - Instructions: ${_instructionsController.text.trim()}');
-      print('  - Pickup Date: $_pickupDate');
-      print('  - Pickup Time: $_pickupTime');
-      print('  - Due DateTime: $_dueDateTime');
+      appLog('🔍 Submitting errand with data:');
+      appLog('  - User ID: $userId');
+      appLog('  - Selected Service: ${widget.selectedService}');
+      appLog('  - Service Category: ${widget.selectedService['category']}');
+      appLog('  - Service Name: ${widget.selectedService['name']}');
+      appLog('  - Location: ${_locationController.text.trim()}');
+      appLog('  - Pickup: ${_pickupController.text.trim()}');
+      appLog('  - Delivery: ${_deliveryController.text.trim()}');
+      appLog('  - Instructions: ${_instructionsController.text.trim()}');
+      appLog('  - Pickup Date: $_pickupDate');
+      appLog('  - Pickup Time: $_pickupTime');
+      appLog('  - Due DateTime: $_dueDateTime');
 
       // Upload images if any
       List<String> imageUrls = [];
@@ -1208,7 +1209,7 @@ class _PostErrandFormPageState extends State<PostErrandFormPage> {
             );
             imageUrls.add(imageUrl);
           } catch (imageError) {
-            print('Error uploading image $i: $imageError');
+            appLog('Error uploading image $i: $imageError');
             // Continue with other images even if one fails
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1266,9 +1267,9 @@ class _PostErrandFormPageState extends State<PostErrandFormPage> {
       };
 
       // Debug: Print the final errand data
-      print('🔍 Final errand data to be sent:');
+      appLog('🔍 Final errand data to be sent:');
       errandData.forEach((key, value) {
-        print('  - $key: $value');
+        appLog('  - $key: $value');
       });
 
       // Add vehicle type information to special instructions if selected
@@ -1379,7 +1380,7 @@ class _PostErrandFormPageState extends State<PostErrandFormPage> {
           errorMessage = 'An unexpected error occurred. Please try again';
         }
 
-        print('Error posting errand: $e'); // For debugging
+        appLog('Error posting errand: $e'); // For debugging
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

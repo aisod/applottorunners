@@ -5,7 +5,6 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/pages/auth_page.dart';
 import 'package:lotto_runners/pages/home_page.dart';
 import 'package:lotto_runners/services/notification_service.dart';
-// Removed debug floating button wrapper
 import 'package:lotto_runners/utils/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,6 +17,13 @@ import 'package:lotto_runners/pages/my_orders_page.dart';
 import 'package:lotto_runners/pages/password_reset_page.dart';
 import 'package:lotto_runners/pages/payment_return_page.dart';
 import 'package:lotto_runners/services/navigation_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
+import 'package:lotto_runners/widgets/app_loading.dart';
+import 'package:lotto_runners/services/connectivity_service.dart';
+import 'package:lotto_runners/widgets/offline_banner.dart';
+import 'package:lotto_runners/services/onboarding_service.dart';
+import 'package:lotto_runners/pages/onboarding_page.dart';
+import 'package:lotto_runners/utils/app_errors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +42,7 @@ void main() async {
 /// Handle deep link that opened the app (e.g. password reset link). Email verification uses codes, not links.
 Future<void> _handleInitialDeepLink() async {
   try {
-    print('🔗 Checking for initial deep link...');
+    appLog('Checking for initial deep link');
     if (kIsWeb) {
       final url = Uri.base.toString();
       if (url.contains('reset-password') &&
@@ -46,7 +52,7 @@ Future<void> _handleInitialDeepLink() async {
       }
     }
   } catch (e) {
-    print('❌ Error handling initial deep link: $e');
+    appLog('Error handling initial deep link: $e');
   }
 }
 
@@ -55,8 +61,11 @@ class LottoRunnersApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
+      ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           final isPaymentReturn = kIsWeb && Uri.base.path.endsWith('payment-return');
@@ -64,21 +73,103 @@ class LottoRunnersApp extends StatelessWidget {
             title: 'Lotto Runners',
             theme: lightTheme,
             darkTheme: darkTheme,
-            themeMode: themeProvider.themeMode,
+            themeMode: ThemeMode.light,
             navigatorKey: NavigationService.navigatorKey,
-            home: isPaymentReturn ? const PaymentReturnPage() : const AuthWrapper(),
+            builder: (context, child) => OfflineBanner(
+              child: child ?? const SizedBox.shrink(),
+            ),
+            home: isPaymentReturn
+                ? const PaymentReturnPage()
+                : const AppEntryGate(),
             routes: {
               '/my-orders': (context) => const MyOrdersPage(),
               '/password-reset': (context) => const PasswordResetPage(),
               '/auth': (context) => const AuthPage(),
               '/payment-return': (context) => const PaymentReturnPage(),
             },
-            // Page transitions are handled by custom routes
+            onUnknownRoute: (settings) {
+              return MaterialPageRoute<void>(
+                builder: (ctx) => Scaffold(
+                  appBar: AppBar(title: const Text('Page not found')),
+                  body: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'No screen is registered for "${settings.name}".',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed: () {
+                              final nav = Navigator.of(ctx);
+                              if (nav.canPop()) {
+                                nav.pop();
+                              } else {
+                                nav.pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const AuthWrapper(),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text('Go back'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
             debugShowCheckedModeBanner: false,
           );
         },
       ),
     );
+  }
+}
+
+/// Shows onboarding on first launch, then the auth/session flow.
+class AppEntryGate extends StatefulWidget {
+  const AppEntryGate({super.key});
+
+  @override
+  State<AppEntryGate> createState() => _AppEntryGateState();
+}
+
+class _AppEntryGateState extends State<AppEntryGate> {
+  bool? _onboardingComplete;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOnboarding();
+  }
+
+  Future<void> _loadOnboarding() async {
+    final complete = await OnboardingService.isComplete();
+    if (mounted) setState(() => _onboardingComplete = complete);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_onboardingComplete == null) {
+      return const Scaffold(
+        body: AppLoadingIndicator(
+          message: 'Loading…',
+          showLogo: true,
+        ),
+      );
+    }
+    if (_onboardingComplete == false) {
+      return OnboardingPage(
+        onComplete: () => setState(() => _onboardingComplete = true),
+      );
+    }
+    return const AuthWrapper();
   }
 }
 
@@ -92,9 +183,7 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: AppLoadingIndicator(message: 'Checking session…'),
           );
         }
 
@@ -132,54 +221,48 @@ class AuthWrapper extends StatelessWidget {
             builder: (context, profileSnapshot) {
               if (profileSnapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
-                  body: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Loading your profile...'),
-                      ],
-                    ),
-                  ),
+                  body: AppLoadingIndicator(message: 'Loading your profile…'),
                 );
               }
 
               if (profileSnapshot.hasError) {
-                print('Profile loading error: ${profileSnapshot.error}');
+                appLog('Profile loading error: ${profileSnapshot.error}');
+                final errMsg = AppErrors.message(profileSnapshot.error!);
                 return Scaffold(
                   body: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline,
-                            size: 64, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading profile',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Please try signing in again',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await SupabaseConfig.signOut();
-                          },
-                          child: const Text('Sign Out'),
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline,
+                              size: 64, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading profile',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            errMsg,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await SupabaseConfig.signOut();
+                            },
+                            child: const Text('Sign Out'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
               }
 
               final profile = profileSnapshot.data;
-              print('User profile: $profile'); // Debug info
-              print('User type: ${profile?['user_type']}'); // Debug info
 
               if (profile == null) {
                 return Scaffold(
@@ -228,15 +311,8 @@ class AuthWrapper extends StatelessWidget {
                         return const PasswordResetPage();
                       }
                       return const Scaffold(
-                        body: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircularProgressIndicator(),
-                              SizedBox(height: 16),
-                              Text('Preparing password reset...'),
-                            ],
-                          ),
+                        body: AppLoadingIndicator(
+                          message: 'Preparing password reset…',
                         ),
                       );
                     },

@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# android/gradle.properties.example
+#
+# Copy this file to android/gradle.properties and fill in values for your
+# local machine.  gradle.properties is in .gitignore — NEVER commit the real
+# file with secrets.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Path to your local JDK installation (adjust for your machine)
+org.gradle.java.home=C:/Program Files/Java/jdk-21
+
+# JVM args — adjust heap sizes to match your available RAM
+org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError -Djavax.net.ssl.trustStoreType=Windows-ROOT -Djavax.net.ssl.trustStore=NONE
+
+android.useAndroidX=true
+android.enableJetifier=true
+
+# Longer timeouts for Mapbox Maven (api.mapbox.com can be slow from some networks)
+systemProp.org.gradle.internal.http.connectionTimeout=300000
+systemProp.org.gradle.internal.http.socketTimeout=300000
+systemProp.jdk.tls.client.protocols=TLSv1.2,TLSv1.3
+
+# Gradle performance optimizations
+org.gradle.parallel=true
+org.gradle.configureondemand=false
+org.gradle.daemon=true
+org.gradle.caching=true
+
+# Android build optimizations
+android.builder.sdkDownload=true
+android.experimental.enableSourceSetPathsMap=true
+
+# JVM Toolchain configuration for consistency
+kotlin.jvm.target.validation.mode=ignore
+
+# Kotlin daemon configuration to resolve connection issues
+kotlin.daemon.jvm.options=-Xmx2G -Djavax.net.ssl.trustStoreType=Windows-ROOT -Djavax.net.ssl.trustStore=NONE
+kotlin.daemon.enabled=true
+kotlin.incremental=false
+
+# Android compatibility settings
+android.enableR8.fullMode=false
+android.useFullClasspathForDexingTransform=true
+android.nonTransitiveRClass=false
+
+# ─── REQUIRED SECRETS ─────────────────────────────────────────────────────────
+# Mapbox SECRET download token (starts with sk.) — used by Gradle to download
+# the Mapbox SDK from the private Maven registry. Get it from:
+# https://account.mapbox.com/access-tokens/
+MAPBOX_DOWNLOADS_TOKEN=sk.YOUR_SECRET_TOKEN_HERE
+
+# Mapbox PUBLIC access token (starts with pk.) — embedded in the app at runtime.
+# Safe to share; it is scope-limited to map tiles for this project.
+MAPBOX_ACCESS_TOKEN=pk.YOUR_PUBLIC_TOKEN_HERE

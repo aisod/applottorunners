@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to handle scheduled errand notifications with different reminder intervals
 /// Uses scheduled_start_time and scheduled_end_time columns for precise timing
@@ -19,7 +20,7 @@ class ScheduledErrandNotificationService {
     if (!_isInitialized) {
       _startScheduledCheck();
       _isInitialized = true;
-      print('⏰ Scheduled errand notification service initialized');
+      appLog('⏰ Scheduled errand notification service initialized');
     }
   }
 
@@ -32,7 +33,7 @@ class ScheduledErrandNotificationService {
       _checkScheduledErrands();
     });
 
-    print('⏰ [Scheduled] Starting scheduled errand checks every 5 minutes');
+    appLog('⏰ [Scheduled] Starting scheduled errand checks every 5 minutes');
   }
 
   /// Check for scheduled errands and send appropriate notifications
@@ -41,7 +42,7 @@ class ScheduledErrandNotificationService {
       final user = SupabaseConfig.currentUser;
       if (user == null) return;
 
-      print('🔍 [Scheduled] Checking for scheduled errands...');
+      appLog('🔍 [Scheduled] Checking for scheduled errands...');
 
       // Get user's scheduled errands using scheduled_start_time
       final errands = await SupabaseConfig.client
@@ -59,7 +60,7 @@ class ScheduledErrandNotificationService {
         await _checkErrandReminders(errand, now);
       }
     } catch (e) {
-      print('❌ [Scheduled] Error checking scheduled errands: $e');
+      appLog('❌ [Scheduled] Error checking scheduled errands: $e');
     }
   }
 
@@ -80,7 +81,7 @@ class ScheduledErrandNotificationService {
       await _sendReminderIfNeeded(
           errand, minutesUntilStart, hoursUntilStart, daysUntilStart);
     } catch (e) {
-      print(
+      appLog(
           '❌ [Scheduled] Error checking reminders for errand ${errand['id']}: $e');
     }
   }
@@ -198,9 +199,9 @@ class ScheduledErrandNotificationService {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      print('📱 [Scheduled] Sent reminder: $title for errand ${errand['id']}');
+      appLog('📱 [Scheduled] Sent reminder: $title for errand ${errand['id']}');
     } catch (e) {
-      print('❌ [Scheduled] Error sending reminder notification: $e');
+      appLog('❌ [Scheduled] Error sending reminder notification: $e');
     }
   }
 
@@ -233,7 +234,7 @@ class ScheduledErrandNotificationService {
 
       return upcoming;
     } catch (e) {
-      print('❌ [Scheduled] Error fetching upcoming errands: $e');
+      appLog('❌ [Scheduled] Error fetching upcoming errands: $e');
       return [];
     }
   }
@@ -242,6 +243,6 @@ class ScheduledErrandNotificationService {
   void dispose() {
     _checkTimer?.cancel();
     _isInitialized = false;
-    print('⏰ [Scheduled] Scheduled errand notification service disposed');
+    appLog('⏰ [Scheduled] Scheduled errand notification service disposed');
   }
 }

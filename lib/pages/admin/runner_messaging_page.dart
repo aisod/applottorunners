@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../supabase/supabase_config.dart';
 import '../../utils/responsive.dart';
 import 'package:intl/intl.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Admin page for sending messages and notifications to runners
 class RunnerMessagingPage extends StatefulWidget {
@@ -46,10 +47,10 @@ class _RunnerMessagingPageState extends State<RunnerMessagingPage> {
       final runners = await SupabaseConfig.getAllRunners();
       final messages = await SupabaseConfig.getAdminMessages();
 
-      print('📨 Loaded ${runners.length} runners');
-      print('📨 Loaded ${messages.length} admin messages');
+      appLog('📨 Loaded ${runners.length} runners');
+      appLog('📨 Loaded ${messages.length} admin messages');
       if (messages.isNotEmpty) {
-        print('📨 First message: ${messages[0]}');
+        appLog('📨 First message: ${messages[0]}');
       }
 
       setState(() {
@@ -58,7 +59,7 @@ class _RunnerMessagingPageState extends State<RunnerMessagingPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Error loading messaging data: $e');
+      appLog('❌ Error loading messaging data: $e');
       setState(() => _isLoading = false);
       _showErrorSnackBar('Error loading data: $e');
     }

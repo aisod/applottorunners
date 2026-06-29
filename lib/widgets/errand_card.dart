@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lotto_runners/pages/route_map_page.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/utils/map_utils.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/page_transitions.dart';
 
 class ErrandCard extends StatelessWidget {
   final Map<String, dynamic> errand;
@@ -23,6 +25,10 @@ class ErrandCard extends StatelessWidget {
   final VoidCallback? onApprove;
   /// When true, shows a "Follow route" button so the runner can open maps to the errand location.
   final bool showNavigateButton;
+  
+  /// When true, shows a "Live Track" button for the customer.
+  final bool showLiveTrackButton;
+  final VoidCallback? onLiveTrack;
 
   const ErrandCard({
     super.key,
@@ -42,6 +48,8 @@ class ErrandCard extends StatelessWidget {
     this.showApproveButton = false,
     this.onApprove,
     this.showNavigateButton = false,
+    this.showLiveTrackButton = false,
+    this.onLiveTrack,
   });
 
   @override
@@ -180,26 +188,25 @@ class ErrandCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (showNavigateButton &&
+                  if (!kIsWeb && showNavigateButton &&
+                      status != 'completed' &&
                       MapUtils.getErrandNavigationAddress(errand) != null)
                     IconButton(
-                      icon: const Icon(Icons.directions),
+                      icon: const Icon(Icons.map_outlined),
                       iconSize: Responsive.isSmallMobile(context) ? 20 : 22,
-                      color: theme.colorScheme.primary,
-                      tooltip: 'Follow route to location',
+                      color: LottoRunnersColors.primaryBlue,
+                      tooltip: 'View Route on Map',
                       onPressed: () {
-                        final address =
-                            MapUtils.getErrandNavigationAddress(errand);
-                        if (address != null) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => RouteMapPage(
-                                destinationAddress: address,
-                                title: errand['title']?.toString(),
-                              ),
+                        final address = MapUtils.getErrandNavigationAddress(errand);
+                        Navigator.push(
+                          context,
+                          PageTransitions.slideFromBottom(
+                            RouteMapPage(
+                              dropoffAddress: address,
+                              title: 'Errand Route',
                             ),
-                          );
-                        }
+                          ),
+                        );
                       },
                     ),
                   const SizedBox(width: 16),
@@ -244,7 +251,8 @@ class ErrandCard extends StatelessWidget {
                   showCancelButton ||
                   showChatButton ||
                   showPayButton ||
-                  showApproveButton) ...[
+                  showApproveButton ||
+                  showLiveTrackButton) ...[
                 _buildActionButtons(theme, Responsive.isSmallMobile(context)),
               ],
             ],
@@ -371,6 +379,31 @@ class ErrandCard extends StatelessWidget {
         ),
       );
     }
+    
+    Widget? liveTrackButton;
+    if (showLiveTrackButton && onLiveTrack != null) {
+      liveTrackButton = Expanded(
+        child: ElevatedButton.icon(
+          onPressed: onLiveTrack,
+          icon: Icon(Icons.satellite_alt, size: isMobile ? 16 : 18),
+          label: Text(
+            'Live Track',
+            style: TextStyle(
+              color: theme.colorScheme.onPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: isMobile ? 14 : 16,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: LottoRunnersColors.primaryBlueDark,
+            foregroundColor: theme.colorScheme.onPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      );
+    }
 
     Widget? cancelButton;
     if (showCancelButton && onCancel != null) {
@@ -444,7 +477,10 @@ class ErrandCard extends StatelessWidget {
           Row(
             children: [
               if (chatButton != null) chatButton,
-              if (chatButton != null && cancelButton != null)
+              if (chatButton != null && (cancelButton != null || liveTrackButton != null))
+                const SizedBox(width: 8),
+              if (liveTrackButton != null) liveTrackButton,
+              if (liveTrackButton != null && cancelButton != null)
                 const SizedBox(width: 8),
               if (cancelButton != null) cancelButton,
             ],
@@ -456,6 +492,12 @@ class ErrandCard extends StatelessWidget {
     // Fallback to a single row layout (original behaviour) for
     // all other combinations of buttons.
     buttons.addAll(primaryRowButtons);
+    if (liveTrackButton != null) {
+      if (buttons.isNotEmpty) {
+        buttons.add(const SizedBox(width: 8));
+      }
+      buttons.add(liveTrackButton);
+    }
     if (chatButton != null) {
       if (buttons.isNotEmpty) {
         buttons.add(const SizedBox(width: 8));
@@ -527,7 +569,13 @@ class ErrandCard extends StatelessWidget {
           (status == 'accepted' ||
               status == 'in_progress' ||
               status == 'completed')) {
-        return errand['runner']?['full_name'] ?? 'Runner Assigned';
+        final runner = errand['runner'];
+        if (runner is List && runner.isNotEmpty) {
+          return runner[0]['full_name'] ?? 'Runner Assigned';
+        } else if (runner is Map) {
+          return runner['full_name'] ?? 'Runner Assigned';
+        }
+        return 'Runner Assigned';
       } else {
         return 'Waiting for runner to accept';
       }
@@ -536,7 +584,13 @@ class ErrandCard extends StatelessWidget {
           (status == 'accepted' ||
               status == 'in_progress' ||
               status == 'completed')) {
-        return errand['customer']?['full_name'] ?? 'Customer';
+        final customer = errand['customer'];
+        if (customer is List && customer.isNotEmpty) {
+          return customer[0]['full_name'] ?? 'Customer';
+        } else if (customer is Map) {
+          return customer['full_name'] ?? 'Customer';
+        }
+        return 'Customer';
       } else {
         return 'Customer info available after acceptance';
       }
@@ -554,14 +608,24 @@ class ErrandCard extends StatelessWidget {
           (status == 'accepted' ||
               status == 'in_progress' ||
               status == 'completed')) {
-        return errand['runner']?['phone'];
+        final runner = errand['runner'];
+        if (runner is List && runner.isNotEmpty) {
+          return runner[0]['phone'];
+        } else if (runner is Map) {
+          return runner['phone'];
+        }
       }
     } else {
       if (runnerId != null &&
           (status == 'accepted' ||
               status == 'in_progress' ||
               status == 'completed')) {
-        return errand['customer']?['phone'];
+        final customer = errand['customer'];
+        if (customer is List && customer.isNotEmpty) {
+          return customer[0]['phone'];
+        } else if (customer is Map) {
+          return customer['phone'];
+        }
       }
     }
 
@@ -578,7 +642,7 @@ class ErrandCard extends StatelessWidget {
             deliveryAddress.toString().trim().isNotEmpty) {
           return 'Deliver to: ${deliveryAddress.toString().trim()}';
         }
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       case 'delivery':
         final pickupAddress =
@@ -598,7 +662,7 @@ class ErrandCard extends StatelessWidget {
         } else if (deliveryAddress != null) {
           return 'To: ${deliveryAddress.toString().trim()}';
         }
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       case 'document_services':
       case 'license_discs':
@@ -617,10 +681,10 @@ class ErrandCard extends StatelessWidget {
         } else if (pickupLocation != null) {
           return 'Pickup: ${pickupLocation.toString().trim()}';
         }
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
 
       default:
-        return errand['location_address']?.toString() ?? 'Location TBD';
+        return errand['location_address']?.toString() ?? 'Location not set';
     }
   }
 }

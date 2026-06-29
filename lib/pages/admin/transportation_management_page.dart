@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/theme.dart';
 import '../../supabase/supabase_config.dart';
 import '../../utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class TransportationManagementPage extends StatefulWidget {
   const TransportationManagementPage({super.key});
@@ -135,21 +136,21 @@ class _TransportationManagementPageState
   }
 
   Future<void> _loadTransportationServices() async {
-    print('🔄 Loading transportation services...');
+    appLog('🔄 Loading transportation services...');
     final services = await SupabaseConfig.getAllTransportationServices();
-    print('📊 Loaded ${services.length} transportation services');
+    appLog('📊 Loaded ${services.length} transportation services');
     for (var service in services) {
       final providers =
           service['providers'] as List<Map<String, dynamic>>? ?? [];
-      print(
+      appLog(
           '🚌 Service "${service['name']}" has ${providers.length} providers');
       for (var provider in providers) {
-        print(
+        appLog(
             '  👤 Provider: ${provider['provider']?['name']} - Features: ${provider['features']}');
       }
     }
     setState(() => _transportationServices = services);
-    print('✅ Transportation services state updated');
+    appLog('✅ Transportation services state updated');
   }
 
   Future<void> _loadBookings() async {
@@ -236,7 +237,7 @@ class _TransportationManagementPageState
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              print('🔄 Manual refresh triggered');
+              appLog('🔄 Manual refresh triggered');
               _loadData();
             },
             tooltip: 'Refresh Data',
@@ -754,7 +755,7 @@ class _TransportationManagementPageState
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error fetching subcategory names: $e');
+      appLog('Error fetching subcategory names: $e');
       return [];
     }
   }
@@ -1961,7 +1962,7 @@ class _TransportationManagementPageState
         final vehicleData = Map<String, dynamic>.from(result);
 
         // Debug: Print the data being sent
-        print(
+        appLog(
           'Updating vehicle type ${vehicleType['id']} with data: $vehicleData',
         );
 
@@ -4210,11 +4211,11 @@ class _TransportationManagementPageState
         );
         if (ok) {
           _showSuccessSnackBar('Provider details updated successfully');
-          print('🔄 Refreshing transportation services after update...');
+          appLog('🔄 Refreshing transportation services after update...');
           await _loadTransportationServices();
-          print('✅ Transportation services refreshed');
+          appLog('✅ Transportation services refreshed');
           setState(() {});
-          print('✅ UI state updated');
+          appLog('✅ UI state updated');
         } else {
           _showErrorSnackBar('Update did not persist on the server');
         }

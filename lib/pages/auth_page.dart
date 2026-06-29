@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/legal_links.dart';
+import 'package:lotto_runners/utils/app_errors.dart';
+import 'package:lotto_runners/services/connectivity_service.dart';
+import 'package:provider/provider.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -27,6 +31,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
   String? _selectedUserType;
   bool _showPasswordReset = false;
   bool _showEmailVerification = false;
+  bool _acceptedTerms = false;
 
   final List<Map<String, dynamic>> _userTypes = [
     {
@@ -109,6 +114,24 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
       return;
     }
 
+    if (!_isLogin && !_acceptedTerms) {
+      setState(() {
+        _errorMessage =
+            'Please accept the Terms of Service and Privacy Policy to continue.';
+      });
+      return;
+    }
+
+    final connectivity = context.read<ConnectivityService>();
+    if (!connectivity.isOnline) {
+      setState(() {
+        _errorMessage = AppErrors.message(
+          Exception('NETWORK_ERROR: No internet connection'),
+        );
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -145,6 +168,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
             'user_type': _selectedUserType,
             'is_verified': false,
             'has_vehicle': false,
+            'terms_accepted': true,
+            'terms_accepted_at': DateTime.now().toIso8601String(),
           });
 
           // Check if email verification is required
@@ -171,56 +196,21 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
       }
     } catch (e) {
       if (mounted) {
+        final raw = e.toString();
+        if (raw.contains('Email not confirmed') ||
+            raw.contains('email_not_confirmed')) {
+          setState(() {
+            _showEmailVerification = true;
+          });
+        }
         setState(() {
-          // Clean up error message for better user experience
-          String cleanError = e
-              .toString()
-              .replaceAll('Exception: ', '')
-              .replaceAll('AuthException: ', '')
-              .replaceAll('PostgrestException: ', '');
-
-          // Provide user-friendly error messages
-          if (cleanError.contains('EMAIL_SEND_FAILED')) {
-            _errorMessage =
-                'We couldn\'t send the confirmation email right now. Please try again in a few minutes. If it keeps happening, contact support.';
-          } else if (cleanError.contains('Invalid login credentials')) {
-            _errorMessage =
-                'Invalid email or password. Please check your credentials and try again.';
-          } else if (cleanError.contains('Email not confirmed') ||
-              cleanError.contains('email_not_confirmed')) {
-            _errorMessage =
-                'Please enter the verification code we sent to your email before signing in.';
-            setState(() {
-              _showEmailVerification = true;
-            });
-          } else if (cleanError.contains('User already registered') ||
-              cleanError.contains('already_registered')) {
-            _errorMessage =
-                'An account with this email already exists. Please sign in instead.';
-          } else if (cleanError.contains('WEAK_PASSWORD') ||
-              cleanError.contains('AuthWeakPasswordException') ||
-              cleanError.contains('weak') && cleanError.contains('password') ||
-              cleanError.contains('pwned') ||
-              cleanError.contains('easy to guess')) {
-            _errorMessage =
-                'This password is too weak or has been found in a security breach. Please choose a different one.\n\n$_passwordRequirements';
-          } else if (cleanError.contains('Password should be at least')) {
-            _errorMessage = 'Password must be at least 8 characters long.\n\n$_passwordRequirements';
-          } else if (cleanError.contains('Unable to validate email address')) {
-            _errorMessage = 'Please enter a valid email address.';
-          } else if (cleanError.contains('Network') || cleanError.contains('NETWORK_ERROR')) {
-            _errorMessage =
-                'Network error. Please check your internet connection and try again.';
-          } else if (cleanError.contains('rate_limit_exceeded') || cleanError.contains('RATE_LIMIT')) {
-            _errorMessage =
-                'Too many attempts. Please wait a moment before trying again.';
-          } else if (cleanError.contains('email_address_invalid') || cleanError.contains('INVALID_EMAIL')) {
-            _errorMessage = 'Please enter a valid email address.';
-          } else {
-            _errorMessage = cleanError.isNotEmpty
-                ? cleanError
-                : 'An unexpected error occurred. Please try again.';
+          var msg = AppErrors.message(e);
+          if (raw.contains('WEAK_PASSWORD') ||
+              raw.contains('AuthWeakPasswordException') ||
+              (raw.contains('weak') && raw.contains('password'))) {
+            msg = '$msg\n\n$_passwordRequirements';
           }
+          _errorMessage = msg;
         });
       }
     } finally {
@@ -239,6 +229,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
       _selectedUserType = null;
       _showPasswordReset = false;
       _showEmailVerification = false;
+      _acceptedTerms = false;
       _verificationCodeController.clear();
     });
     _formKey.currentState?.reset();
@@ -529,6 +520,12 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                 if (_errorMessage != null) ...[
                                   const SizedBox(height: 16),
                                   _buildErrorMessage(),
+                                ],
+                                if (!_isLogin &&
+                                    !_showPasswordReset &&
+                                    !_showEmailVerification) ...[
+                                  const SizedBox(height: 8),
+                                  _buildTermsCheckbox(),
                                 ],
                                 const SizedBox(height: 24),
                                 _buildSubmitButton(),
@@ -1256,13 +1253,96 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildTermsCheckbox() {
+    return CheckboxListTile(
+      contentPadding: EdgeInsets.zero,
+      value: _acceptedTerms,
+      onChanged: _isLoading
+          ? null
+          : (v) => setState(() => _acceptedTerms = v ?? false),
+      controlAffinity: ListTileControlAffinity.leading,
+      activeColor: LottoRunnersColors.primaryBlue,
+      title: Text.rich(
+        TextSpan(
+          style: Theme.of(context).textTheme.bodySmall,
+          children: [
+            const TextSpan(text: 'I agree to the '),
+            WidgetSpan(
+              child: GestureDetector(
+                onTap: () => openTermsOfService(context),
+                child: Text(
+                  'Terms of Service',
+                  style: TextStyle(
+                    color: LottoRunnersColors.primaryBlue,
+                    decoration: TextDecoration.underline,
+                    fontSize:
+                        Theme.of(context).textTheme.bodySmall?.fontSize,
+                  ),
+                ),
+              ),
+            ),
+            const TextSpan(text: ' and '),
+            WidgetSpan(
+              child: GestureDetector(
+                onTap: () => openPrivacyPolicy(context),
+                child: Text(
+                  'Privacy Policy',
+                  style: TextStyle(
+                    color: LottoRunnersColors.primaryBlue,
+                    decoration: TextDecoration.underline,
+                    fontSize:
+                        Theme.of(context).textTheme.bodySmall?.fontSize,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFooter() {
-    return Text(
-      'By continuing, you agree to our Terms of Service and Privacy Policy',
-      textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: LottoRunnersColors.gray400,
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: LottoRunnersColors.gray400,
+        );
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: [
+          const TextSpan(text: 'View our '),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: GestureDetector(
+              onTap: () => openTermsOfService(context),
+              child: Text(
+                'Terms',
+                style: style?.copyWith(
+                  color: LottoRunnersColors.primaryBlue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
           ),
+          const TextSpan(text: ' and '),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: GestureDetector(
+              onTap: () => openPrivacyPolicy(context),
+              child: Text(
+                'Privacy Policy',
+                style: style?.copyWith(
+                  color: LottoRunnersColors.primaryBlue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }

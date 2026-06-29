@@ -5,6 +5,7 @@ import '../theme.dart';
 import '../supabase/supabase_config.dart';
 
 import '../utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Bus Service Booking Page
 ///
@@ -116,19 +117,19 @@ class _BusBookingPageState extends State<BusBookingPage> {
 
   /// Check if a date is available for the selected service
   bool _isDateAvailable(DateTime date) {
-    print('🔍 _isDateAvailable called for date: $date');
+    appLog('🔍 _isDateAvailable called for date: $date');
 
     if (_selectedService == null) {
-      print('❌ No selected service');
+      appLog('❌ No selected service');
       return false;
     }
 
     final daysOfWeek = _selectedService!['days_of_week'] as List<dynamic>?;
-    print(
+    appLog(
         '📋 Days of week from service: $daysOfWeek (type: ${daysOfWeek.runtimeType})');
 
     if (daysOfWeek == null || daysOfWeek.isEmpty) {
-      print('❌ Days of week is null or empty');
+      appLog('❌ Days of week is null or empty');
       return false;
     }
 
@@ -143,10 +144,10 @@ class _BusBookingPageState extends State<BusBookingPage> {
       'Sunday'
     ];
     final dayName = dayNames[date.weekday - 1];
-    print('📅 Date weekday: ${date.weekday}, Day name: $dayName');
+    appLog('📅 Date weekday: ${date.weekday}, Day name: $dayName');
 
     final isAvailable = daysOfWeek.contains(dayName);
-    print('✅ Is $dayName available? $isAvailable');
+    appLog('✅ Is $dayName available? $isAvailable');
 
     return isAvailable;
   }
@@ -592,9 +593,7 @@ class _BusBookingPageState extends State<BusBookingPage> {
             ),
           ],
         ),
-        actions: const [
-          // ThemeToggleButton(), // Commented out dark mode for now
-        ],
+
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(isSmallMobile ? 16 : 20),
@@ -848,9 +847,9 @@ class _BusBookingPageState extends State<BusBookingPage> {
 
   /// Show date picker
   Future<void> _showDatePicker() async {
-    print('🗓️ _showDatePicker called');
-    print('🔍 Selected service: ${_selectedService?['name']}');
-    print('🔍 Days of week: ${_selectedService?['days_of_week']}');
+    appLog('🗓️ _showDatePicker called');
+    appLog('🔍 Selected service: ${_selectedService?['name']}');
+    appLog('🔍 Days of week: ${_selectedService?['days_of_week']}');
 
     final DateTime now = DateTime.now();
     final DateTime firstDate = now;
@@ -863,16 +862,16 @@ class _BusBookingPageState extends State<BusBookingPage> {
       lastDate: lastDate,
       selectableDayPredicate: (DateTime date) {
         final isAvailable = _isDateAvailable(date);
-        print(
+        appLog(
             '📅 Date ${date.toString().split(' ')[0]} - Available: $isAvailable');
         // Temporarily allow all dates to test if picker works
         return true; // isAvailable;
       },
     );
 
-    print('📅 Picked date: $picked');
+    appLog('📅 Picked date: $picked');
     if (picked != null && picked != _selectedDate) {
-      print('✅ Setting selected date: $picked');
+      appLog('✅ Setting selected date: $picked');
       _onDateSelected(picked);
     }
   }

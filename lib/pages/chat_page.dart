@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/chat_service.dart';
 import 'package:intl/intl.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class ChatPage extends StatefulWidget {
   final String conversationId;
@@ -84,7 +85,7 @@ class _ChatPageState extends State<ChatPage> {
         _scrollToBottom();
       }
     } catch (e) {
-      print('❌ Error loading chat: $e');
+      appLog('❌ Error loading chat: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         _showErrorSnackBar('Failed to load chat messages');
@@ -95,7 +96,7 @@ class _ChatPageState extends State<ChatPage> {
   /// Refresh chat messages manually
   Future<void> _refreshChat() async {
     try {
-      print('🔄 Manually refreshing chat messages');
+      appLog('🔄 Manually refreshing chat messages');
 
       // Get latest messages
       final messages = await ChatService.getMessages(widget.conversationId);
@@ -124,7 +125,7 @@ class _ChatPageState extends State<ChatPage> {
         );
       }
     } catch (e) {
-      print('❌ Error refreshing chat: $e');
+      appLog('❌ Error refreshing chat: $e');
       if (mounted) {
         _showErrorSnackBar('Failed to refresh messages');
       }
@@ -133,13 +134,13 @@ class _ChatPageState extends State<ChatPage> {
 
   void _setupRealtimeMessages() {
     try {
-      print(
+      appLog(
           '🔔 Setting up real-time message stream for conversation: ${widget.conversationId}');
 
       // Use the improved ChatService stream method
       ChatService.getMessageStream(widget.conversationId).listen(
         (messages) {
-          print('📨 Received ${messages.length} messages via real-time stream');
+          appLog('📨 Received ${messages.length} messages via real-time stream');
           if (mounted) {
             setState(() {
               _messages = messages;
@@ -159,7 +160,7 @@ class _ChatPageState extends State<ChatPage> {
           }
         },
         onError: (error) {
-          print('❌ Error in real-time message stream: $error');
+          appLog('❌ Error in real-time message stream: $error');
           if (mounted) {
             _showErrorSnackBar(
                 'Connection error. Messages may not update in real-time.');
@@ -170,7 +171,7 @@ class _ChatPageState extends State<ChatPage> {
       // Also listen for conversation updates (status changes, etc.)
       ChatService.getConversationStream(widget.conversationId).listen(
         (conversation) {
-          print('🔄 Conversation update received: ${conversation?['status']}');
+          appLog('🔄 Conversation update received: ${conversation?['status']}');
           if (mounted && conversation != null) {
             setState(() {
               _conversation = conversation;
@@ -183,11 +184,11 @@ class _ChatPageState extends State<ChatPage> {
           }
         },
         onError: (error) {
-          print('❌ Error in conversation stream: $error');
+          appLog('❌ Error in conversation stream: $error');
         },
       );
     } catch (e) {
-      print('❌ Error setting up realtime messages: $e');
+      appLog('❌ Error setting up realtime messages: $e');
     }
   }
 
@@ -202,9 +203,9 @@ class _ChatPageState extends State<ChatPage> {
     setState(() => _isSending = true);
 
     try {
-      print('💬 Sending message: $message');
-      print('💬 Conversation ID: ${widget.conversationId}');
-      print('💬 Sender ID: $_currentUserId');
+      appLog('💬 Sending message: $message');
+      appLog('💬 Conversation ID: ${widget.conversationId}');
+      appLog('💬 Sender ID: $_currentUserId');
 
       final success = await ChatService.sendMessage(
         conversationId: widget.conversationId,
@@ -215,7 +216,7 @@ class _ChatPageState extends State<ChatPage> {
       if (success) {
         // Message will be added via realtime stream
         _scrollToBottom();
-        print('✅ Message sent successfully');
+        appLog('✅ Message sent successfully');
 
         // Show success feedback
         if (mounted) {
@@ -239,7 +240,7 @@ class _ChatPageState extends State<ChatPage> {
         throw Exception('Failed to send message');
       }
     } catch (e) {
-      print('❌ Error sending message: $e');
+      appLog('❌ Error sending message: $e');
       _showErrorSnackBar('Failed to send message: $e');
 
       // Restore the message to the input field if sending failed

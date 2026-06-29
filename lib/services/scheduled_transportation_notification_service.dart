@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to handle scheduled transportation notifications with different reminder intervals
 /// Uses booking_date and booking_time columns for precise timing
@@ -19,7 +20,7 @@ class ScheduledTransportationNotificationService {
     if (!_isInitialized) {
       _startScheduledCheck();
       _isInitialized = true;
-      print('🚗 Scheduled transportation notification service initialized');
+      appLog('🚗 Scheduled transportation notification service initialized');
     }
   }
 
@@ -32,14 +33,14 @@ class ScheduledTransportationNotificationService {
       _checkScheduledTransportationBookings();
     });
 
-    print(
+    appLog(
         '🚗 [Scheduled] Starting scheduled transportation checks every 5 minutes');
   }
 
   /// Check for scheduled transportation bookings and send appropriate notifications
   Future<void> _checkScheduledTransportationBookings() async {
     try {
-      print('🔍 [Scheduled] Checking for scheduled transportation bookings...');
+      appLog('🔍 [Scheduled] Checking for scheduled transportation bookings...');
 
       // Get all scheduled transportation bookings that are confirmed or pending
       final bookings = await SupabaseConfig.client
@@ -61,7 +62,7 @@ class ScheduledTransportationNotificationService {
         await _checkTransportationReminders(booking, now);
       }
     } catch (e) {
-      print(
+      appLog(
           '❌ [Scheduled] Error checking scheduled transportation bookings: $e');
     }
   }
@@ -94,7 +95,7 @@ class ScheduledTransportationNotificationService {
       await _sendTransportationReminderIfNeeded(
           booking, minutesUntilStart, hoursUntilStart, daysUntilStart);
     } catch (e) {
-      print(
+      appLog(
           '❌ [Scheduled] Error checking reminders for transportation booking ${booking['id']}: $e');
     }
   }
@@ -288,10 +289,10 @@ class ScheduledTransportationNotificationService {
           .from('transportation_bookings')
           .update({notificationField: notificationValue}).eq('id', bookingId);
 
-      print(
+      appLog(
           '📱 [Scheduled] Sent transportation reminder: $title for booking $bookingId');
     } catch (e) {
-      print(
+      appLog(
           '❌ [Scheduled] Error sending transportation reminder notification: $e');
     }
   }
@@ -315,7 +316,7 @@ class ScheduledTransportationNotificationService {
         'created_at': DateTime.now().toIso8601String(),
       });
     } catch (e) {
-      print('❌ [Scheduled] Error sending notification to user $userId: $e');
+      appLog('❌ [Scheduled] Error sending notification to user $userId: $e');
     }
   }
 
@@ -335,7 +336,7 @@ class ScheduledTransportationNotificationService {
 
       return hasBusKeyword;
     } catch (e) {
-      print('❌ Error checking if service is bus service: $e');
+      appLog('❌ Error checking if service is bus service: $e');
       return false;
     }
   }
@@ -345,6 +346,6 @@ class ScheduledTransportationNotificationService {
     _checkTimer?.cancel();
     _checkTimer = null;
     _isInitialized = false;
-    print('🚗 Scheduled transportation notification service disposed');
+    appLog('🚗 Scheduled transportation notification service disposed');
   }
 }

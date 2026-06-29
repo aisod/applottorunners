@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import '../services/location_service.dart';
 import 'dart:async';
 import 'map_picker_sheet.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class SimpleLocationPicker extends StatefulWidget {
   final String? initialAddress;
@@ -101,7 +101,7 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
         _updateOverlay();
       }
     } catch (e) {
-      print('Error searching places: $e');
+      appLog('Error searching places: $e');
       if (mounted) {
         setState(() {
           _searchResults = [];
@@ -466,7 +466,7 @@ class _SimpleLocationPickerState extends State<SimpleLocationPicker> {
             lng = details.longitude;
           }
         } catch (e) {
-          print('Error getting place details: $e');
+          appLog('Error getting place details: $e');
         }
       }
 

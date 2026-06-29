@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/utils/responsive.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Bus Accounting Page
 ///
@@ -70,7 +71,7 @@ class _BusAccountingPageState extends State<BusAccountingPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ ERROR loading bus bookings: $e');
+      appLog('❌ ERROR loading bus bookings: $e');
       setState(() => _isLoading = false);
       _showErrorSnackBar('Error loading bus bookings: $e');
     }

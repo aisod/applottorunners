@@ -1,4 +1,5 @@
 import 'dart:html' as html;
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Web implementation for PDF saving
 Future<void> savePdfPlatform(List<int> pdfBytes, String fileName) async {
@@ -17,14 +18,10 @@ Future<dynamic> mergePDFsPlatform(List<dynamic> pdfFiles) async {
     if (pdfFiles.isEmpty) return null;
     if (pdfFiles.length == 1) return pdfFiles.first;
 
-    // TODO: Implement actual PDF merging logic for web
-    // For now, we'll just return the first file as a placeholder
-    // In a real implementation, you would use a PDF library to merge the files
-
-    // Placeholder: return first file
+    // Web merge is limited to the first selected file until a merge library is added.
     return pdfFiles.first;
   } catch (e) {
-    print('Error merging PDFs: $e');
+    appLog('Error merging PDFs: $e');
     return null;
   }
 }
@@ -42,7 +39,7 @@ Future<bool> downloadPDFPlatform(dynamic pdfFile, String fileName) async {
 
     return true;
   } catch (e) {
-    print('Error downloading PDF: $e');
+    appLog('Error downloading PDF: $e');
     return false;
   }
 }
@@ -83,7 +80,7 @@ Future<bool> downloadPDFBytesPlatform(
     await savePdfPlatform(pdfBytes, fileName);
     return true;
   } catch (e) {
-    print('Error downloading PDF bytes: $e');
+    appLog('Error downloading PDF bytes: $e');
     return false;
   }
 }

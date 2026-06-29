@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:lotto_runners/constants/mapbox_config.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class LocationService {
   // Prefer passing your key at build/run time: --dart-define=GOOGLE_MAPS_API_KEY=YOUR_KEY
@@ -31,34 +34,52 @@ class LocationService {
   static const String _directionsUrl =
       'https://maps.googleapis.com/maps/api/directions';
 
-  // Get current location
+  // Get current location with retry and fallback logic
   static Future<Position?> getCurrentPosition() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        throw Exception(
-            'Location services are disabled. Please enable location services in your device settings.');
+        throw Exception('Location services are disabled.');
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          throw Exception(
-              'Location permission is required to use this feature. Please grant location permission in your device settings.');
+          throw Exception('Location permissions are denied.');
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        throw Exception(
-            'Location permission is permanently denied. Please enable it in your device settings to use this feature.');
+        throw Exception('Location permissions are permanently denied.');
       }
 
-      return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      // 1. First, try to get the last known position for immediate result
+      try {
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) {
+          appLog('📍 Using last known position as fallback: ${lastKnown.latitude}, ${lastKnown.longitude}');
+          // If the last known is fresh (e.g., < 1 min), we could return it immediately, 
+          // but for now we just use it if getCurrentPosition fails.
+        }
+      } catch (e) {
+        appLog('⚠️ Could not get last known position: $e');
+      }
+
+      // 2. Try to get current position with a reasonable time limit
+      try {
+        return await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium, // Balanced for faster locks
+          timeLimit: const Duration(seconds: 10),
+        );
+      } catch (timeout) {
+        appLog('⏳ Location fetch timed out, falling back to last known position...');
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) return lastKnown;
+        rethrow;
+      }
     } catch (e) {
-      print('Error getting current position: $e');
+      appLog('❌ Error in getCurrentPosition: $e');
       return null;
     }
   }
@@ -88,7 +109,7 @@ class LocationService {
         }
       }
     } catch (e) {
-      print('Reverse geocode (Supabase) failed: $e');
+      appLog('Reverse geocode (Supabase) failed: $e');
     }
 
     // 2) Try platform geocoding package (often only city/country on Android).
@@ -124,7 +145,7 @@ class LocationService {
         }
       }
     } catch (e) {
-      print('Error getting address from coordinates with geocoding: $e');
+      appLog('Error getting address from coordinates with geocoding: $e');
     }
 
     // 3) If we have a client key, try Google Geocoding API directly.
@@ -148,7 +169,7 @@ class LocationService {
         }
       }
     } catch (e) {
-      print('Error getting address from coordinates with Google API: $e');
+      appLog('Error getting address from coordinates with Google API: $e');
     }
 
     return _getDescriptiveLocationName(latitude, longitude);
@@ -243,25 +264,42 @@ class LocationService {
         final lat = location.latitude;
         final lng = location.longitude;
 
-        // Validate coordinates are valid numbers
         if (lat.isFinite && lng.isFinite) {
           return {
             'latitude': lat,
             'longitude': lng,
           };
-        } else {
-          print('❌ Invalid coordinates from address: $lat, $lng');
         }
       }
     } catch (e) {
-      String errorMessage = 'Unknown error';
-      try {
-        errorMessage = e.toString();
-      } catch (_) {
-        errorMessage = 'Error occurred during geocoding';
-      }
-      print('Error getting coordinates from address: $errorMessage');
+      appLog('Platform geocode failed: $e, trying Mapbox fallback...');
     }
+
+    // Fallback to Mapbox Geocoding API
+    try {
+      const String mapboxToken = kMapboxAccessToken;
+      final encodedAddress = Uri.encodeComponent(address);
+      final url = Uri.parse(
+          'https://api.mapbox.com/geocoding/v5/mapbox.places/$encodedAddress.json?access_token=$mapboxToken&limit=1&country=na');
+
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final features = data['features'] as List?;
+        if (features != null && features.isNotEmpty) {
+          final center = features[0]['center'] as List?;
+          if (center != null && center.length >= 2) {
+            return {
+              'latitude': (center[1] as num).toDouble(),
+              'longitude': (center[0] as num).toDouble(),
+            };
+          }
+        }
+      }
+    } catch (e) {
+      appLog('Mapbox geocode fallback failed: $e');
+    }
+
     return null;
   }
 
@@ -343,7 +381,7 @@ class LocationService {
         }
       }
     } catch (e) {
-      print('Error getting route distance: $e');
+      appLog('Error getting route distance: $e');
     }
 
     // Fallback to direct distance calculation
@@ -388,7 +426,7 @@ class LocationService {
       final points = overview?['points'] as String?;
       return points;
     } catch (e) {
-      print('Error getting route polyline: $e');
+      appLog('Error getting route polyline: $e');
       return null;
     }
   }
@@ -414,7 +452,7 @@ class LocationService {
         );
       }
     } catch (e) {
-      print('Error calculating address distance: $e');
+      appLog('Error calculating address distance: $e');
     }
     return null;
   }
@@ -451,7 +489,7 @@ class LocationService {
       final cacheTime = _cacheTimestamps[normalizedQuery];
       if (cacheTime != null &&
           DateTime.now().difference(cacheTime) < _cacheExpiry) {
-        print('🚀 Using cached results for: $query');
+        appLog('🚀 Using cached results for: $query');
         return _searchCache[normalizedQuery]!;
       } else {
         _searchCache.remove(normalizedQuery);
@@ -479,15 +517,15 @@ class LocationService {
       final data = response.data;
       if (data is Map<String, dynamic> && data['status'] == 'OK') {
         final results = _parsePlacesResponse(data);
-        print('✅ Places (proxy): ${results.length} results');
+        appLog('✅ Places (proxy): ${results.length} results');
         _cacheResults(normalizedQuery, results);
         return results;
       }
       if (response.status != 200) {
-        print('❌ Places proxy HTTP ${response.status}');
+        appLog('❌ Places proxy HTTP ${response.status}');
       }
     } catch (e) {
-      print('❌ Places proxy failed, using fallback: $e');
+      appLog('❌ Places proxy failed, using fallback: $e');
     }
 
     // 2) Fallback: basic search (geocoding + Namibia suggestions, no client-side API key)
@@ -523,7 +561,7 @@ class LocationService {
   static void clearCache() {
     _searchCache.clear();
     _cacheTimestamps.clear();
-    print('🧹 Location search cache cleared');
+    appLog('🧹 Location search cache cleared');
   }
 
   // Get place details
@@ -545,7 +583,7 @@ class LocationService {
         return PlaceDetails.fromJson(data['result']);
       }
     } catch (e) {
-      print('Error getting place details: $e');
+      appLog('Error getting place details: $e');
     }
 
     return null;
@@ -553,15 +591,15 @@ class LocationService {
 
   // Basic place search without API key (fallback)
   static Future<List<PlaceModel>> _basicPlaceSearch(String query) async {
-    print('🔍 Basic search for: $query');
+    appLog('🔍 Basic search for: $query');
     // Skip geocoding if query is too short or empty
     if (query.trim().isEmpty || query.trim().length < 2) {
-      print('❌ Query too short for basic search');
+      appLog('❌ Query too short for basic search');
       return [];
     }
 
     try {
-      print('🌐 Attempting geocoding for: $query');
+      appLog('🌐 Attempting geocoding for: $query');
       final locations = await locationFromAddress(query);
 
       if (locations.isNotEmpty) {
@@ -570,7 +608,7 @@ class LocationService {
         final lng = location.longitude;
 
         if (lat.isFinite && lng.isFinite) {
-          print('✅ Found location: $lat, $lng');
+          appLog('✅ Found location: $lat, $lng');
           return [
             PlaceModel(
               placeId: 'basic_search',
@@ -581,28 +619,45 @@ class LocationService {
               longitude: lng,
             ),
           ];
-        } else {
-          print('❌ Invalid coordinates: $lat, $lng');
         }
-      } else {
-        print('❌ No locations found for: $query');
       }
     } catch (e) {
-      // Handle specific error types
-      String errorMessage = 'Unknown error';
-      try {
-        errorMessage = e.toString();
-      } catch (_) {
-        // If toString() fails, use a safe fallback
-        errorMessage = 'Error occurred during geocoding';
-      }
+      appLog('Platform geocode failed for search: $e, trying Mapbox fallback...');
+    }
 
-      if (errorMessage.contains('null') || errorMessage.contains('Null')) {
-        print('❌ Basic search error: Null value encountered - $errorMessage');
-      } else {
-        print('❌ Basic search error: $errorMessage');
+    // Fallback to Mapbox Geocoding API for search
+    try {
+      const String mapboxToken = kMapboxAccessToken;
+      final encodedQuery = Uri.encodeComponent(query);
+      final url = Uri.parse(
+          'https://api.mapbox.com/geocoding/v5/mapbox.places/$encodedQuery.json?access_token=$mapboxToken&limit=1&country=na');
+
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final features = data['features'] as List?;
+        if (features != null && features.isNotEmpty) {
+          final feature = features[0];
+          final center = feature['center'] as List?;
+          if (center != null && center.length >= 2) {
+            final lat = (center[1] as num).toDouble();
+            final lng = (center[0] as num).toDouble();
+            appLog('✅ Found location (Mapbox fallback): $lat, $lng');
+            return [
+              PlaceModel(
+                placeId: feature['id'] ?? 'mapbox_search',
+                description: feature['place_name'] ?? query,
+                mainText: feature['text'] ?? query,
+                secondaryText: feature['place_name']?.toString().replaceFirst(feature['text'] ?? '', '').trim() ?? 'Namibia',
+                latitude: lat,
+                longitude: lng,
+              ),
+            ];
+          }
+        }
       }
-      // Continue to fallback locations below
+    } catch (e) {
+      appLog('Mapbox geocode search fallback failed: $e');
     }
 
     // Return common locations in Namibia as fallback

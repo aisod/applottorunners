@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Route Provider Selector Widget
 ///
@@ -109,7 +110,7 @@ class _RouteProviderSelectorState extends State<RouteProviderSelector> {
         _isLoadingRoutes = false;
       });
     } catch (e) {
-      print('Error loading routes: $e');
+      appLog('Error loading routes: $e');
       setState(() => _isLoadingRoutes = false);
     }
   }
@@ -122,9 +123,9 @@ class _RouteProviderSelectorState extends State<RouteProviderSelector> {
         _providers = providers;
         _isLoadingProviders = false;
       });
-      print('Loaded ${providers.length} providers for route $routeId');
+      appLog('Loaded ${providers.length} providers for route $routeId');
     } catch (e) {
-      print('Error loading providers for route: $e');
+      appLog('Error loading providers for route: $e');
       setState(() => _isLoadingProviders = false);
     }
   }
@@ -138,9 +139,9 @@ class _RouteProviderSelectorState extends State<RouteProviderSelector> {
         _providers = providers;
         _isLoadingProviders = false;
       });
-      print('Loaded ${providers.length} providers for route "$routeName"');
+      appLog('Loaded ${providers.length} providers for route "$routeName"');
     } catch (e) {
-      print('Error loading providers for route by name: $e');
+      appLog('Error loading providers for route by name: $e');
       setState(() => _isLoadingProviders = false);
     }
   }

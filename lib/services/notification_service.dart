@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
@@ -53,7 +54,7 @@ class NotificationService {
 
   static void _onNotificationTapped(NotificationResponse response) {
     // Handle notification tap
-    print('Notification tapped: ${response.payload}');
+    appLog('Notification tapped: ${response.payload}');
   }
 
   static Future<void> showNotification({
@@ -101,19 +102,16 @@ class NotificationService {
 
     _cleanup(); // Clean up existing subscriptions
 
-    // For now, we'll implement basic notification system without real-time subscriptions
-    // TODO: Implement proper real-time subscriptions when Supabase API is updated
-    print('Real-time notifications initialized for user: ${user.id}');
+    // Local notifications are shown from explicit app events; channel wiring can be extended here.
+    appLog('Real-time notifications initialized for user: ${user.id}');
   }
 
   static void _handleErrandChange(Map<String, dynamic> payload, String userId) {
-    // Placeholder for future implementation
-    print('Errand change detected: $payload');
+    appLog('Errand change detected: $payload');
   }
 
   static void _handleErrandUpdate(Map<String, dynamic> payload, String userId) {
-    // Placeholder for future implementation
-    print('Errand update detected: $payload');
+    appLog('Errand update detected: $payload');
   }
 
   static Future<void> _notifyRunnersOfNewErrand(

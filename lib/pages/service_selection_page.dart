@@ -10,6 +10,7 @@ import 'package:lotto_runners/pages/enhanced_post_errand_form_page.dart';
 import 'package:lotto_runners/theme.dart';
 import 'package:lotto_runners/utils/service_icons.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class ServiceSelectionPage extends StatefulWidget {
   const ServiceSelectionPage({super.key});
@@ -44,7 +45,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
         }
       }
     } catch (e) {
-      print('Error loading user profile: $e');
+      appLog('Error loading user profile: $e');
     }
   }
 
@@ -192,6 +193,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     final isDesktop = screenWidth >= 1200;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           'Select Service Type',
@@ -405,13 +407,17 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                     : 16),
             child: Row(
               children: [
-                // Icon container with colored background
+                // Icon container with white background
                 Container(
                   width: iconSize,
                   height: iconSize,
                   decoration: BoxDecoration(
-                    color: serviceColor.withOpacity(0.15),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
                   ),
                   child: iconUrl != null
                       ? _buildServiceIcon(

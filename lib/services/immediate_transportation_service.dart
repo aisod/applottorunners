@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lotto_runners/supabase/supabase_config.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to manage immediate transportation requests that are waiting for driver acceptance
 /// These bookings are stored temporarily until a driver accepts them
@@ -30,7 +31,7 @@ class ImmediateTransportationService {
           .select()
           .single();
 
-      print(
+      appLog(
           '📝 Stored pending immediate transportation booking in database: ${bookingData['pickup_location']} to ${bookingData['dropoff_location']} with ID: ${response['id']}');
 
       // Store the database ID in SharedPreferences for tracking
@@ -43,7 +44,7 @@ class ImmediateTransportationService {
 
       return response;
     } catch (e) {
-      print('❌ Error storing pending transportation booking: $e');
+      appLog('❌ Error storing pending transportation booking: $e');
       throw Exception('Failed to store pending transportation booking: $e');
     }
   }
@@ -65,7 +66,7 @@ class ImmediateTransportationService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('❌ Error fetching pending transportation bookings: $e');
+      appLog('❌ Error fetching pending transportation bookings: $e');
       return [];
     }
   }
@@ -76,7 +77,7 @@ class ImmediateTransportationService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getStringList('pending_transportation_booking_ids') ?? [];
     } catch (e) {
-      print('❌ Error getting pending transportation booking IDs: $e');
+      appLog('❌ Error getting pending transportation booking IDs: $e');
       return [];
     }
   }
@@ -91,7 +92,7 @@ class ImmediateTransportationService {
       await prefs.setStringList(
           'pending_transportation_booking_ids', pendingIds);
     } catch (e) {
-      print('❌ Error removing pending transportation booking ID: $e');
+      appLog('❌ Error removing pending transportation booking ID: $e');
     }
   }
 
@@ -111,10 +112,10 @@ class ImmediateTransportationService {
           .filter('driver_id', 'is', null)
           .lt('created_at', expiredCutoff.toIso8601String());
 
-      print(
+      appLog(
           '🧹 Deleted expired immediate transportation bookings from database');
     } catch (e) {
-      print('❌ Error cleaning up expired transportation bookings: $e');
+      appLog('❌ Error cleaning up expired transportation bookings: $e');
     }
   }
 

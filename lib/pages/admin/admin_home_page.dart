@@ -15,7 +15,7 @@ import 'feedback_management_page.dart';
 import 'payment_tracking_page.dart';
 import 'all_bookings_page.dart';
 import 'errand_oversight_page.dart';
-import 'package:lotto_runners/widgets/theme_toggle_button.dart';
+
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -164,7 +164,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const ThemeToggleButton(),
               ],
             ),
           ],

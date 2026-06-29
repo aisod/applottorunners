@@ -1,3 +1,5 @@
+import 'package:url_launcher/url_launcher.dart';
+
 /// Utilities for maps, navigation addresses, and polyline decoding.
 class MapUtils {
   MapUtils._();
@@ -73,6 +75,16 @@ class MapUtils {
         final delivery = errand['delivery_address']?.toString().trim();
         if (delivery != null && delivery.isNotEmpty) return delivery;
         return null;
+    }
+  }
+
+  /// Opens an external map application (or web tab) to a specific coordinate.
+  static Future<void> openExternalMap(double latitude, double longitude) async {
+    final url =
+        'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude&travelmode=driving';
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }

@@ -9,6 +9,8 @@ import 'package:lotto_runners/utils/responsive.dart';
 import 'package:lotto_runners/utils/page_transitions.dart';
 import 'package:lotto_runners/pages/paytoday_payment_page.dart';
 import 'package:lotto_runners/services/paytoday_config.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 class MyTransportationRequestsPage extends StatefulWidget {
   const MyTransportationRequestsPage({super.key});
@@ -51,15 +53,15 @@ class _MyTransportationRequestsPageState
   }
 
   Future<void> _loadMyBookings({bool forceRefresh = false}) async {
-    print('🚀 DEBUG: [MY TRANSPORTATION REQUESTS] _loadMyBookings called');
-    print(
+    appLog('🚀 DEBUG: [MY TRANSPORTATION REQUESTS] _loadMyBookings called');
+    appLog(
         '🔄 DEBUG: [MY TRANSPORTATION REQUESTS] Force refresh: $forceRefresh');
 
     // Aggressive cache: don't reload if data is less than 2 minutes old
     if (!forceRefresh &&
         _lastLoadTime != null &&
         DateTime.now().difference(_lastLoadTime!).inMinutes < 2) {
-      print(
+      appLog(
           '⏭️ DEBUG: [MY TRANSPORTATION REQUESTS] Skipping reload - data is fresh (${DateTime.now().difference(_lastLoadTime!).inMinutes} minutes old)');
       return;
     }
@@ -67,65 +69,65 @@ class _MyTransportationRequestsPageState
     try {
       // Only show loading if we don't have cached data
       if (_bookings.isEmpty) {
-        print(
+        appLog(
             '⏳ DEBUG: [MY TRANSPORTATION REQUESTS] Showing loading indicator');
         setState(() => _isLoading = true);
       }
 
       final userId = SupabaseConfig.currentUser?.id;
-      print('👤 DEBUG: [MY TRANSPORTATION REQUESTS] Current user ID: $userId');
+      appLog('👤 DEBUG: [MY TRANSPORTATION REQUESTS] Current user ID: $userId');
 
       if (userId != null) {
-        print(
+        appLog(
             '📡 DEBUG: [MY TRANSPORTATION REQUESTS] Calling getUserBookings...');
         // Driver profiles are now fetched in the getUserBookings method
         final bookings = await SupabaseConfig.getUserBookings(userId);
 
-        print(
+        appLog(
             '✅ DEBUG: [MY TRANSPORTATION REQUESTS] Received ${bookings.length} bookings from getUserBookings');
 
         // Log detailed information about each booking
         for (var i = 0; i < bookings.length; i++) {
           final booking = bookings[i];
-          print('📋 DEBUG: [MY TRANSPORTATION REQUESTS] Booking #${i + 1}:');
-          print('   - ID: ${booking['id']}');
-          print('   - Type: ${booking['booking_type']}');
-          print('   - Status: ${booking['status']}');
-          print('   - Title: ${booking['title']}');
-          print('   - Pickup: ${booking['pickup_location']}');
-          print('   - Dropoff: ${booking['dropoff_location']}');
-          print(
+          appLog('📋 DEBUG: [MY TRANSPORTATION REQUESTS] Booking #${i + 1}:');
+          appLog('   - ID: ${booking['id']}');
+          appLog('   - Type: ${booking['booking_type']}');
+          appLog('   - Status: ${booking['status']}');
+          appLog('   - Title: ${booking['title']}');
+          appLog('   - Pickup: ${booking['pickup_location']}');
+          appLog('   - Dropoff: ${booking['dropoff_location']}');
+          appLog(
               '   - Vehicle type: ${booking['vehicle_type']?['name'] ?? booking['vehicle_name'] ?? 'N/A'}');
-          print('   - Service: ${booking['service']?['name'] ?? 'N/A'}');
-          print(
+          appLog('   - Service: ${booking['service']?['name'] ?? 'N/A'}');
+          appLog(
               '   - Driver: ${booking['driver']?['full_name'] ?? 'No driver'}');
-          print('   - Created: ${booking['created_at']}');
+          appLog('   - Created: ${booking['created_at']}');
         }
 
         if (mounted) {
-          print(
+          appLog(
               '✅ DEBUG: [MY TRANSPORTATION REQUESTS] Updating state with ${bookings.length} bookings');
           setState(() {
             _bookings = bookings;
             _isLoading = false;
             _lastLoadTime = DateTime.now();
           });
-          print(
+          appLog(
               '✅ DEBUG: [MY TRANSPORTATION REQUESTS] State updated successfully');
         } else {
-          print(
+          appLog(
               '⚠️ DEBUG: [MY TRANSPORTATION REQUESTS] Widget not mounted - skipping state update');
         }
       } else {
-        print(
+        appLog(
             '❌ DEBUG: [MY TRANSPORTATION REQUESTS] No user ID - cannot load bookings');
       }
     } catch (e, stackTrace) {
-      print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error loading bookings');
-      print(
+      appLog('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error loading bookings');
+      appLog(
           '❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error type: ${e.runtimeType}');
-      print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error message: $e');
-      print('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Stack trace: $stackTrace');
+      appLog('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Error message: $e');
+      appLog('❌ DEBUG: [MY TRANSPORTATION REQUESTS] Stack trace: $stackTrace');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -337,13 +339,10 @@ class _MyTransportationRequestsPageState
           side: BorderSide(color: theme.colorScheme.outline),
         ),
         color: theme.cardColor,
-        child: InkWell(
-          onTap: () {}, // No action needed for transportation cards
-          borderRadius: BorderRadius.circular(0),
-          child: Padding(
-            padding:
-                EdgeInsets.all(Responsive.isSmallMobile(context) ? 12.0 : 16.0),
-            child: Column(
+        child: Padding(
+          padding:
+              EdgeInsets.all(Responsive.isSmallMobile(context) ? 12.0 : 16.0),
+          child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header with status
@@ -568,9 +567,28 @@ class _MyTransportationRequestsPageState
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+                              if (booking['driver']?['phone'] != null)
+                                Text(
+                                  booking['driver']?['phone'] ?? '',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: LottoRunnersColors.primaryYellow,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
+                        if (booking['driver']?['phone'] != null)
+                          IconButton(
+                            onPressed: () => launchUrl(Uri.parse(
+                                'tel:${booking['driver']!['phone']}')),
+                            icon: const Icon(
+                              Icons.phone,
+                              color: LottoRunnersColors.primaryYellow,
+                              size: 20,
+                            ),
+                            tooltip: 'Call Driver',
+                          ),
                       ],
                     ),
                   ),
@@ -700,7 +718,6 @@ class _MyTransportationRequestsPageState
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -907,7 +924,7 @@ class _MyTransportationRequestsPageState
         }
       }
     } catch (e) {
-      print('Error opening chat: $e');
+      appLog('Error opening chat: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

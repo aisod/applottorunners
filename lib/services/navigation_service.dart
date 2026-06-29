@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotto_runners/utils/app_errors.dart';
 
 class NavigationService {
   static final GlobalKey<NavigatorState> navigatorKey =
@@ -31,6 +32,11 @@ class NavigationService {
         ),
       );
     }
+  }
+
+  /// Show error message from an exception or string.
+  static void showError(Object error) {
+    showErrorMessage(AppErrors.message(error));
   }
 
   /// Show error message

@@ -4,6 +4,7 @@ import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/widgets/new_ride_request_popup.dart';
 import 'package:lotto_runners/services/notification_service.dart';
 import 'package:lotto_runners/services/immediate_transportation_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Global service to manage transportation request popups across the entire app
 class GlobalTransportationPopupService {
@@ -29,7 +30,7 @@ class GlobalTransportationPopupService {
     if (!_isInitialized) {
       _startPolling();
       _isInitialized = true;
-      print('🌍 Global transportation popup service initialized');
+      appLog('🌍 Global transportation popup service initialized');
     }
   }
 
@@ -42,13 +43,13 @@ class GlobalTransportationPopupService {
   void _startPolling() {
     _checkTimer?.cancel();
 
-    print(
+    appLog(
         '⏱️ [Global] Starting transportation request polling every 30 seconds');
     _checkTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (_currentContext != null) {
         _checkForNewTransportationRequests();
       } else {
-        print('❌ [Global] No context available, stopping timer');
+        appLog('❌ [Global] No context available, stopping timer');
         timer.cancel();
       }
     });
@@ -65,20 +66,20 @@ class GlobalTransportationPopupService {
 
       // Skip if popup is already showing
       if (_currentPopup != null) {
-        print('⏭️ [Global] Skipping check - popup already visible');
+        appLog('⏭️ [Global] Skipping check - popup already visible');
         return;
       }
 
-      print('🔍 [Global] Checking for new transportation requests...');
+      appLog('🔍 [Global] Checking for new transportation requests...');
 
       final user = SupabaseConfig.currentUser;
       if (user == null) {
-        print(
+        appLog(
             '❌ [Global] No current user - skipping transportation request check');
         return;
       }
 
-      print('👤 [Global] Current user ID: ${user.id}');
+      appLog('👤 [Global] Current user ID: ${user.id}');
 
       // Check if user has a runner application (approved or pending)
       final runnerApp = await SupabaseConfig.client
@@ -88,40 +89,40 @@ class GlobalTransportationPopupService {
           .maybeSingle();
 
       if (runnerApp == null) {
-        print(
+        appLog(
             '❌ [Global] User has no runner application - skipping global transportation popup service');
         return;
       }
 
-      print(
+      appLog(
           '👤 [Global] Runner application status: ${runnerApp['verification_status']}');
 
       // Additional check: Get complete user profile to ensure they're actually a runner
       final userProfile = await SupabaseConfig.getCompleteUserProfile(user.id);
       if (userProfile == null) {
-        print(
+        appLog(
             '❌ [Global] Could not get user profile - skipping global transportation popup service');
         return;
       }
 
       if (userProfile['user_type'] != 'runner') {
-        print(
+        appLog(
             '❌ [Global] User is not a runner type (${userProfile['user_type']}) - skipping global transportation popup service');
         return;
       }
 
-      print(
+      appLog(
           '✅ [Global] User is a runner - proceeding with transportation popup service');
 
       // Get runner's vehicle type for filtering
       final runnerVehicleType = runnerApp['vehicle_type']?.toString() ?? '';
       final hasVehicle = userProfile['has_vehicle'] ?? false;
 
-      print(
+      appLog(
           '🚗 [Global] Runner vehicle info - has_vehicle: $hasVehicle, vehicle_type: "$runnerVehicleType"');
 
       // Get pending immediate transportation bookings
-      print(
+      appLog(
           '🔍 [Global] Querying database for immediate transportation bookings...');
       final bookings = await SupabaseConfig.client
           .from('transportation_bookings')
@@ -135,12 +136,12 @@ class GlobalTransportationPopupService {
           .filter('driver_id', 'is', null)
           .order('created_at', ascending: false);
 
-      print(
+      appLog(
           '📋 [Global] Found ${bookings.length} pending immediate transportation bookings');
 
       // Debug: Print details of each booking
       for (var booking in bookings) {
-        print(
+        appLog(
             '📋 [Global] Booking: ${booking['id']} - ${booking['pickup_location']} to ${booking['dropoff_location']} - vehicle_type: "${booking['vehicle_type']?['name']}"');
       }
 
@@ -149,76 +150,76 @@ class GlobalTransportationPopupService {
         final bookingVehicleType =
             booking['vehicle_type']?['name']?.toString() ?? '';
 
-        print(
+        appLog(
             '🔍 [Global] Checking booking: ${booking['pickup_location']} to ${booking['dropoff_location']} - booking vehicle: "$bookingVehicleType"');
 
         // If booking has no vehicle type, any driver can do it
         if (bookingVehicleType.isEmpty) {
-          print(
+          appLog(
               '✅ [Global] Booking has no vehicle type - showing to all drivers');
           return true;
         }
 
         // If booking has a vehicle type, only show to drivers with matching vehicle type
         if (runnerVehicleType.isEmpty) {
-          print(
+          appLog(
               '❌ [Global] Driver has no vehicle type, can\'t do vehicle bookings');
           return false; // Driver has no vehicle type, can't do vehicle bookings
         }
 
         final matches =
             bookingVehicleType.toLowerCase() == runnerVehicleType.toLowerCase();
-        print(
+        appLog(
             '${matches ? "✅" : "❌"} [Global] Vehicle type match: "$bookingVehicleType" vs "$runnerVehicleType"');
         return matches;
       }).toList();
 
-      print(
+      appLog(
           '🚗 [Global] After vehicle filtering: ${filteredBookings.length} bookings match driver vehicle type: $runnerVehicleType');
 
       for (final booking in filteredBookings) {
         // Check if this booking was dismissed or declined recently
         final bookingId = booking['id'];
         if (_dismissedBookings.contains(bookingId)) {
-          print('⏭️ [Global] Skipping dismissed booking: $bookingId');
+          appLog('⏭️ [Global] Skipping dismissed booking: $bookingId');
           continue;
         }
         if (_declinedBookings.contains(bookingId)) {
-          print('⏭️ [Global] Skipping declined booking: $bookingId');
+          appLog('⏭️ [Global] Skipping declined booking: $bookingId');
           continue;
         }
 
         // Check if this is a new booking (not the current one)
         if (_currentRequest?['id'] != booking['id']) {
-          print(
+          appLog(
               '🎉 [Global] New matching transportation booking found! Showing popup...');
-          print(
+          appLog(
               '🎉 [Global] Booking details: ${booking['pickup_location']} to ${booking['dropoff_location']} - ${booking['vehicle_type']?['name']}');
           _showTransportationRequestPopup(booking);
           break;
         } else {
-          print(
+          appLog(
               '⏭️ [Global] Booking ${booking['id']} is already being shown as popup');
         }
       }
     } catch (e) {
-      print('❌ [Global] Error checking for transportation requests: $e');
+      appLog('❌ [Global] Error checking for transportation requests: $e');
     }
   }
 
   /// Show transportation request popup globally
   void _showTransportationRequestPopup(Map<String, dynamic> booking) {
     if (_currentContext == null) {
-      print('❌ [Global] Cannot show popup - no context available');
+      appLog('❌ [Global] Cannot show popup - no context available');
       return;
     }
 
-    print(
+    appLog(
         '🚨 [Global] Showing transportation request popup for booking: ${booking['id']}');
-    print(
+    appLog(
         '🚨 [Global] Booking: ${booking['pickup_location']} to ${booking['dropoff_location']}');
-    print('🚨 [Global] Vehicle type: ${booking['vehicle_type']?['name']}');
-    print('🚨 [Global] Current context: ${_currentContext.runtimeType}');
+    appLog('🚨 [Global] Vehicle type: ${booking['vehicle_type']?['name']}');
+    appLog('🚨 [Global] Current context: ${_currentContext.runtimeType}');
 
     // Hide any existing popup
     hidePopup();
@@ -238,9 +239,9 @@ class GlobalTransportationPopupService {
     // Insert into overlay
     try {
       Overlay.of(_currentContext!).insert(_currentPopup!);
-      print('✅ [Global] Popup inserted into overlay successfully');
+      appLog('✅ [Global] Popup inserted into overlay successfully');
     } catch (e) {
-      print('❌ [Global] Error inserting popup into overlay: $e');
+      appLog('❌ [Global] Error inserting popup into overlay: $e');
     }
 
     // Auto-dismiss after 30 seconds
@@ -255,7 +256,7 @@ class GlobalTransportationPopupService {
   Future<void> _acceptTransportationRequest(
       Map<String, dynamic> booking) async {
     try {
-      print('✅ [Global] Accepting transportation request: ${booking['id']}');
+      appLog('✅ [Global] Accepting transportation request: ${booking['id']}');
 
       await SupabaseConfig.client.from('transportation_bookings').update({
         'driver_id': SupabaseConfig.currentUser!.id,
@@ -282,7 +283,7 @@ class GlobalTransportationPopupService {
 
       hidePopup();
     } catch (e) {
-      print('❌ [Global] Error accepting transportation request: $e');
+      appLog('❌ [Global] Error accepting transportation request: $e');
 
       // Show error snackbar
       if (_currentContext != null) {
@@ -298,13 +299,13 @@ class GlobalTransportationPopupService {
 
   /// Decline transportation request
   void _declineTransportationRequest() {
-    print('❌ [Global] Transportation request declined');
+    appLog('❌ [Global] Transportation request declined');
 
     // Add to declined bookings to prevent re-showing
     if (_currentRequest != null) {
       final bookingId = _currentRequest!['id'];
       _declinedBookings.add(bookingId);
-      print('🚫 [Global] Added booking $bookingId to declined list');
+      appLog('🚫 [Global] Added booking $bookingId to declined list');
     }
 
     hidePopup();
@@ -312,13 +313,13 @@ class GlobalTransportationPopupService {
 
   /// Dismiss transportation request
   void _dismissTransportationRequest() {
-    print('👋 [Global] Transportation request dismissed');
+    appLog('👋 [Global] Transportation request dismissed');
 
     // Add to dismissed bookings to prevent re-showing
     if (_currentRequest != null) {
       final bookingId = _currentRequest!['id'];
       _dismissedBookings.add(bookingId);
-      print('⏸️ [Global] Added booking $bookingId to dismissed list');
+      appLog('⏸️ [Global] Added booking $bookingId to dismissed list');
     }
 
     hidePopup();
@@ -326,9 +327,9 @@ class GlobalTransportationPopupService {
 
   /// Dismiss a specific transportation request by ID (public method)
   void dismissBookingById(String bookingId) {
-    print('👋 [Global] Dismissing transportation request by ID: $bookingId');
+    appLog('👋 [Global] Dismissing transportation request by ID: $bookingId');
     _dismissedBookings.add(bookingId);
-    print('⏸️ [Global] Added booking $bookingId to dismissed list');
+    appLog('⏸️ [Global] Added booking $bookingId to dismissed list');
   }
 
   /// Hide the current popup
@@ -340,7 +341,7 @@ class GlobalTransportationPopupService {
 
   /// Manual check for new transportation requests (for debug purposes)
   Future<void> manualCheck() async {
-    print('🔍 [Global] Manual check triggered');
+    appLog('🔍 [Global] Manual check triggered');
     await _checkForNewTransportationRequests();
   }
 
@@ -358,7 +359,7 @@ class GlobalTransportationPopupService {
   void clearDismissedBookings() {
     _dismissedBookings.clear();
     _declinedBookings.clear();
-    print('🧹 [Global] Cleared dismissed and declined booking tracking');
+    appLog('🧹 [Global] Cleared dismissed and declined booking tracking');
   }
 
   /// Dispose resources
@@ -368,7 +369,7 @@ class GlobalTransportationPopupService {
     clearDismissedBookings();
     _currentContext = null;
     _isInitialized = false;
-    print('🌍 Global transportation popup service disposed');
+    appLog('🌍 Global transportation popup service disposed');
   }
 }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:lotto_runners/supabase/supabase_config.dart';
 import 'package:lotto_runners/services/notification_service.dart';
+import 'package:lotto_runners/utils/app_log.dart';
 
 /// Service to handle scheduled bus booking notifications with different reminder intervals
 /// Uses booking_date and booking_time columns for precise timing
@@ -19,7 +20,7 @@ class ScheduledBusNotificationService {
     if (!_isInitialized) {
       _startScheduledCheck();
       _isInitialized = true;
-      print('⏰ Scheduled bus notification service initialized');
+      appLog('⏰ Scheduled bus notification service initialized');
     }
   }
 
@@ -32,7 +33,7 @@ class ScheduledBusNotificationService {
       _checkScheduledBusBookings();
     });
 
-    print(
+    appLog(
         '⏰ [Scheduled] Starting scheduled bus booking checks every 5 minutes');
   }
 
@@ -42,7 +43,7 @@ class ScheduledBusNotificationService {
       final user = SupabaseConfig.currentUser;
       if (user == null) return;
 
-      print('🔍 [Scheduled] Checking for scheduled bus bookings...');
+      appLog('🔍 [Scheduled] Checking for scheduled bus bookings...');
 
       // Get user's scheduled bus bookings using booking_date and booking_time
       final busBookings = await SupabaseConfig.client
@@ -58,7 +59,7 @@ class ScheduledBusNotificationService {
         await _checkBusBookingReminders(booking, now);
       }
     } catch (e) {
-      print('❌ [Scheduled] Error checking scheduled bus bookings: $e');
+      appLog('❌ [Scheduled] Error checking scheduled bus bookings: $e');
     }
   }
 
@@ -89,7 +90,7 @@ class ScheduledBusNotificationService {
       await _sendReminderIfNeeded(
           booking, minutesUntilStart, hoursUntilStart, daysUntilStart);
     } catch (e) {
-      print(
+      appLog(
           '❌ [Scheduled] Error checking reminders for bus booking ${booking['id']}: $e');
     }
   }
@@ -213,10 +214,10 @@ class ScheduledBusNotificationService {
       // Also notify admins for bus service management
       await _sendAdminNotificationForBusBooking(booking, title, body);
 
-      print(
+      appLog(
           '📱 [Scheduled] Sent reminder: $title for bus booking ${booking['id']}');
     } catch (e) {
-      print('❌ [Scheduled] Error sending bus reminder notification: $e');
+      appLog('❌ [Scheduled] Error sending bus reminder notification: $e');
     }
   }
 
@@ -258,7 +259,7 @@ class ScheduledBusNotificationService {
 
       return upcoming;
     } catch (e) {
-      print('❌ [Scheduled] Error fetching upcoming bus bookings: $e');
+      appLog('❌ [Scheduled] Error fetching upcoming bus bookings: $e');
       return [];
     }
   }
@@ -288,10 +289,10 @@ class ScheduledBusNotificationService {
         });
       }
 
-      print(
+      appLog(
           '📱 [Scheduled] Sent admin notification for bus booking ${booking['id']}');
     } catch (e) {
-      print(
+      appLog(
           '❌ [Scheduled] Error sending admin notification for bus booking: $e');
     }
   }
@@ -300,6 +301,6 @@ class ScheduledBusNotificationService {
   void dispose() {
     _checkTimer?.cancel();
     _isInitialized = false;
-    print('⏰ [Scheduled] Scheduled bus notification service disposed');
+    appLog('⏰ [Scheduled] Scheduled bus notification service disposed');
   }
 }

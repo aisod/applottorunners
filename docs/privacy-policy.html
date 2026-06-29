@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — Lotto Runners</title>
+  <style>
+    :root {
+      --lr-blue: #3b82f6;
+      --lr-blue-dark: #1d4ed8;
+      --lr-yellow: #facc15;
+      --lr-text: #1e293b;
+      --lr-muted: #64748b;
+      --lr-bg: #f8fafc;
+      --lr-card: #ffffff;
+      --lr-border: #e2e8f0;
+      --lr-radius: 12px;
+      --lr-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--lr-text);
+      background: var(--lr-bg);
+    }
+
+    .page-header {
+      background: linear-gradient(135deg, var(--lr-blue-dark) 0%, var(--lr-blue) 100%);
+      color: #fff;
+      padding: 2.5rem 1.5rem 2rem;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .page-header .tagline {
+      margin: 0;
+      opacity: 0.92;
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem 1.25rem;
+      margin-top: 1.25rem;
+      font-size: 0.9rem;
+    }
+
+    .meta-bar span {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+    }
+
+    main {
+      max-width: 42rem;
+      margin: -1.25rem auto 3rem;
+      padding: 0 1rem;
+    }
+
+    .card {
+      background: var(--lr-card);
+      border-radius: var(--lr-radius);
+      box-shadow: var(--lr-shadow);
+      padding: 1.75rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .intro {
+      border-left: 4px solid var(--lr-yellow);
+      padding-left: 1rem;
+      margin: 0 0 1rem;
+    }
+
+    h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--lr-blue-dark);
+    }
+
+    h3 {
+      margin: 1.25rem 0 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--lr-text);
+    }
+
+    p { margin: 0 0 1rem; }
+    p:last-child { margin-bottom: 0; }
+
+    ul {
+      margin: 0 0 1rem;
+      padding-left: 1.35rem;
+    }
+
+    li { margin-bottom: 0.4rem; }
+    li:last-child { margin-bottom: 0; }
+
+    a {
+      color: var(--lr-blue);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .highlight {
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 1rem 1.15rem;
+      margin: 0;
+    }
+
+    .share-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .share-list li {
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--lr-border);
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .share-list li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .share-list strong {
+      color: var(--lr-blue-dark);
+      font-size: 0.95rem;
+    }
+
+    .contact-card {
+      text-align: center;
+      background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%);
+    }
+
+    .contact-card a {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      background: var(--lr-blue);
+      color: #fff !important;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .contact-card a:hover {
+      background: var(--lr-blue-dark);
+      text-decoration: none;
+    }
+
+    .legal-nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .legal-nav a {
+      color: #fff;
+      opacity: 0.95;
+      text-decoration: none;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      font-weight: 500;
+    }
+
+    .legal-nav a:hover {
+      background: rgba(255, 255, 255, 0.12);
+      text-decoration: none;
+    }
+
+    .legal-nav a.is-active {
+      background: var(--lr-yellow);
+      color: var(--lr-blue-dark);
+      border-color: var(--lr-yellow);
+      font-weight: 600;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0 1rem 2rem;
+      font-size: 0.85rem;
+      color: var(--lr-muted);
+    }
+
+    footer a {
+      color: var(--lr-blue);
+      font-weight: 500;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --lr-text: #e2e8f0;
+        --lr-muted: #94a3b8;
+        --lr-bg: #0f172a;
+        --lr-card: #1e293b;
+        --lr-border: #334155;
+        --lr-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+      }
+
+      .highlight { background: #1e3a5f; }
+      .contact-card {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      }
+
+      .legal-nav a.is-active {
+        color: #0f172a;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>Privacy Policy</h1>
+    <p class="tagline">Lotto Runners</p>
+    <div class="meta-bar">
+      <span>Effective: 20 May 2026</span>
+      <span>Last updated: 26 May 2026</span>
+    </div>
+    <nav class="legal-nav" aria-label="Legal documents">
+      <a href="/terms-of-service">Terms of Service</a>
+      <a href="/privacy-policy" class="is-active">Privacy Policy</a>
+      <a href="/delete-account">Delete account</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="card">
+      <p class="intro">Lotto Runners (“<strong>we</strong>”, “<strong>us</strong>”, “<strong>our</strong>”) operates the Lotto Runners mobile and web application (the “<strong>App</strong>”). This policy explains how we collect, use, store, share, and protect your personal information.</p>
+      <p>By creating an account or using the App, you agree to this Privacy Policy. If you do not agree, please do not use the App.</p>
+    </section>
+
+    <section class="card">
+      <h2>1. Who we are</h2>
+      <p><strong>App name:</strong> Lotto Runners</p>
+      <p><strong>Email:</strong> <a href="mailto:info@lottoerunners.com">info@lottoerunners.com</a></p>
+      <p><strong>Phone:</strong> <a href="tel:+264811284627">+264 81 128 4627</a></p>
+    </section>
+
+    <section class="card">
+      <h2>2. Who this policy applies to</h2>
+      <p>The App is used by <strong>customers</strong> (people who request services), <strong>runners</strong> (people who complete jobs), and <strong>administrators</strong> (authorised staff). This policy applies to everyone who uses the App.</p>
+    </section>
+
+    <section class="card">
+      <h2>3. Information we collect</h2>
+
+      <h3>3.1 Information you provide</h3>
+      <ul>
+        <li>Account details: name, email, phone number, and password (handled securely by our authentication provider)</li>
+        <li>Profile information, addresses, and user type</li>
+        <li>Job details: descriptions, locations, times, notes, ratings, and feedback</li>
+        <li>Verification documents for runners, where applicable</li>
+        <li>In-app messages and support communications</li>
+        <li>Payment references and status (card details are processed by our payment provider)</li>
+      </ul>
+
+      <h3>3.2 Information collected automatically</h3>
+      <ul>
+        <li><strong>Location</strong> — maps, job matching, navigation, and live tracking during active jobs while you use the App</li>
+        <li>Device and technical logs needed to operate and secure the service</li>
+        <li>Notification identifiers for job and payment updates</li>
+      </ul>
+
+      <h3>3.3 Photos, camera, and files</h3>
+      <p>With your permission, we access the camera and photo library so you can attach images or documents to errands and verification. Files are stored securely to fulfil your request.</p>
+      <p class="highlight-warn"><strong>Prohibited content:</strong> Do not upload nudity, pornography, sexually explicit material, or sexual content involving minors. The App does not support public sharing of photos or messages. See our <a href="/terms-of-service">Terms of Service</a> (section 5).</p>
+    </section>
+
+    <section class="card">
+      <h2>4. How we use your information</h2>
+      <ul>
+        <li>Account creation, authentication, and service delivery</li>
+        <li>Matching customers with runners and administrators</li>
+        <li>Maps, routing, live tracking, payments, wallets, and receipts</li>
+        <li>Notifications, support, verification, and operational reporting</li>
+        <li>Security, fraud prevention, and legal compliance</li>
+      </ul>
+      <p class="highlight"><strong>We do not sell your personal information.</strong> The App does not use third-party advertising networks or ad-tracking analytics. In-app statistics (such as earnings summaries) come from our own service data.</p>
+    </section>
+
+    <section class="card">
+      <h2>5. How we share information</h2>
+      <ul class="share-list">
+        <li><strong>Other users</strong> Information needed to complete jobs (contact, locations, status; live runner location during active tracking).</li>
+        <li><strong>Supabase</strong> Authentication, database, storage, and real-time features.</li>
+        <li><strong>Google Maps / Places</strong> Maps, geocoding, and address search.</li>
+        <li><strong>Mapbox</strong> Turn-by-turn navigation where used.</li>
+        <li><strong>PayToday</strong> Secure payment processing.</li>
+        <li><strong>Service providers</strong> Hosting and operations under confidentiality obligations.</li>
+        <li><strong>Authorities</strong> When required by law or to protect safety and rights.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>6. International transfers</h2>
+      <p>Our providers may process data outside your country. We use appropriate safeguards offered by those providers where required by law.</p>
+    </section>
+
+    <section class="card">
+      <h2>7. Data retention</h2>
+      <p>We retain data while your account is active and as needed for transactions, disputes, legal requirements, and security. We then delete or anonymise data when it is no longer needed.</p>
+    </section>
+
+    <section class="card">
+      <h2>8. Security</h2>
+      <p>We use HTTPS, access controls, and role-based permissions. Payment credentials are handled by PayToday under their security standards. No system is completely secure.</p>
+    </section>
+
+    <section class="card">
+      <h2>9. Your rights</h2>
+      <p>You may request access, correction, deletion, or restriction of your data. To delete your account, use <strong>Profile → Delete account</strong> in the App or see <a href="/delete-account">Delete your account</a> for full steps and retention details. You can withdraw consent for location, camera, or notifications in your device settings. Contact us and we will respond within a reasonable time.</p>
+    </section>
+
+    <section class="card">
+      <h2>10. Children</h2>
+      <p>The App is not intended for users under 16. Contact us if you believe a child has provided personal data.</p>
+    </section>
+
+    <section class="card">
+      <h2>11. Device permissions</h2>
+      <p>The App may request internet, location, camera, photos/files, notifications, and phone (for optional call actions via your dialer). Denying permissions may limit some features.</p>
+    </section>
+
+    <section class="card">
+      <h2>12. Third-party links</h2>
+      <p>External sites (for example payment pages) have their own privacy policies. We are not responsible for their practices.</p>
+    </section>
+
+    <section class="card">
+      <h2>13. Changes to this policy</h2>
+      <p>We may update this policy from time to time. The latest version will always be posted on this page with an updated date. Important changes may be communicated in the App or by email.</p>
+    </section>
+
+    <section class="card contact-card">
+      <h2>14. Contact us</h2>
+      <p><strong>Lotto Runners — Privacy</strong></p>
+      <p>Email: <a href="mailto:info@lottoerunners.com">info@lottoerunners.com</a></p>
+      <p>Phone: <a href="tel:+264811284627">+264 81 128 4627</a></p>
+      <a href="mailto:info@lottoerunners.com">Email us about privacy</a>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; Lotto Runners. All rights reserved. &nbsp;·&nbsp;
+    <a href="/terms-of-service">Terms of Service</a> &nbsp;·&nbsp;
+    <a href="/delete-account">Delete account</a>
+  </footer>
+
+</body>
+</html>
